@@ -146,3 +146,45 @@ class Database:
         else:
             logger.debug(f"Block ID {block_id} not found.")
             return False
+
+    def update_block_content(self, block_id: int, new_content: str) -> bool:
+        """
+        Updates the content of an existing block.
+        Returns True if successful, False otherwise.
+        """
+        self.cursor.execute("UPDATE blocks SET content = ? WHERE block_id = ?", (new_content, block_id))
+        self.conn.commit()
+        if self.cursor.rowcount > 0:
+            logger.debug(f"Block ID {block_id} content updated.")
+            return True
+        else:
+            logger.debug(f"Block ID {block_id} not found or no change in content.")
+            return False
+
+    def update_block_parent(self, block_id: int, new_page_id: int = None, new_parent_block_id: int = None) -> bool:
+        """
+        Updates the parent of an existing block. A block can either have a page_id or a parent_block_id, but not both.
+        Returns True if successful, False otherwise.
+        """
+        if new_page_id is not None and new_parent_block_id is None:
+            self.cursor.execute(
+                "UPDATE blocks SET page_id = ?, parent_block_id = NULL WHERE block_id = ?",
+                (new_page_id, block_id)
+            )
+            logger.debug(f"Block ID {block_id} parent updated to page ID {new_page_id}.")
+        elif new_parent_block_id is not None and new_page_id is None:
+            self.cursor.execute(
+                "UPDATE blocks SET parent_block_id = ?, page_id = NULL WHERE block_id = ?",
+                (new_parent_block_id, block_id)
+            )
+            logger.debug(f"Block ID {block_id} parent updated to parent block ID {new_parent_block_id}.")
+        else:
+            logger.error("A block must be associated with either a page_id or a parent_block_id, but not both. No update performed for block ID {block_id}.")
+            return False
+
+        self.conn.commit()
+        if self.cursor.rowcount > 0:
+            return True
+        else:
+            logger.debug(f"Block ID {block_id} not found or no change in parent.")
+            return False
