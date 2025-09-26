@@ -12,7 +12,7 @@ import {
 function App() {
   const current_page_id = 2;
   const [title, setTitle] = useState("");
-  const [blocks, setBlocks] = useState<any[]>([]);
+  const [blocks, setBlocks] = useState<Block[]>([]);
 
   useEffect(() => {
     const fetchTitle = async () => {
@@ -28,13 +28,9 @@ function App() {
       const response = await getBlocksBlocksPageIdGet({
         path: { page_id: current_page_id },
       });
-
-      const block_contents: string[] = [];
-
-      response.data?.forEach((b: Block) => {
-        block_contents.push(b.content);
-      });
-      setBlocks(block_contents);
+      if (response.data) {
+        setBlocks(response.data);
+      }
     };
 
     fetchTitle();
@@ -50,7 +46,7 @@ function App() {
       </Panel>
       <PanelResizeHandle className="resize-handle" />
       <Panel minSize={30}>
-        <Page title={title} blocks={blocks} />
+        <Page page_id={current_page_id} title={title} blocks={blocks} />
       </Panel>
     </PanelGroup>
   );

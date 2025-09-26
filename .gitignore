@@ -1,3 +1,6 @@
+# Underlying DB
+server/src/data.db
+
 # Python env
 __pycache__/
 

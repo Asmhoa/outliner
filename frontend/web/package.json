@@ -11,6 +11,8 @@
     "generate-api-client": "openapi-ts -i http://127.0.0.1:8000/openapi.json -o src/api-client"
   },
   "dependencies": {
+    "@types/loglevel": "^1.5.4",
+    "loglevel": "^1.9.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-resizable-panels": "^3.0.6"
