@@ -9,7 +9,9 @@ class Database:
 
     def __init__(self, db_name: str) -> None:
         self.db_name: str = db_name
-        self.conn: Connection = connect(self.db_name)
+        # NOTE: in api.py, we use a separate Database() object for each request
+        # So one conn is used by only 1 request, making it safe to not check same thread
+        self.conn: Connection = connect(self.db_name, check_same_thread=False)
         self.cursor: Cursor = self.conn.cursor()
         self.cursor.execute("PRAGMA foreign_keys = ON")
 
@@ -68,6 +70,8 @@ class Database:
         self._create_table_pages()
         self._create_table_blocks()
 
+    # CRUD:- pages
+
     def add_page(self, title: str) -> int:
         """
         Adds a new page to the database.
@@ -78,6 +82,20 @@ class Database:
         new_page_id = self.cursor.lastrowid
         logger.debug(f"Page '{title}' added successfully with ID: {new_page_id}")
         return new_page_id
+
+    def get_page_by_id(self, page_id: int):
+        """
+        Retrieves a page by its ID.
+        """
+        self.cursor.execute("SELECT * FROM pages WHERE page_id = ?", (page_id,))
+        return self.cursor.fetchone()
+
+    def get_pages(self):
+        """
+        Retrieves all pages from the database.
+        """
+        self.cursor.execute("SELECT * FROM pages")
+        return self.cursor.fetchall()
 
     def rename_page(self, page_id: int, new_title: str) -> bool:
         """
@@ -107,6 +125,8 @@ class Database:
             logger.debug(f"Page ID {page_id} not found.")
             return False
 
+    # CRUD:- blocks
+
     def add_block(self, content: str, position: int, page_id: int = None, parent_block_id: int = None) -> int:
         """
         Adds a new block to a page or as a child of another block.
@@ -133,19 +153,19 @@ class Database:
         logger.debug(f"Block with content '{content[:50]}...' added successfully with ID: {new_block_id}")
         return new_block_id
 
-    def delete_block(self, block_id: int) -> bool:
+    def get_blocks_by_page(self, page_id: int):
         """
-        Deletes a block and all its nested child blocks.
-        Returns True if successful, False otherwise.
+        Retrieves all blocks for a given page ID.
         """
-        self.cursor.execute("DELETE FROM blocks WHERE block_id = ?", (block_id,))
-        self.conn.commit()
-        if self.cursor.rowcount > 0:
-            logger.debug(f"Block ID {block_id} and its children deleted successfully.")
-            return True
-        else:
-            logger.debug(f"Block ID {block_id} not found.")
-            return False
+        self.cursor.execute("SELECT * FROM blocks WHERE page_id = ?", (page_id,))
+        return self.cursor.fetchall()
+
+    def get_block_content_by_id(self, block_id: int):
+        """
+        Retrieves a block by its ID.
+        """
+        self.cursor.execute("SELECT * FROM blocks WHERE block_id = ?", (block_id,))
+        return self.cursor.fetchone()
 
     def update_block_content(self, block_id: int, new_content: str) -> bool:
         """
@@ -187,4 +207,18 @@ class Database:
             return True
         else:
             logger.debug(f"Block ID {block_id} not found or no change in parent.")
+            return False
+
+    def delete_block(self, block_id: int) -> bool:
+        """
+        Deletes a block and all its nested child blocks.
+        Returns True if successful, False otherwise.
+        """
+        self.cursor.execute("DELETE FROM blocks WHERE block_id = ?", (block_id,))
+        self.conn.commit()
+        if self.cursor.rowcount > 0:
+            logger.debug(f"Block ID {block_id} and its children deleted successfully.")
+            return True
+        else:
+            logger.debug(f"Block ID {block_id} not found.")
             return False

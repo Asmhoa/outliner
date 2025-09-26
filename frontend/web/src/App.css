@@ -1,0 +1,61 @@
+html,
+body,
+#root {
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+}
+
+.sidebar {
+    padding: 1rem;
+    height: 100%;
+    overflow: auto;
+    background-color: #f0f0f0;
+}
+
+.page {
+    padding: 1rem;
+}
+
+.block {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.bullet {
+    margin-right: 0.5rem;
+}
+
+.resize-handle {
+    width: 4px;
+    background-color: #ccc;
+    cursor: col-resize;
+}
+
+.resize-handle:hover {
+    background-color: #999;
+}
+
+[contenteditable]:focus {
+    outline: none;
+}
+
+.editable-block {
+    width: 100%;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.add-page-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5rem;
+    font-weight: bold;
+}

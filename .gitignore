@@ -1,6 +1,11 @@
+# Underlying DB
+server/src/data.db
+
 # Python env
-server_env/
-*/*__pycache__*
+__pycache__/
+
+# MacOS
+.DS_Store
 
 # Vim swap files
 */*.swp
