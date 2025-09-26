@@ -9,6 +9,7 @@ import {
   getBlocksBlocksPageIdGet,
   addPagePagesPost,
   getPagesPagesGet,
+  deletePagePagesDelete,
   type Block,
   type Page as PageType,
 } from "./api-client";
@@ -30,6 +31,13 @@ function App() {
         setCurrentPageId(response.data[0].page_id);
       }
     }
+  };
+
+  const handleDeletePage = async (page_id: number) => {
+    log.debug(`Deleting page with page_id: ${page_id}`);
+    await deletePagePagesDelete({ body: { page_id } });
+    fetchPages();
+    setCurrentPageId(null);
   };
 
   useEffect(() => {
@@ -101,7 +109,7 @@ function App() {
       </Panel>
       <PanelResizeHandle className="resize-handle" />
       <Panel minSize={30}>
-        {currentPageId && <Page page_id={currentPageId} title={title} blocks={blocks} />}
+        {currentPageId && <Page page_id={currentPageId} title={title} blocks={blocks} onDelete={handleDeletePage} />}
       </Panel>
     </PanelGroup>
   );

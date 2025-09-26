@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Block from "./Block";
 import { renamePagePagesPut, addBlockBlocksPost, deleteBlockBlocksDelete } from "../api-client/sdk.gen";
 import log from "../utils/logger";
+import PageMenu from "./PageMenu";
 
 import { type Block as BlockType } from "../api-client";
 
@@ -9,9 +10,10 @@ interface PageProps {
   page_id: number;
   title: string;
   blocks: BlockType[];
+  onDelete: (page_id: number) => void;
 }
 
-const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks }) => {
+const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks, onDelete }) => {
   const [pageTitle, setPageTitle] = useState(title);
   const [blocks, setBlocks] = useState<BlockType[]>(initialBlocks);
   const blockRefs = useRef<{
@@ -90,21 +92,35 @@ const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks }) =>
     }
   };
 
+  const handleDeletePage = async () => {
+    if (window.confirm("Are you sure you want to delete this page?")) {
+      log.debug(`Deleting page_id: ${page_id}`);
+      try {
+        onDelete(page_id);
+      } catch (error) {
+        log.error('Failed to delete page:', error);
+      }
+    }
+  };
+
   return (
     <div className="page">
-      <h1
-        contentEditable
-        onBlur={handleTitleBlur}
-        suppressContentEditableWarning
-      >
-        {pageTitle}
-      </h1>
+      <div className="page-title">
+        <h1
+          contentEditable
+          onBlur={handleTitleBlur}
+          suppressContentEditableWarning
+        >
+          {pageTitle}
+        </h1>
+        <PageMenu onDelete={handleDeletePage} />
+      </div>
       {blocks.map((block) => (
-        <Block 
+        <Block
           ref={(el) => (blockRefs.current[block.block_id] = el)}
-          key={block.block_id} 
-          id={block.block_id} 
-          content={block.content} 
+          key={block.block_id}
+          id={block.block_id}
+          content={block.content}
           onNewBlock={handleNewBlock}
           onDeleteBlock={handleDeleteBlock}
           isDeletable={blocks.length > 1}
@@ -115,3 +131,4 @@ const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks }) =>
 };
 
 export default Page;
+
