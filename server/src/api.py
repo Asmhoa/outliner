@@ -110,12 +110,22 @@ class BlockUpdateParent(BaseModel):
 class BlockDelete(BaseModel):
     block_id: int
 
-@app.post("/blocks")
+@app.post("/blocks", response_model=Block)
 def add_block(block: BlockCreate, db: Database = Depends(get_db)):
     block_id = db.add_block(
         block.content, block.position, block.page_id, block.parent_block_id
     )
-    return {"block_id": block_id}
+    block_data = db.get_block_content_by_id(block_id)
+    if not block_data:
+        raise HTTPException(status_code=404, detail="Block not found")
+    return Block(
+        block_id=block_data[0],
+        content=block_data[1],
+        page_id=block_data[2],
+        parent_block_id=block_data[3],
+        position=block_data[4],
+        created_at=block_data[5],
+    )
 
 @app.get("/block/{block_id}", response_model=Block)
 def get_block(block_id: int, db: Database = Depends(get_db)):

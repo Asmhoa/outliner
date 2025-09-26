@@ -337,8 +337,10 @@ export type AddBlockBlocksPostResponses = {
     /**
      * Successful Response
      */
-    200: unknown;
+    200: Block;
 };
+
+export type AddBlockBlocksPostResponse = AddBlockBlocksPostResponses[keyof AddBlockBlocksPostResponses];
 
 export type GetBlockBlockBlockIdGetData = {
     body?: never;
