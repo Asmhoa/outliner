@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Block from "./Block";
-import { renamePagePagesPut, addBlockBlocksPost, deleteBlockBlocksDelete } from "../api-client/sdk.gen";
+import { renamePagePagesPut, addBlockBlocksPost, deleteBlockBlocksDelete } from "../api-client";
 import log from "../utils/logger";
 
 import { type Block as BlockType } from "../api-client";

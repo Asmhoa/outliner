@@ -50,3 +50,28 @@ This script executes the `openapi-ts` command, which fetches the latest `openapi
 -   `frontend/ui`: This directory is intended for shared UI components (e.g., React components) that can be used across different frontend applications.
 -   `frontend/web`: The web application, which consumes shared components from `frontend/ui`.
 -   `frontend/desktop`: The desktop application, which also consumes shared components from `frontend/ui`.
+
+## Server Database Structure
+
+The server uses an SQLite database. The schema is defined in `server/src/data.py`.
+
+### `pages` table
+
+| Column | Type | Constraints |
+|---|---|---|
+| `page_id` | INTEGER | PRIMARY KEY AUTOINCREMENT |
+| `title` | VARCHAR(255) | NOT NULL |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP |
+
+### `blocks` table
+
+| Column | Type | Constraints |
+|---|---|---|
+| `block_id` | INTEGER | PRIMARY KEY AUTOINCREMENT |
+| `content` | TEXT | NOT NULL |
+| `page_id` | INTEGER | NULL, FOREIGN KEY (`page_id`) REFERENCES `pages`(`page_id`) ON DELETE CASCADE |
+| `parent_block_id` | INTEGER | NULL, FOREIGN KEY (`parent_block_id`) REFERENCES `blocks`(`block_id`) ON DELETE CASCADE |
+| `position` | INTEGER | NOT NULL |
+| `created_at` | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP |
+
+**CHECK Constraint:** A block must have either a `page_id` or a `parent_block_id`, but not both. This enforces a hierarchical structure where a block is either a direct child of a page or a child of another block.
