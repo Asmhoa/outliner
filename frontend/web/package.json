@@ -11,6 +11,9 @@
     "generate-api-client": "openapi-ts -i http://127.0.0.1:8000/openapi.json -o src/api-client"
   },
   "dependencies": {
+    "@mantine/core": "^8.3.4",
+    "@mantine/hooks": "^8.3.4",
+    "@tabler/icons-react": "^3.35.0",
     "@types/loglevel": "^1.5.4",
     "loglevel": "^1.9.2",
     "react": "^19.1.1",

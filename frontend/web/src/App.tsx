@@ -1,26 +1,57 @@
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { useEffect, useState } from "react";
+import {
+  AppShell,
+  Burger,
+  Title,
+  Button,
+  NavLink,
+  Group,
+  TextInput,
+  rem,
+  Stack,
+} from "@mantine/core";
+import { IconSearch, IconPlus } from "@tabler/icons-react";
+import { useDisclosure } from "@mantine/hooks";
+import { useEffect, useState, useCallback } from "react";
 import log from "./utils/logger";
 
 import "./App.css";
 import Page from "./components/Page";
+import WorkspaceSidebar from "./components/WorkspaceSidebar";
 import {
   getPagePagesPageIdGet,
   getBlocksBlocksPageIdGet,
   addPagePagesPost,
   getPagesPagesGet,
   deletePagePagesDelete,
+  addBlockBlocksPost,
   type Block,
   type Page as PageType,
 } from "./api-client";
+
+interface Workspace {
+  id: string;
+  name: string;
+  color: string; // For tab color
+}
+
+const mockWorkspaces: Workspace[] = [
+  { id: "ws1", name: "Personal", color: "blue" },
+  { id: "ws2", name: "Work", color: "green" },
+  { id: "ws3", name: "Projects", color: "red" },
+  { id: "ws4", name: "Archive", color: "gray" },
+];
 
 function App() {
   const [currentPageId, setCurrentPageId] = useState<number | null>(null);
   const [title, setTitle] = useState("");
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [pages, setPages] = useState<PageType[]>([]);
+  const [opened, { toggle }] = useDisclosure();
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(
+    mockWorkspaces[0].id,
+  );
 
-  const fetchPages = async () => {
+  const fetchPages = useCallback(async () => {
     log.debug("Fetching pages...");
     const response = await getPagesPagesGet();
     if (response.data) {
@@ -31,7 +62,7 @@ function App() {
         setCurrentPageId(response.data[0].page_id);
       }
     }
-  };
+  }, [currentPageId]);
 
   const handleDeletePage = async (page_id: number) => {
     log.debug(`Deleting page with page_id: ${page_id}`);
@@ -61,11 +92,19 @@ function App() {
       });
       if (response.data) {
         if (response.data.length === 0) {
-          log.debug(`No blocks found for page_id: ${currentPageId}, creating a new one.`);
-          const newBlock = await addBlockBlocksPost({ body: { page_id: currentPageId, content: "", position: 0 } });
-          setBlocks([newBlock]);
+          log.debug(
+            `No blocks found for page_id: ${currentPageId}, creating a new one.`,
+          );
+          const newBlock = await addBlockBlocksPost({
+            body: { page_id: currentPageId, content: "", position: 0 },
+          });
+          if (newBlock.data) {
+            setBlocks([newBlock.data]);
+          }
         } else {
-          log.debug(`Fetched ${response.data.length} blocks for page_id: ${currentPageId}`);
+          log.debug(
+            `Fetched ${response.data.length} blocks for page_id: ${currentPageId}`,
+          );
           setBlocks(response.data);
         }
       }
@@ -77,41 +116,88 @@ function App() {
 
   useEffect(() => {
     fetchPages();
-  }, []);
+  }, [fetchPages]); // Added fetchPages to dependency array
 
   return (
-    <PanelGroup direction="horizontal">
-      <Panel collapsible defaultSize={20} minSize={20} maxSize={30}>
-        <div className="sidebar">
-          <div className="sidebar-header">
-            <p>Recently edited pages</p>
-            <button
-              onClick={async () => {
-                let title = "";
-                while (!title) {
-                  title = prompt("Enter page title") || "";
-                }
-                log.debug(`Adding new page with title: "${title}"`);
-                await addPagePagesPost({ body: { title } });
-                fetchPages();
-              }}
-              className="add-page-button"
-            >
-              +
-            </button>
-          </div>
-          <ul>
-            {pages.map((page) => (
-              <li key={page.page_id} onClick={() => setCurrentPageId(page.page_id)}>{page.title}</li>
-            ))}
-          </ul>
-        </div>
-      </Panel>
-      <PanelResizeHandle className="resize-handle" />
-      <Panel minSize={30}>
-        {currentPageId && <Page page_id={currentPageId} title={title} blocks={blocks} onDelete={handleDeletePage} />}
-      </Panel>
-    </PanelGroup>
+    <AppShell
+      padding={0}
+      // navbar={{
+      //   width: 320,
+      //   collapsed: { mobile: !opened },
+      // }}
+    >
+      <AppShell.Navbar>
+        <Group gap={0} align="flex-start">
+          <WorkspaceSidebar
+            workspaces={mockWorkspaces}
+            activeWorkspaceId={activeWorkspaceId}
+            onWorkspaceClick={setActiveWorkspaceId}
+          />
+          <Stack p="md">
+            <AppShell.Section>
+              <Group mb="sm">
+                <TextInput
+                  style={{ flex: 1 }}
+                  placeholder="Search"
+                  leftSection={
+                    <IconSearch style={{ width: rem(16), height: rem(16) }} />
+                  }
+                />
+                <Button
+                  onClick={async () => {
+                    let title = "";
+                    while (!title) {
+                      title = prompt("Enter page title") || "";
+                    }
+                    log.debug(`Adding new page with title: "${title}"`);
+                    await addPagePagesPost({ body: { title } });
+                    fetchPages();
+                  }}
+                >
+                  <IconPlus size={16} />
+                </Button>
+              </Group>
+            </AppShell.Section>
+            <AppShell.Section>
+              <Title order={4}>Favorites</Title>
+            </AppShell.Section>
+            <AppShell.Section>
+              <Title order={4}>Views</Title>
+            </AppShell.Section>
+            <AppShell.Section>
+              <Title order={4}>Notes</Title>
+            </AppShell.Section>
+            <AppShell.Section>
+              {pages.map((page) => (
+                <NavLink
+                  key={page.page_id}
+                  label={page.title}
+                  active={page.page_id === currentPageId}
+                  onClick={() => {
+                    setCurrentPageId(page.page_id);
+                    toggle();
+                  }}
+                />
+              ))}
+            </AppShell.Section>
+          </Stack>
+        </Group>
+      </AppShell.Navbar>
+      <AppShell.Main p="md">
+        <Group>
+          <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+          <Title order={3}>{title}</Title>
+        </Group>
+        {currentPageId && (
+          <Page
+            page_id={currentPageId}
+            title={title}
+            blocks={blocks}
+            onDelete={handleDeletePage}
+          />
+        )}
+      </AppShell.Main>
+    </AppShell>
   );
 }
 

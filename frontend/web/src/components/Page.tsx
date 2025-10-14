@@ -40,7 +40,7 @@ const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks, onDe
   useEffect(() => {
     log.debug(`Setting blocks for page_id: ${page_id}`, initialBlocks);
     setBlocks(initialBlocks);
-  }, [initialBlocks]);
+  }, [initialBlocks, page_id]);
 
   const handleTitleBlur = async (
     event: React.FocusEvent<HTMLHeadingElement>,
