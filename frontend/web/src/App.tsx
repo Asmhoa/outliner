@@ -17,6 +17,7 @@ import log from "./utils/logger";
 import "./App.css";
 import Page from "./components/Page";
 import WorkspaceSidebar from "./components/WorkspaceSidebar";
+import RightSidebar from "./components/RightSidebar";
 import {
   getPagePagesPageIdGet,
   getBlocksBlocksPageIdGet,
@@ -145,9 +146,9 @@ function App() {
                 />
                 <Button
                   onClick={async () => {
-                    let title = "";
-                    while (!title) {
-                      title = prompt("Enter page title") || "";
+                    const title = prompt("Enter page title");
+                    if (!title) {
+                      return; // User cancelled or entered empty title
                     }
                     log.debug(`Adding new page with title: "${title}"`);
                     await addPagePagesPost({ body: { title } });
@@ -197,6 +198,10 @@ function App() {
           />
         )}
       </AppShell.Main>
+
+      <AppShell.Aside p="md" w={300}>
+        <RightSidebar />
+      </AppShell.Aside>
     </AppShell>
   );
 }
