@@ -8,11 +8,14 @@ import {
   TextInput,
   rem,
   Stack,
+  Menu,
+  ActionIcon,
 } from "@mantine/core";
 import {
   IconPlus,
   IconChevronLeft,
   IconChevronRight,
+  IconDots,
 } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState, useCallback } from "react";
@@ -60,6 +63,11 @@ function App() {
   );
   const [navbarVisibility, setNavbarVisibility] =
     useState<NavbarVisibility>("visible");
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+
+  const handleRightSidebarToggle = () => {
+    setRightSidebarCollapsed(!rightSidebarCollapsed);
+  };
 
   const handleChevronClick = () => {
     setNavbarVisibility((current) => {
@@ -157,17 +165,50 @@ function App() {
           desktop: navbarVisibility === "navbar-collapsed",
         },
       }}
+      aside={{
+        width: 300,
+        breakpoint: "sm",
+        collapsed: { desktop: rightSidebarCollapsed },
+      }}
       padding="md"
       layout="alt"
     >
       <AppShell.Header>
-        <Group h="100%" align="center" p="sm">
-          {navbarVisibility === "navbar-collapsed" && (
-            <Button onClick={handleChevronClick} variant="subtle">
-              <IconChevronRight />
-            </Button>
-          )}
-          <Title order={3}>{title}</Title>
+        <Group h="100%" align="center" p="sm" justify="space-between">
+          <Group>
+            {navbarVisibility === "navbar-collapsed" && (
+              <Button onClick={handleChevronClick} variant="subtle">
+                <IconChevronRight />
+              </Button>
+            )}
+            <Title order={3}>{title}</Title>
+          </Group>
+          <Group>
+            <Menu shadow="md" width={200}>
+              <Menu.Target>
+                <ActionIcon variant="subtle">
+                  <IconDots />
+                </ActionIcon>
+              </Menu.Target>
+
+              <Menu.Dropdown>
+                <Menu.Item
+                  onClick={() => {
+                    if (currentPageId) {
+                      handleDeletePage(currentPageId);
+                    }
+                  }}
+                >
+                  Delete page
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+            {rightSidebarCollapsed && (
+              <Button onClick={handleRightSidebarToggle} variant="subtle">
+                <IconChevronLeft />
+              </Button>
+            )}
+          </Group>
         </Group>
       </AppShell.Header>
 
@@ -251,28 +292,10 @@ function App() {
       </AppShell.Navbar>
 
       <AppShell.Main>Main</AppShell.Main>
+      <AppShell.Aside p="md">
+        <RightSidebar onClose={handleRightSidebarToggle} />
+      </AppShell.Aside>
     </AppShell>
-    // <AppShell padding={0}>
-
-    //   // <AppShell.Main p="md">
-    //   //   <Group>
-    //   //     <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-    //   //     <Title order={3}>{title}</Title>
-    //   //   </Group>
-    //   //   {currentPageId && (
-    //   //     <Page
-    //   //       page_id={currentPageId}
-    //   //       title={title}
-    //   //       blocks={blocks}
-    //   //       onDelete={handleDeletePage}
-    //   //     />
-    //   //   )}
-    //   // </AppShell.Main>
-
-    //   // <AppShell.Aside p="md" w={300}>
-    //   //   <RightSidebar />
-    //   // </AppShell.Aside>
-    // </AppShell>
   );
 }
 
