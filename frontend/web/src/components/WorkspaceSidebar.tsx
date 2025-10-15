@@ -46,7 +46,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                 justifyContent: "center",
               }}
             >
-              <Text size="xs" style={{ transform: "rotate(-90deg)" }}>
+              <Text style={{ transform: "rotate(-90deg)" }}>
                 {workspace.name.substring(0, 3)}
               </Text>
             </Tabs.Tab>

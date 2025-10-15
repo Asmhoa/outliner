@@ -161,7 +161,7 @@ function App() {
       layout="alt"
     >
       <AppShell.Header>
-        <Group>
+        <Group h="100%" align="center" p="sm">
           {navbarVisibility === "navbar-collapsed" && (
             <Button onClick={handleChevronClick} variant="subtle">
               <IconChevronRight />
