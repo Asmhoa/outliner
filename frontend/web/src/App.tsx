@@ -52,6 +52,8 @@ const mockWorkspaces: Workspace[] = [
 
 type NavbarVisibility = "visible" | "sidebar-collapsed" | "navbar-collapsed";
 
+import PageMenu from "./components/PageMenu";
+
 function App() {
   const [currentPageId, setCurrentPageId] = useState<number | null>(null);
   const [title, setTitle] = useState("");
@@ -64,6 +66,7 @@ function App() {
   const [navbarVisibility, setNavbarVisibility] =
     useState<NavbarVisibility>("visible");
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
 
   const handleRightSidebarToggle = () => {
     setRightSidebarCollapsed(!rightSidebarCollapsed);
@@ -99,6 +102,12 @@ function App() {
     await deletePagePagesDelete({ body: { page_id } });
     fetchPages();
     setCurrentPageId(null);
+    setTitle("");
+    setBlocks([]);
+  };
+
+  const handleRenamePage = () => {
+    setIsRenaming(true);
   };
 
   const handleAddPage = async (title: string) => {
@@ -184,25 +193,14 @@ function App() {
             <Title order={3}>{title}</Title>
           </Group>
           <Group>
-            <Menu shadow="md" width={200}>
-              <Menu.Target>
-                <ActionIcon variant="subtle">
-                  <IconDots />
-                </ActionIcon>
-              </Menu.Target>
-
-              <Menu.Dropdown>
-                <Menu.Item
-                  onClick={() => {
-                    if (currentPageId) {
-                      handleDeletePage(currentPageId);
-                    }
-                  }}
-                >
-                  Delete page
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
+            {currentPageId && <PageMenu 
+              onDelete={() => {
+                if (currentPageId) {
+                  handleDeletePage(currentPageId);
+                }
+              }}
+              onRename={handleRenamePage}
+            />}
             {rightSidebarCollapsed && (
               <Button onClick={handleRightSidebarToggle} variant="subtle">
                 <IconChevronLeft />
@@ -291,7 +289,19 @@ function App() {
         </AppShell.Section>
       </AppShell.Navbar>
 
-      <AppShell.Main>Main</AppShell.Main>
+            <AppShell.Main>
+        {currentPageId && (
+          <Page
+            key={currentPageId}
+            page_id={currentPageId}
+            title={title}
+            blocks={blocks}
+            onDelete={handleDeletePage}
+            isRenaming={isRenaming}
+            setIsRenaming={setIsRenaming}
+          />
+        )}
+      </AppShell.Main>
       <AppShell.Aside p="md">
         <RightSidebar onClose={handleRightSidebarToggle} />
       </AppShell.Aside>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Block from "./Block";
 import { renamePagePagesPut, addBlockBlocksPost, deleteBlockBlocksDelete } from "../api-client/sdk.gen";
 import log from "../utils/logger";
-import PageMenu from "./PageMenu";
+
 
 import { type Block as BlockType } from "../api-client";
 
@@ -11,15 +11,24 @@ interface PageProps {
   title: string;
   blocks: BlockType[];
   onDelete: (page_id: number) => void;
+  isRenaming: boolean;
+  setIsRenaming: (isRenaming: boolean) => void;
 }
 
-const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks, onDelete }) => {
+const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks, onDelete, isRenaming, setIsRenaming }) => {
   const [pageTitle, setPageTitle] = useState(title);
   const [blocks, setBlocks] = useState<BlockType[]>(initialBlocks);
   const blockRefs = useRef<{
     [key: number]: HTMLDivElement | null
   }>({});
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const [nextFocusableBlockId, setNextFocusableBlockId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (isRenaming) {
+      titleRef.current?.focus();
+    }
+  }, [isRenaming]);
 
   useEffect(() => {
     if (nextFocusableBlockId) {
@@ -59,6 +68,7 @@ const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks, onDe
       log.error("Failed to rename page:", error);
       setPageTitle(title);
     }
+    setIsRenaming(false);
   };
 
   const handleNewBlock = async (currentBlockId: number) => {
@@ -103,17 +113,23 @@ const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks, onDe
     }
   };
 
+  const handleRename = () => {
+    setRenaming(true);
+    titleRef.current?.focus();
+  };
+
   return (
     <div className="page">
       <div className="page-title">
         <h1
-          contentEditable
+          ref={titleRef}
+          contentEditable={isRenaming}
           onBlur={handleTitleBlur}
           suppressContentEditableWarning
         >
           {pageTitle}
         </h1>
-        <PageMenu onDelete={handleDeletePage} />
+        
       </div>
       {blocks.map((block) => (
         <Block
@@ -131,4 +147,3 @@ const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks, onDe
 };
 
 export default Page;
-
