@@ -1,5 +1,6 @@
-import { AppShell, NavLink, Group, Stack, Title } from "@mantine/core";
+import { AppShell, NavLink, Group, Stack, Title, Select } from "@mantine/core";
 import {
+  IconDatabase,
   IconLayoutDashboard,
   IconGitFork,
   IconPaperclip,
@@ -32,10 +33,12 @@ interface Workspace {
 }
 
 const mockWorkspaces: Workspace[] = [
-  { id: "ws1", name: "Personal", color: "blue" },
-  { id: "ws2", name: "Work", color: "green" },
-  { id: "ws3", name: "Projects", color: "red" },
-  { id: "ws4", name: "Archive", color: "gray" },
+  { id: "0", name: "Personal", color: "blue" },
+  { id: "1", name: "Work", color: "green" },
+  { id: "2", name: "Projects", color: "red" },
+  { id: "3", name: "Archive", color: "gray" },
+  { id: "4", name: "Archive", color: "gray" },
+  { id: "5", name: "Archive", color: "gray" },
 ];
 
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
@@ -70,6 +73,12 @@ function App() {
     });
   };
 
+  const databases = [
+    { value: "db1", label: "Database 1" },
+    { value: "db2", label: "Database 2" },
+    { value: "db3", label: "Database 3" },
+  ];
+
   const fetchPages = useCallback(async () => {
     log.debug("Fetching pages...");
     const response = await getPagesPagesGet();
@@ -97,7 +106,9 @@ function App() {
   };
 
   const handlePageRenamed = (pageId: number, newTitle: string) => {
-    setPages(pages.map(p => p.page_id === pageId ? {...p, title: newTitle} : p));
+    setPages(
+      pages.map((p) => (p.page_id === pageId ? { ...p, title: newTitle } : p)),
+    );
   };
 
   const handleAddPage = async (title: string) => {
@@ -176,7 +187,7 @@ function App() {
       }}
       padding="md"
     >
-      <AppShell.Header p="sm">
+      <AppShell.Header p="sm" style={{ border: "none" }}>
         <SearchBox
           onAddPage={handleAddPage}
           navbarVisibility={navbarVisibility}
@@ -187,18 +198,23 @@ function App() {
         <AppShell.Section>
           <NavLink
             label="All Pages"
-            leftSection={<IconLayoutDashboard size="1rem" />}
+            leftSection={<IconLayoutDashboard />}
             onClick={() => console.log("Clicked All Pages")}
           />
           <NavLink
             label="Graph View"
-            leftSection={<IconGitFork size="1rem" />}
+            leftSection={<IconGitFork />}
             onClick={() => console.log("Clicked Graph View")}
           />
           <NavLink
             label="Assets"
-            leftSection={<IconPaperclip size="1rem" />}
+            leftSection={<IconPaperclip />}
             onClick={() => console.log("Clicked Assets")}
+          />
+          <Select
+            leftSection={<IconDatabase size={16} />}
+            data={databases}
+            defaultValue="db1"
           />
         </AppShell.Section>
         <Group>

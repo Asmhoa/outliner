@@ -1,4 +1,4 @@
-import { TextInput, Button, Group, rem } from "@mantine/core";
+import { Button, Group, rem } from "@mantine/core";
 import {
   IconPlus,
   IconChevronLeft,
@@ -27,11 +27,12 @@ export default function SearchBox({
           <IconChevronLeft />
         )}
       </Button>
-      <TextInput
-        style={{ flex: 1 }}
-        placeholder="Search"
-        leftSection={<IconSearch style={{ width: rem(16), height: rem(16) }} />}
-      />
+      <Button
+        variant="subtle"
+        onClick={() => console.log("Search button clicked")}
+      >
+        <IconSearch style={{ width: rem(16), height: rem(16) }} />
+      </Button>
       <Button
         onClick={() => {
           const title = prompt("Enter page title");
