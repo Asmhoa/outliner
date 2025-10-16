@@ -1,10 +1,5 @@
-import { Box, Stack, Tabs, Text, rem, ActionIcon, Button } from "@mantine/core";
-import React, { useState } from "react";
-import {
-  IconFolder,
-  IconChevronLeft,
-  IconChevronRight,
-} from "@tabler/icons-react";
+import React from "react";
+import { Stack, Tabs, rem, Text } from "@mantine/core";
 
 interface Workspace {
   id: string;

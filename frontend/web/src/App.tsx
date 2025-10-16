@@ -1,22 +1,5 @@
-import {
-  AppShell,
-  Burger,
-  Title,
-  Button,
-  NavLink,
-  Group,
-  TextInput,
-  rem,
-  Stack,
-  Menu,
-  ActionIcon,
-} from "@mantine/core";
-import {
-  IconPlus,
-  IconChevronLeft,
-  IconChevronRight,
-  IconDots,
-} from "@tabler/icons-react";
+import { AppShell, NavLink, Group, Stack, Title } from "@mantine/core";
+
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState, useCallback } from "react";
 import log from "./utils/logger";
@@ -50,9 +33,7 @@ const mockWorkspaces: Workspace[] = [
   { id: "ws4", name: "Archive", color: "gray" },
 ];
 
-type NavbarVisibility = "visible" | "sidebar-collapsed" | "navbar-collapsed";
-
-import PageMenu from "./components/PageMenu";
+type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
 function App() {
   const [currentPageId, setCurrentPageId] = useState<number | null>(null);
@@ -75,10 +56,10 @@ function App() {
   const handleChevronClick = () => {
     setNavbarVisibility((current) => {
       if (current === "visible") {
-        return "sidebar-collapsed";
+        return "workspace-collapsed";
       }
-      if (current === "sidebar-collapsed") {
-        return "navbar-collapsed";
+      if (current === "workspace-collapsed") {
+        return "sidebar-collapsed";
       }
       return "visible";
     });
@@ -108,6 +89,10 @@ function App() {
 
   const handleRenamePage = () => {
     setIsRenaming(true);
+  };
+
+  const handlePageRenamed = (pageId: number, newTitle: string) => {
+    setPages(pages.map(p => p.page_id === pageId ? {...p, title: newTitle} : p));
   };
 
   const handleAddPage = async (title: string) => {
@@ -165,51 +150,24 @@ function App() {
 
   return (
     <AppShell
-      header={{ height: 60 }}
       navbar={{
         width: 300,
         breakpoint: "sm",
         collapsed: {
           mobile: !opened,
-          desktop: navbarVisibility === "navbar-collapsed",
+          desktop: navbarVisibility === "sidebar-collapsed",
         },
       }}
       aside={{
         width: 300,
         breakpoint: "sm",
-        collapsed: { desktop: rightSidebarCollapsed },
+        collapsed: {
+          mobile: rightSidebarCollapsed,
+          desktop: rightSidebarCollapsed,
+        },
       }}
       padding="md"
-      layout="alt"
     >
-      <AppShell.Header>
-        <Group h="100%" align="center" p="sm" justify="space-between">
-          <Group>
-            {navbarVisibility === "navbar-collapsed" && (
-              <Button onClick={handleChevronClick} variant="subtle">
-                <IconChevronRight />
-              </Button>
-            )}
-            <Title order={3}>{title}</Title>
-          </Group>
-          <Group>
-            {currentPageId && <PageMenu 
-              onDelete={() => {
-                if (currentPageId) {
-                  handleDeletePage(currentPageId);
-                }
-              }}
-              onRename={handleRenamePage}
-            />}
-            {rightSidebarCollapsed && (
-              <Button onClick={handleRightSidebarToggle} variant="subtle">
-                <IconChevronLeft />
-              </Button>
-            )}
-          </Group>
-        </Group>
-      </AppShell.Header>
-
       <AppShell.Navbar p="sm">
         <AppShell.Section>
           <SearchBox
@@ -289,16 +247,21 @@ function App() {
         </AppShell.Section>
       </AppShell.Navbar>
 
-            <AppShell.Main>
+      <AppShell.Main>
         {currentPageId && (
           <Page
             key={currentPageId}
             page_id={currentPageId}
             title={title}
             blocks={blocks}
-            onDelete={handleDeletePage}
             isRenaming={isRenaming}
             setIsRenaming={setIsRenaming}
+            handleDeletePage={handleDeletePage}
+            handleRenamePage={handleRenamePage}
+            handleChevronClick={handleChevronClick}
+            handleRightSidebarToggle={handleRightSidebarToggle}
+            navbarVisibility={navbarVisibility}
+            rightSidebarCollapsed={rightSidebarCollapsed}
           />
         )}
       </AppShell.Main>

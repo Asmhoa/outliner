@@ -1,10 +1,5 @@
 import { TextInput, Button, Group, rem } from "@mantine/core";
-import {
-  IconSearch,
-  IconPlus,
-  IconChevronLeft,
-  IconChevronRight,
-} from "@tabler/icons-react";
+import { IconPlus, IconChevronLeft, IconSearch } from "@tabler/icons-react";
 import log from "../../utils/logger";
 
 interface SearchBoxProps {
