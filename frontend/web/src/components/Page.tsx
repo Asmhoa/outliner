@@ -138,11 +138,6 @@ const Page: React.FC<PageProps> = ({
     <div className="page" style={{ paddingTop: 0 }}>
       <Group justify="space-between">
         <Group>
-          {navbarVisibility === "sidebar-collapsed" && (
-            <Button onClick={handleChevronClick} variant="subtle">
-              <IconChevronRight />
-            </Button>
-          )}
           <h1
             ref={titleRef}
             contentEditable={isRenaming}

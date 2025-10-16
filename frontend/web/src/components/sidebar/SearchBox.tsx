@@ -1,5 +1,10 @@
 import { TextInput, Button, Group, rem } from "@mantine/core";
-import { IconPlus, IconChevronLeft, IconSearch } from "@tabler/icons-react";
+import {
+  IconPlus,
+  IconChevronLeft,
+  IconChevronRight,
+  IconSearch,
+} from "@tabler/icons-react";
 import log from "../../utils/logger";
 
 interface SearchBoxProps {
@@ -15,17 +20,17 @@ export default function SearchBox({
 }: SearchBoxProps) {
   return (
     <Group mb="sm">
-      {navbarVisibility !== "navbar-collapsed" && (
-        <Button onClick={onChevronClick} variant="subtle">
+      <Button onClick={onChevronClick} variant="subtle">
+        {navbarVisibility === "sidebar-collapsed" ? (
+          <IconChevronRight />
+        ) : (
           <IconChevronLeft />
-        </Button>
-      )}
+        )}
+      </Button>
       <TextInput
         style={{ flex: 1 }}
         placeholder="Search"
-        leftSection={
-          <IconSearch style={{ width: rem(16), height: rem(16) }} />
-        }
+        leftSection={<IconSearch style={{ width: rem(16), height: rem(16) }} />}
       />
       <Button
         onClick={() => {

@@ -1,4 +1,9 @@
 import { AppShell, NavLink, Group, Stack, Title } from "@mantine/core";
+import {
+  IconLayoutDashboard,
+  IconGitFork,
+  IconPaperclip,
+} from "@tabler/icons-react";
 
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState, useCallback } from "react";
@@ -150,6 +155,9 @@ function App() {
 
   return (
     <AppShell
+      header={{
+        height: 60,
+      }}
       navbar={{
         width: 300,
         breakpoint: "sm",
@@ -168,12 +176,29 @@ function App() {
       }}
       padding="md"
     >
+      <AppShell.Header p="sm">
+        <SearchBox
+          onAddPage={handleAddPage}
+          navbarVisibility={navbarVisibility}
+          onChevronClick={handleChevronClick}
+        />
+      </AppShell.Header>
       <AppShell.Navbar p="sm">
         <AppShell.Section>
-          <SearchBox
-            onAddPage={handleAddPage}
-            navbarVisibility={navbarVisibility}
-            onChevronClick={handleChevronClick}
+          <NavLink
+            label="All Pages"
+            leftSection={<IconLayoutDashboard size="1rem" />}
+            onClick={() => console.log("Clicked All Pages")}
+          />
+          <NavLink
+            label="Graph View"
+            leftSection={<IconGitFork size="1rem" />}
+            onClick={() => console.log("Clicked Graph View")}
+          />
+          <NavLink
+            label="Assets"
+            leftSection={<IconPaperclip size="1rem" />}
+            onClick={() => console.log("Clicked Assets")}
           />
         </AppShell.Section>
         <Group>
