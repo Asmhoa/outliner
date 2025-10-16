@@ -1,10 +1,4 @@
-import { AppShell, NavLink, Group, Stack, Title, Select } from "@mantine/core";
-import {
-  IconDatabase,
-  IconLayoutDashboard,
-  IconGitFork,
-  IconPaperclip,
-} from "@tabler/icons-react";
+import { AppShell } from "@mantine/core";
 
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState, useCallback } from "react";
@@ -12,7 +6,6 @@ import log from "./utils/logger";
 
 import "./App.css";
 import Page from "./components/Page";
-import WorkspaceSidebar from "./components/WorkspaceSidebar";
 import RightSidebar from "./components/RightSidebar";
 import {
   getPagePagesPageIdGet,
@@ -25,6 +18,7 @@ import {
   type Page as PageType,
 } from "./api-client";
 import SearchBox from "./components/sidebar/SearchBox";
+import LeftSidebar from "./components/LeftSidebar";
 
 interface Workspace {
   id: string;
@@ -33,12 +27,12 @@ interface Workspace {
 }
 
 const mockWorkspaces: Workspace[] = [
-  { id: "0", name: "Personal", color: "blue" },
-  { id: "1", name: "Work", color: "green" },
-  { id: "2", name: "Projects", color: "red" },
-  { id: "3", name: "Archive", color: "gray" },
-  { id: "4", name: "Archive", color: "gray" },
-  { id: "5", name: "Archive", color: "gray" },
+  { id: "0", name: "Personal", color: "#4285F4" },
+  { id: "1", name: "Work", color: "#34A853" },
+  { id: "2", name: "Projects", color: "#FBBC05" },
+  { id: "3", name: "Archive", color: "#EA4335" },
+  { id: "4", name: "Archive", color: "#4285F4" },
+  { id: "5", name: "Archive", color: "#EA4335" },
 ];
 
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
@@ -103,12 +97,6 @@ function App() {
 
   const handleRenamePage = () => {
     setIsRenaming(true);
-  };
-
-  const handlePageRenamed = (pageId: number, newTitle: string) => {
-    setPages(
-      pages.map((p) => (p.page_id === pageId ? { ...p, title: newTitle } : p)),
-    );
   };
 
   const handleAddPage = async (title: string) => {
@@ -194,99 +182,17 @@ function App() {
           onChevronClick={handleChevronClick}
         />
       </AppShell.Header>
-      <AppShell.Navbar p="sm">
-        <AppShell.Section>
-          <NavLink
-            label="All Pages"
-            leftSection={<IconLayoutDashboard />}
-            onClick={() => console.log("Clicked All Pages")}
-          />
-          <NavLink
-            label="Graph View"
-            leftSection={<IconGitFork />}
-            onClick={() => console.log("Clicked Graph View")}
-          />
-          <NavLink
-            label="Assets"
-            leftSection={<IconPaperclip />}
-            onClick={() => console.log("Clicked Assets")}
-          />
-          <Select
-            leftSection={<IconDatabase size={16} />}
-            data={databases}
-            defaultValue="db1"
-          />
-        </AppShell.Section>
-        <Group>
-          {navbarVisibility === "visible" && (
-            <WorkspaceSidebar
-              workspaces={mockWorkspaces}
-              activeWorkspaceId={activeWorkspaceId}
-              onWorkspaceClick={setActiveWorkspaceId}
-            />
-          )}
-          <Stack>
-            <AppShell.Section>
-              <Title order={4}>Favorites</Title>
-              <NavLink
-                label="Favorite Page 1"
-                onClick={() => console.log("Clicked Favorite Page 1")}
-              />
-              <NavLink
-                label="Favorite Page 2"
-                onClick={() => console.log("Clicked Favorite Page 2")}
-              />
-              <NavLink
-                label="Favorite Page 3"
-                onClick={() => console.log("Clicked Favorite Page 3")}
-              />
-            </AppShell.Section>
-            <AppShell.Section>
-              <Title order={4}>Views</Title>
-              <NavLink
-                label="View Page 1"
-                onClick={() => console.log("Clicked View Page 1")}
-              />
-              <NavLink
-                label="View Page 2"
-                onClick={() => console.log("Clicked View Page 2")}
-              />
-              <NavLink
-                label="View Page 3"
-                onClick={() => console.log("Clicked View Page 3")}
-              />
-            </AppShell.Section>
-            <AppShell.Section>
-              <Title order={4}>Notes</Title>
-              <NavLink
-                label="Note Page 1"
-                onClick={() => console.log("Clicked Note Page 1")}
-              />
-              <NavLink
-                label="Note Page 2"
-                onClick={() => console.log("Clicked Note Page 2")}
-              />
-              <NavLink
-                label="Note Page 3"
-                onClick={() => console.log("Clicked Note Page 3")}
-              />
-            </AppShell.Section>
-          </Stack>
-        </Group>
-        <AppShell.Section>
-          {pages.map((page) => (
-            <NavLink
-              key={page.page_id}
-              label={page.title}
-              active={page.page_id === currentPageId}
-              onClick={() => {
-                setCurrentPageId(page.page_id);
-                toggle();
-              }}
-            />
-          ))}
-        </AppShell.Section>
-      </AppShell.Navbar>
+      <LeftSidebar
+        pages={pages}
+        currentPageId={currentPageId}
+        setCurrentPageId={setCurrentPageId}
+        toggle={toggle}
+        navbarVisibility={navbarVisibility}
+        workspaces={mockWorkspaces}
+        activeWorkspaceId={activeWorkspaceId}
+        onWorkspaceClick={setActiveWorkspaceId}
+        databases={databases}
+      />
 
       <AppShell.Main>
         {currentPageId && (

@@ -12,8 +12,6 @@ interface WorkspaceSidebarProps {
   onWorkspaceClick: (id: string) => void;
 }
 
-const tabColors = ["#4285F4", "#34A853", "#FBBC05", "#EA4335"];
-
 const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   workspaces,
   activeWorkspaceId,
@@ -35,7 +33,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
               h={rem(120)}
               w={rem(40)}
               style={{
-                background: `${tabColors[index % tabColors.length]}`,
+                background: workspace.color,
                 // clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)",
                 boxShadow: (() => {
                   switch (index) {
