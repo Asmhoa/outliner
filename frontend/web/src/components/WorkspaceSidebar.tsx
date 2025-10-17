@@ -41,7 +41,6 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                 onMouseLeave={() => setHoveredIndex(null)}
                 style={{
                   background: workspace.color,
-                  // clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)",
                   boxShadow: (() => {
                     const unselected =
                       index === parseInt(activeWorkspaceId)
@@ -77,10 +76,32 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                     hoveredIndex === index
                       ? "1"
                       : "0.5",
+                  overflow: "hidden",
                 }}
               >
-                <Text style={{ transform: "rotate(-90deg)" }}>
-                  {workspace.name.substring(0, NAME_LENGTH)}
+                <Text
+                  style={{
+                    transform: "rotate(-90deg)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    width: "100%",
+                    textAlign: "center",
+                  }}
+                >
+                  {hoveredIndex === index &&
+                  workspace.name.length > NAME_LENGTH ? (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        animation: "scroll 3s linear infinite",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {workspace.name}
+                    </span>
+                  ) : (
+                    workspace.name.substring(0, NAME_LENGTH)
+                  )}
                 </Text>
               </Tabs.Tab>
             ))}
@@ -90,10 +111,15 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
           style={{
             width: "10px",
             backgroundColor: workspaces[activeWorkspaceId].color,
-            // opacity: 0.8,
           }}
         ></div>
       </Tabs>
+      <style>{`
+        @keyframes scroll {
+          0% { transform: translateX(30%); }
+          100% { transform: translateX(-30%); }
+        }
+      `}</style>
     </Group>
   );
 };
