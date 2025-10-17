@@ -1,4 +1,4 @@
-import { Button, Group, rem } from "@mantine/core";
+import { ActionIcon, Group, rem } from "@mantine/core";
 import {
   IconPlus,
   IconChevronLeft,
@@ -20,20 +20,20 @@ export default function SearchBox({
 }: SearchBoxProps) {
   return (
     <Group mb="sm">
-      <Button onClick={onChevronClick} variant="subtle">
+      <ActionIcon onClick={onChevronClick} variant="subtle">
         {navbarVisibility === "sidebar-collapsed" ? (
           <IconChevronRight />
         ) : (
           <IconChevronLeft />
         )}
-      </Button>
-      <Button
+      </ActionIcon>
+      <ActionIcon
         variant="subtle"
         onClick={() => console.log("Search button clicked")}
       >
         <IconSearch style={{ width: rem(16), height: rem(16) }} />
-      </Button>
-      <Button
+      </ActionIcon>
+      {/*<Button
         onClick={() => {
           const title = prompt("Enter page title");
           if (!title) {
@@ -44,7 +44,7 @@ export default function SearchBox({
         }}
       >
         <IconPlus size={16} />
-      </Button>
+      </Button>*/}
     </Group>
   );
 }

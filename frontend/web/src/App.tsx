@@ -6,7 +6,7 @@ import log from "./utils/logger";
 
 import "./App.css";
 import Page from "./components/Page";
-import RightSidebar from "./components/RightSidebar";
+import RightSidebar from "./components/sidebar/RightSidebar";
 import {
   getPagePagesPageIdGet,
   getBlocksBlocksPageIdGet,
@@ -18,7 +18,7 @@ import {
   type Page as PageType,
 } from "./api-client";
 import SearchBox from "./components/sidebar/SearchBox";
-import LeftSidebar from "./components/LeftSidebar";
+import LeftSidebar from "./components/sidebar/LeftSidebar";
 
 interface Workspace {
   id: string;
@@ -153,10 +153,10 @@ function App() {
   return (
     <AppShell
       header={{
-        height: 60,
+        height: 35,
       }}
       navbar={{
-        width: 350,
+        width: navbarVisibility === "workspace-collapsed" ? 280 : 330, // each tab has width 40 + 10 padding. TODO: move to a constant
         breakpoint: "sm",
         collapsed: {
           mobile: !opened,
@@ -173,7 +173,7 @@ function App() {
       }}
       padding="md"
     >
-      <AppShell.Header p="sm" style={{ border: "none" }}>
+      <AppShell.Header style={{ border: "none" }}>
         <SearchBox
           onAddPage={handleAddPage}
           navbarVisibility={navbarVisibility}

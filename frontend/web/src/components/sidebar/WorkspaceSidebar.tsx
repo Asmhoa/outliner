@@ -38,6 +38,9 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         variant="default"
         radius="0"
         onClick={() => console.log("New workspace added")}
+        style={{
+          boxShadow: "inset -2px 1px 4px rgba(0,0,0,0.3)",
+        }}
       >
         <IconPlus />
       </ActionIcon>
