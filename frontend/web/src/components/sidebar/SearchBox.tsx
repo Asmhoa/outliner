@@ -1,39 +1,43 @@
 import { ActionIcon, Group, rem } from "@mantine/core";
 import {
   IconPlus,
-  IconChevronLeft,
-  IconChevronRight,
+  IconLayoutSidebarRightExpandFilled,
+  IconLayoutSidebarLeftExpandFilled,
   IconSearch,
 } from "@tabler/icons-react";
 import log from "../../utils/logger";
 
 interface SearchBoxProps {
-  onAddPage: (title: string) => void;
+  // onAddPage: (title: string) => void;
   navbarVisibility: "visible" | "sidebar-collapsed" | "navbar-collapsed";
-  onChevronClick: () => void;
+  onLeftSidebarToggle: () => void;
+  rightSidebarCollapsed: boolean;
+  onRightSidebarToggle: () => void;
 }
 
 export default function SearchBox({
-  onAddPage,
   navbarVisibility,
-  onChevronClick,
+  onLeftSidebarToggle,
+  rightSidebarCollapsed,
+  onRightSidebarToggle,
 }: SearchBoxProps) {
   return (
-    <Group mb="sm">
-      <ActionIcon onClick={onChevronClick} variant="subtle">
-        {navbarVisibility === "sidebar-collapsed" ? (
-          <IconChevronRight />
-        ) : (
-          <IconChevronLeft />
-        )}
-      </ActionIcon>
-      <ActionIcon
-        variant="subtle"
-        onClick={() => console.log("Search button clicked")}
-      >
-        <IconSearch style={{ width: rem(16), height: rem(16) }} />
-      </ActionIcon>
-      {/*<Button
+    <Group p="xs" pl="md" pr="md" pt="4px" gap="xs" w="100%">
+      <Group>
+        <ActionIcon onClick={onLeftSidebarToggle} variant="subtle">
+          {navbarVisibility === "sidebar-collapsed" ? (
+            <IconLayoutSidebarLeftExpandFilled />
+          ) : (
+            <IconLayoutSidebarRightExpandFilled />
+          )}
+        </ActionIcon>
+        <ActionIcon
+          variant="subtle"
+          onClick={() => console.log("Search button clicked")}
+        >
+          <IconSearch style={{ width: rem(16), height: rem(16) }} />
+        </ActionIcon>
+        {/*<Button
         onClick={() => {
           const title = prompt("Enter page title");
           if (!title) {
@@ -45,6 +49,16 @@ export default function SearchBox({
       >
         <IconPlus size={16} />
       </Button>*/}
+      </Group>
+      <Group align="flex-end" ml="auto">
+        <ActionIcon onClick={onRightSidebarToggle} variant="subtle">
+          {rightSidebarCollapsed ? (
+            <IconLayoutSidebarRightExpandFilled />
+          ) : (
+            <IconLayoutSidebarLeftExpandFilled />
+          )}
+        </ActionIcon>
+      </Group>
     </Group>
   );
 }

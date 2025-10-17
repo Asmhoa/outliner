@@ -53,7 +53,7 @@ function App() {
     setRightSidebarCollapsed(!rightSidebarCollapsed);
   };
 
-  const handleChevronClick = () => {
+  const handleLeftSidebarToggle = () => {
     setNavbarVisibility((current) => {
       if (current === "visible") {
         return "workspace-collapsed";
@@ -156,7 +156,7 @@ function App() {
         height: 35,
       }}
       navbar={{
-        width: navbarVisibility === "workspace-collapsed" ? 280 : 330, // each tab has width 40 + 10 padding. TODO: move to a constant
+        width: navbarVisibility === "workspace-collapsed" ? 240 : 290, // each tab has width 40 + 10 padding. TODO: move to a constant
         breakpoint: "sm",
         collapsed: {
           mobile: !opened,
@@ -175,9 +175,11 @@ function App() {
     >
       <AppShell.Header style={{ border: "none" }}>
         <SearchBox
-          onAddPage={handleAddPage}
+          // onAddPage={handleAddPage}
           navbarVisibility={navbarVisibility}
-          onChevronClick={handleChevronClick}
+          onLeftSidebarToggle={handleLeftSidebarToggle}
+          rightSidebarCollapsed={rightSidebarCollapsed}
+          onRightSidebarToggle={handleRightSidebarToggle}
         />
       </AppShell.Header>
       <LeftSidebar
@@ -203,8 +205,8 @@ function App() {
             setIsRenaming={setIsRenaming}
             handleDeletePage={handleDeletePage}
             handleRenamePage={handleRenamePage}
-            handleChevronClick={handleChevronClick}
-            handleRightSidebarToggle={handleRightSidebarToggle}
+            // handleLeftSidebarToggle={handleLeftSidebarToggle}
+            // handleRightSidebarToggle={handleRightSidebarToggle}
             navbarVisibility={navbarVisibility}
             rightSidebarCollapsed={rightSidebarCollapsed}
           />

@@ -11,9 +11,6 @@ const RightSidebar: React.FC<RightSidebarProps> = ({ onClose }) => {
     <Stack>
       <Group justify="space-between">
         <Title order={4}>Right Sidebar</Title>
-        <ActionIcon onClick={onClose} variant="subtle">
-          <IconChevronRight />
-        </ActionIcon>
       </Group>
       <Text>This is the right sidebar content.</Text>
       {/* Add more content here later */}
