@@ -1,9 +1,10 @@
 import React from "react";
-import { Stack, Tabs, rem, Text } from "@mantine/core";
+import { Group, Tabs, rem, Text, Box } from "@mantine/core";
 
 interface Workspace {
   id: string;
   name: string;
+  color: string;
 }
 
 interface WorkspaceSidebarProps {
@@ -18,7 +19,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   onWorkspaceClick,
 }) => {
   return (
-    <Stack>
+    <Group gap="xs">
       <Tabs
         variant="unstyled"
         orientation="vertical"
@@ -36,13 +37,20 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                 background: workspace.color,
                 // clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)",
                 boxShadow: (() => {
+                  const unselected =
+                    index === parseInt(activeWorkspaceId)
+                      ? ""
+                      : "inset -2px 0 2px rgba(0,0,0,0.3), ";
                   switch (index) {
                     case 0:
-                      return "0px 5px 2px rgba(0,0,0,0.3)";
+                      return unselected + "0px 5px 0px rgba(0,0,0,0.3)";
                     case workspaces.length - 1:
-                      return "0px -3px 2px rgba(0,0,0,0.3)";
+                      return unselected + "0px -3px 0px rgba(0,0,0,0.3)";
                     default:
-                      return "0px 5px 2px rgba(0,0,0,0.3), 0px -3px 2px rgba(0,0,0,0.3)";
+                      return (
+                        unselected +
+                        "0px 5px 0px rgba(0,0,0,0.3), 0px -3px 0px rgba(0,0,0,0.3)"
+                      );
                   }
                 })(),
                 borderRadius: "10px 0 0 10px",
@@ -55,6 +63,8 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                 alignItems: "center",
                 justifyContent: "center",
                 color: "white",
+                outline: "none",
+                opacity: parseInt(activeWorkspaceId) === index ? "1" : "0.5",
               }}
             >
               <Text style={{ transform: "rotate(-90deg)" }}>
@@ -63,8 +73,15 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
             </Tabs.Tab>
           ))}
         </Tabs.List>
+        <div
+          style={{
+            width: "10px",
+            backgroundColor: workspaces[activeWorkspaceId].color,
+            // opacity: 0.8,
+          }}
+        ></div>
       </Tabs>
-    </Stack>
+    </Group>
   );
 };
 

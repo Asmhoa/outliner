@@ -33,6 +33,13 @@ const mockWorkspaces: Workspace[] = [
   { id: "3", name: "Archive", color: "#EA4335" },
   { id: "4", name: "Archive", color: "#4285F4" },
   { id: "5", name: "Archive", color: "#EA4335" },
+  { id: "6", name: "Personal", color: "#4285F4" },
+  { id: "7", name: "Work", color: "#34A853" },
+  { id: "8", name: "Projects", color: "#FBBC05" },
+  { id: "9", name: "Archive", color: "#EA4335" },
+  { id: "10", name: "Archive", color: "#4285F4" },
+  { id: "11", name: "Archive", color: "#EA4335" },
+  { id: "12", name: "Personal", color: "#4285F4" },
 ];
 
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
@@ -158,7 +165,7 @@ function App() {
         height: 60,
       }}
       navbar={{
-        width: 300,
+        width: 350,
         breakpoint: "sm",
         collapsed: {
           mobile: !opened,
