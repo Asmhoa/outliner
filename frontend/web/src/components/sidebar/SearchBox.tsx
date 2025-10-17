@@ -1,8 +1,8 @@
 import { ActionIcon, Group, rem } from "@mantine/core";
 import {
   IconPlus,
-  IconLayoutSidebarRightExpandFilled,
-  IconLayoutSidebarLeftExpandFilled,
+  IconLayoutSidebarRightExpand,
+  IconLayoutSidebarLeftExpand,
   IconSearch,
 } from "@tabler/icons-react";
 import log from "../../utils/logger";
@@ -26,9 +26,9 @@ export default function SearchBox({
       <Group>
         <ActionIcon onClick={onLeftSidebarToggle} variant="subtle">
           {navbarVisibility === "sidebar-collapsed" ? (
-            <IconLayoutSidebarLeftExpandFilled />
+            <IconLayoutSidebarLeftExpand />
           ) : (
-            <IconLayoutSidebarRightExpandFilled />
+            <IconLayoutSidebarRightExpand />
           )}
         </ActionIcon>
         <ActionIcon
@@ -53,9 +53,9 @@ export default function SearchBox({
       <Group align="flex-end" ml="auto">
         <ActionIcon onClick={onRightSidebarToggle} variant="subtle">
           {rightSidebarCollapsed ? (
-            <IconLayoutSidebarRightExpandFilled />
+            <IconLayoutSidebarRightExpand />
           ) : (
-            <IconLayoutSidebarLeftExpandFilled />
+            <IconLayoutSidebarLeftExpand />
           )}
         </ActionIcon>
       </Group>

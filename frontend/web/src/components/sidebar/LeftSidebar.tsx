@@ -68,11 +68,12 @@ const LeftSidebar = ({
         )}
         <Stack pl="lg">
           <AppShell.Section>
-            <Menu shadow="md" width={200}>
+            <Menu shadow="md">
               <Menu.Target>
                 <Button
-                  rightSection={<IconChevronDown size={14} />}
+                  rightSection={<IconChevronDown size={16} />}
                   leftSection={<IconDatabase size={16} />}
+                  variant="light"
                 >
                   <Text>Switch database</Text>
                 </Button>
@@ -104,60 +105,64 @@ const LeftSidebar = ({
           </AppShell.Section>
           <Divider />
           <AppShell.Section>
-            <Group>
-              <IconStar size={16} />
-              <Title order={4}>Favorites</Title>
-            </Group>
             <NavLink
-              label="Favorite Page 1"
-              onClick={() => console.log("Clicked Favorite Page 1")}
-            />
-            <NavLink
-              label="Favorite Page 2"
-              onClick={() => console.log("Clicked Favorite Page 2")}
-            />
-            <NavLink
-              label="Favorite Page 3"
-              onClick={() => console.log("Clicked Favorite Page 3")}
-            />
+              label="Favorites"
+              leftSection={<IconStar />}
+              childrenOffset={28}
+            >
+              <NavLink
+                label="Favorite Page 1"
+                onClick={() => console.log("Clicked Favorite Page 1")}
+              />
+              <NavLink
+                label="Favorite Page 2"
+                onClick={() => console.log("Clicked Favorite Page 2")}
+              />
+              <NavLink
+                label="Favorite Page 3"
+                onClick={() => console.log("Clicked Favorite Page 3")}
+              />
+            </NavLink>
           </AppShell.Section>
           <AppShell.Section>
-            <Group>
-              <IconLayoutGrid size={16} />
-              <Title order={4}>Views</Title>
-              <IconPlus size={16} />
-            </Group>
             <NavLink
-              label="View Page 1"
-              onClick={() => console.log("Clicked View Page 1")}
-            />
-            <NavLink
-              label="View Page 2"
-              onClick={() => console.log("Clicked View Page 2")}
-            />
-            <NavLink
-              label="View Page 3"
-              onClick={() => console.log("Clicked View Page 3")}
-            />
+              label="Views"
+              leftSection={<IconLayoutGrid />}
+              childrenOffset={28}
+            >
+              <NavLink
+                label="View Page 1"
+                onClick={() => console.log("Clicked View Page 1")}
+              />
+              <NavLink
+                label="View Page 2"
+                onClick={() => console.log("Clicked View Page 2")}
+              />
+              <NavLink
+                label="View Page 3"
+                onClick={() => console.log("Clicked View Page 3")}
+              />
+            </NavLink>
           </AppShell.Section>
           <AppShell.Section>
-            <Group>
-              <IconNote size={16} />
-              <Title order={4}>Notes</Title>
-              <IconPlus size={16} />
-            </Group>
             <NavLink
-              label="Note Page 1"
-              onClick={() => console.log("Clicked Note Page 1")}
-            />
-            <NavLink
-              label="Note Page 2"
-              onClick={() => console.log("Clicked Note Page 2")}
-            />
-            <NavLink
-              label="Note Page 3"
-              onClick={() => console.log("Clicked Note Page 3")}
-            />
+              label="Notes"
+              leftSection={<IconNote />}
+              childrenOffset={28}
+            >
+              <NavLink
+                label="Note Page 1"
+                onClick={() => console.log("Clicked Note Page 1")}
+              />
+              <NavLink
+                label="Note Page 2"
+                onClick={() => console.log("Clicked Note Page 2")}
+              />
+              <NavLink
+                label="Note Page 3"
+                onClick={() => console.log("Clicked Note Page 3")}
+              />
+            </NavLink>
           </AppShell.Section>
           <AppShell.Section>
             {pages.map((page) => (
