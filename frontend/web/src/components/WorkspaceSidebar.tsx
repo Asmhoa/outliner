@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { Group, Tabs, rem, Text, ScrollArea } from "@mantine/core";
+import {
+  ActionIcon,
+  Group,
+  Tabs,
+  rem,
+  Text,
+  ScrollArea,
+  Stack,
+} from "@mantine/core";
+import { IconPlus } from "@tabler/icons-react";
 
 interface Workspace {
   id: string;
@@ -22,7 +31,16 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   const NAME_LENGTH = 10;
 
   return (
-    <Group gap="xs">
+    <Stack gap={0}>
+      <ActionIcon
+        w="100%"
+        size="xl"
+        variant="default"
+        radius="0"
+        onClick={() => console.log("New workspace added")}
+      >
+        <IconPlus />
+      </ActionIcon>
       <Tabs
         variant="unstyled"
         orientation="vertical"
@@ -75,7 +93,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                     parseInt(activeWorkspaceId) === index ||
                     hoveredIndex === index
                       ? "1"
-                      : "0.5",
+                      : "0.75",
                   overflow: "hidden",
                 }}
               >
@@ -120,7 +138,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
           100% { transform: translateX(-30%); }
         }
       `}</style>
-    </Group>
+    </Stack>
   );
 };
 
