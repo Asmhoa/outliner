@@ -58,7 +58,7 @@ const LeftSidebar = ({
   return (
     // <AppShell.Navbar pt="sm" pb="sm" style={{ backgroundColor }}>
     <AppShell.Navbar pt="sm" pb="sm">
-      <Group align="flex-start" gap={0}>
+      <Group align="flex-start">
         {navbarVisibility === "visible" && (
           <WorkspaceSidebar
             workspaces={workspaces}
@@ -66,7 +66,7 @@ const LeftSidebar = ({
             onWorkspaceClick={onWorkspaceClick}
           />
         )}
-        <Stack pl="lg">
+        <Stack>
           <AppShell.Section>
             <Menu shadow="md">
               <Menu.Target>
@@ -124,7 +124,7 @@ const LeftSidebar = ({
               />
             </NavLink>
           </AppShell.Section>
-          <AppShell.Section>
+          {/*<AppShell.Section>
             <NavLink
               label="Views"
               leftSection={<IconLayoutGrid />}
@@ -143,7 +143,7 @@ const LeftSidebar = ({
                 onClick={() => console.log("Clicked View Page 3")}
               />
             </NavLink>
-          </AppShell.Section>
+          </AppShell.Section>*/}
           <AppShell.Section>
             <NavLink
               label="Notes"
@@ -164,7 +164,7 @@ const LeftSidebar = ({
               />
             </NavLink>
           </AppShell.Section>
-          <AppShell.Section>
+          {/*<AppShell.Section>
             {pages.map((page) => (
               <NavLink
                 key={page.page_id}
@@ -176,7 +176,7 @@ const LeftSidebar = ({
                 }}
               />
             ))}
-          </AppShell.Section>
+          </AppShell.Section>*/}
         </Stack>
       </Group>
     </AppShell.Navbar>
