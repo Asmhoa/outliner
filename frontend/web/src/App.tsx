@@ -1,26 +1,77 @@
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { useEffect, useState } from "react";
+import { AppShell } from "@mantine/core";
+
+import { useDisclosure } from "@mantine/hooks";
+import { useEffect, useState, useCallback } from "react";
 import log from "./utils/logger";
 
 import "./App.css";
 import Page from "./components/Page";
+import RightSidebar from "./components/sidebar/RightSidebar";
 import {
   getPagePagesPageIdGet,
   getBlocksBlocksPageIdGet,
   addPagePagesPost,
   getPagesPagesGet,
   deletePagePagesDelete,
+  addBlockBlocksPost,
   type Block,
   type Page as PageType,
 } from "./api-client";
+import SearchBox from "./components/sidebar/SearchBox";
+import LeftSidebar from "./components/sidebar/LeftSidebar";
+
+interface Workspace {
+  id: string;
+  name: string;
+  color: string; // For tab color
+}
+
+const mockWorkspaces: Workspace[] = [
+  { id: "0", name: "Personal", color: "#4285F4" },
+  { id: "1", name: "Work", color: "#34A853" },
+  { id: "2", name: "Projects", color: "#FBBC05" },
+  { id: "3", name: "Archive Test Long Name", color: "#EA4335" },
+];
+
+type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
 function App() {
   const [currentPageId, setCurrentPageId] = useState<number | null>(null);
   const [title, setTitle] = useState("");
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [pages, setPages] = useState<PageType[]>([]);
+  const [opened, { toggle }] = useDisclosure();
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(
+    mockWorkspaces[0].id,
+  );
+  const [navbarVisibility, setNavbarVisibility] =
+    useState<NavbarVisibility>("visible");
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
 
-  const fetchPages = async () => {
+  const handleRightSidebarToggle = () => {
+    setRightSidebarCollapsed(!rightSidebarCollapsed);
+  };
+
+  const handleLeftSidebarToggle = () => {
+    setNavbarVisibility((current) => {
+      if (current === "visible") {
+        return "workspace-collapsed";
+      }
+      if (current === "workspace-collapsed") {
+        return "sidebar-collapsed";
+      }
+      return "visible";
+    });
+  };
+
+  const databases = [
+    { value: "db1", label: "Database 1" },
+    { value: "db2", label: "Database 2" },
+    { value: "db3", label: "Database 3" },
+  ];
+
+  const fetchPages = useCallback(async () => {
     log.debug("Fetching pages...");
     const response = await getPagesPagesGet();
     if (response.data) {
@@ -31,13 +82,25 @@ function App() {
         setCurrentPageId(response.data[0].page_id);
       }
     }
-  };
+  }, [currentPageId]);
 
   const handleDeletePage = async (page_id: number) => {
     log.debug(`Deleting page with page_id: ${page_id}`);
     await deletePagePagesDelete({ body: { page_id } });
     fetchPages();
     setCurrentPageId(null);
+    setTitle("");
+    setBlocks([]);
+  };
+
+  const handleRenamePage = () => {
+    setIsRenaming(true);
+  };
+
+  const handleAddPage = async (title: string) => {
+    log.debug(`Adding new page with title: "${title}"`);
+    await addPagePagesPost({ body: { title } });
+    fetchPages();
   };
 
   useEffect(() => {
@@ -61,11 +124,19 @@ function App() {
       });
       if (response.data) {
         if (response.data.length === 0) {
-          log.debug(`No blocks found for page_id: ${currentPageId}, creating a new one.`);
-          const newBlock = await addBlockBlocksPost({ body: { page_id: currentPageId, content: "", position: 0 } });
-          setBlocks([newBlock]);
+          log.debug(
+            `No blocks found for page_id: ${currentPageId}, creating a new one.`,
+          );
+          const newBlock = await addBlockBlocksPost({
+            body: { page_id: currentPageId, content: "", position: 0 },
+          });
+          if (newBlock.data) {
+            setBlocks([newBlock.data]);
+          }
         } else {
-          log.debug(`Fetched ${response.data.length} blocks for page_id: ${currentPageId}`);
+          log.debug(
+            `Fetched ${response.data.length} blocks for page_id: ${currentPageId}`,
+          );
           setBlocks(response.data);
         }
       }
@@ -77,41 +148,74 @@ function App() {
 
   useEffect(() => {
     fetchPages();
-  }, []);
+  }, [fetchPages]); // Added fetchPages to dependency array
 
   return (
-    <PanelGroup direction="horizontal">
-      <Panel collapsible defaultSize={20} minSize={20} maxSize={30}>
-        <div className="sidebar">
-          <div className="sidebar-header">
-            <p>Recently edited pages</p>
-            <button
-              onClick={async () => {
-                let title = "";
-                while (!title) {
-                  title = prompt("Enter page title") || "";
-                }
-                log.debug(`Adding new page with title: "${title}"`);
-                await addPagePagesPost({ body: { title } });
-                fetchPages();
-              }}
-              className="add-page-button"
-            >
-              +
-            </button>
-          </div>
-          <ul>
-            {pages.map((page) => (
-              <li key={page.page_id} onClick={() => setCurrentPageId(page.page_id)}>{page.title}</li>
-            ))}
-          </ul>
-        </div>
-      </Panel>
-      <PanelResizeHandle className="resize-handle" />
-      <Panel minSize={30}>
-        {currentPageId && <Page page_id={currentPageId} title={title} blocks={blocks} onDelete={handleDeletePage} />}
-      </Panel>
-    </PanelGroup>
+    <AppShell
+      header={{
+        height: 35,
+      }}
+      navbar={{
+        width: navbarVisibility === "workspace-collapsed" ? 240 : 290, // each tab has width 40 + 10 padding. TODO: move to a constant
+        breakpoint: "sm",
+        collapsed: {
+          mobile: !opened,
+          desktop: navbarVisibility === "sidebar-collapsed",
+        },
+      }}
+      aside={{
+        width: 300,
+        breakpoint: "sm",
+        collapsed: {
+          mobile: rightSidebarCollapsed,
+          desktop: rightSidebarCollapsed,
+        },
+      }}
+      padding="md"
+    >
+      <AppShell.Header style={{ border: "none" }}>
+        <SearchBox
+          // onAddPage={handleAddPage}
+          navbarVisibility={navbarVisibility}
+          onLeftSidebarToggle={handleLeftSidebarToggle}
+          rightSidebarCollapsed={rightSidebarCollapsed}
+          onRightSidebarToggle={handleRightSidebarToggle}
+        />
+      </AppShell.Header>
+      <LeftSidebar
+        pages={pages}
+        currentPageId={currentPageId}
+        setCurrentPageId={setCurrentPageId}
+        toggle={toggle}
+        navbarVisibility={navbarVisibility}
+        workspaces={mockWorkspaces}
+        activeWorkspaceId={activeWorkspaceId}
+        onWorkspaceClick={setActiveWorkspaceId}
+        databases={databases}
+      />
+
+      <AppShell.Main>
+        {currentPageId && (
+          <Page
+            key={currentPageId}
+            page_id={currentPageId}
+            title={title}
+            blocks={blocks}
+            isRenaming={isRenaming}
+            setIsRenaming={setIsRenaming}
+            handleDeletePage={handleDeletePage}
+            handleRenamePage={handleRenamePage}
+            // handleLeftSidebarToggle={handleLeftSidebarToggle}
+            // handleRightSidebarToggle={handleRightSidebarToggle}
+            navbarVisibility={navbarVisibility}
+            rightSidebarCollapsed={rightSidebarCollapsed}
+          />
+        )}
+      </AppShell.Main>
+      <AppShell.Aside p="md">
+        <RightSidebar onClose={handleRightSidebarToggle} />
+      </AppShell.Aside>
+    </AppShell>
   );
 }
 

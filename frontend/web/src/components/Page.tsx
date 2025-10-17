@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import Block from "./Block";
-import { renamePagePagesPut, addBlockBlocksPost, deleteBlockBlocksDelete } from "../api-client/sdk.gen";
+import {
+  renamePagePagesPut,
+  addBlockBlocksPost,
+  deleteBlockBlocksDelete,
+} from "../api-client/sdk.gen";
 import log from "../utils/logger";
+import { Button, Group } from "@mantine/core";
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import PageMenu from "./PageMenu";
 
 import { type Block as BlockType } from "../api-client";
@@ -10,16 +16,44 @@ interface PageProps {
   page_id: number;
   title: string;
   blocks: BlockType[];
-  onDelete: (page_id: number) => void;
+  isRenaming: boolean;
+  setIsRenaming: (isRenaming: boolean) => void;
+  handleDeletePage: (page_id: number) => void;
+  handleRenamePage: () => void;
+  // handleChevronClick: () => void;
+  // handleRightSidebarToggle: () => void;
+  navbarVisibility: string;
+  rightSidebarCollapsed: boolean;
 }
 
-const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks, onDelete }) => {
+const Page: React.FC<PageProps> = ({
+  page_id,
+  title,
+  blocks: initialBlocks,
+  isRenaming,
+  setIsRenaming,
+  handleDeletePage,
+  handleRenamePage,
+  // handleChevronClick,
+  // handleRightSidebarToggle,
+  navbarVisibility,
+  rightSidebarCollapsed,
+}) => {
   const [pageTitle, setPageTitle] = useState(title);
   const [blocks, setBlocks] = useState<BlockType[]>(initialBlocks);
   const blockRefs = useRef<{
-    [key: number]: HTMLDivElement | null
+    [key: number]: HTMLDivElement | null;
   }>({});
-  const [nextFocusableBlockId, setNextFocusableBlockId] = useState<number | null>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [nextFocusableBlockId, setNextFocusableBlockId] = useState<
+    number | null
+  >(null);
+
+  useEffect(() => {
+    if (isRenaming) {
+      titleRef.current?.focus();
+    }
+  }, [isRenaming]);
 
   useEffect(() => {
     if (nextFocusableBlockId) {
@@ -31,7 +65,6 @@ const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks, onDe
     }
   }, [nextFocusableBlockId]);
 
-
   useEffect(() => {
     log.debug(`Setting page title to: "${title}"`);
     setPageTitle(title);
@@ -40,7 +73,7 @@ const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks, onDe
   useEffect(() => {
     log.debug(`Setting blocks for page_id: ${page_id}`, initialBlocks);
     setBlocks(initialBlocks);
-  }, [initialBlocks]);
+  }, [initialBlocks, page_id]);
 
   const handleTitleBlur = async (
     event: React.FocusEvent<HTMLHeadingElement>,
@@ -59,19 +92,24 @@ const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks, onDe
       log.error("Failed to rename page:", error);
       setPageTitle(title);
     }
+    setIsRenaming(false);
   };
 
   const handleNewBlock = async (currentBlockId: number) => {
     log.debug(`Adding new block after block_id: ${currentBlockId}`);
     try {
-      const newBlock = await addBlockBlocksPost({ body: { page_id: page_id, content: "", position: 0 } });
-      const currentIndex = blocks.findIndex(block => block.block_id === currentBlockId);
+      const newBlock = await addBlockBlocksPost({
+        body: { page_id: page_id, content: "", position: 0 },
+      });
+      const currentIndex = blocks.findIndex(
+        (block) => block.block_id === currentBlockId,
+      );
       const newBlocks = [...blocks];
       newBlocks.splice(currentIndex + 1, 0, newBlock.data);
       setBlocks(newBlocks);
       setNextFocusableBlockId(newBlock.data.block_id);
     } catch (error) {
-      log.error('Failed to add new block:', error);
+      log.error("Failed to add new block:", error);
     }
   };
 
@@ -79,42 +117,58 @@ const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks, onDe
     if (blocks.length > 1) {
       log.debug(`Deleting block_id: ${currentBlockId}`);
       try {
-        const currentIndex = blocks.findIndex(block => block.block_id === currentBlockId);
+        const currentIndex = blocks.findIndex(
+          (block) => block.block_id === currentBlockId,
+        );
         await deleteBlockBlocksDelete({ body: { block_id: currentBlockId } });
-        const newBlocks = blocks.filter(block => block.block_id !== currentBlockId);
+        const newBlocks = blocks.filter(
+          (block) => block.block_id !== currentBlockId,
+        );
         setBlocks(newBlocks);
         if (currentIndex > 0) {
           setNextFocusableBlockId(blocks[currentIndex - 1].block_id);
         }
       } catch (error) {
-        log.error('Failed to delete block:', error);
-      }
-    }
-  };
-
-  const handleDeletePage = async () => {
-    if (window.confirm("Are you sure you want to delete this page?")) {
-      log.debug(`Deleting page_id: ${page_id}`);
-      try {
-        onDelete(page_id);
-      } catch (error) {
-        log.error('Failed to delete page:', error);
+        log.error("Failed to delete block:", error);
       }
     }
   };
 
   return (
-    <div className="page">
-      <div className="page-title">
-        <h1
-          contentEditable
-          onBlur={handleTitleBlur}
-          suppressContentEditableWarning
-        >
-          {pageTitle}
-        </h1>
-        <PageMenu onDelete={handleDeletePage} />
-      </div>
+    <div className="page" style={{ paddingTop: 0 }}>
+      <Group justify="space-between">
+        <Group>
+          <h1
+            ref={titleRef}
+            contentEditable={isRenaming}
+            onBlur={handleTitleBlur}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.currentTarget.blur();
+              }
+            }}
+            suppressContentEditableWarning
+          >
+            {pageTitle}
+          </h1>
+        </Group>
+        <Group>
+          <PageMenu
+            onDelete={() => {
+              if (page_id) {
+                handleDeletePage(page_id);
+              }
+            }}
+            onRename={handleRenamePage}
+          />
+          {/*{rightSidebarCollapsed && (
+            <Button onClick={handleRightSidebarToggle} variant="subtle">
+              <IconChevronLeft />
+            </Button>
+          )}*/}
+        </Group>
+      </Group>
       {blocks.map((block) => (
         <Block
           ref={(el) => (blockRefs.current[block.block_id] = el)}
@@ -131,4 +185,3 @@ const Page: React.FC<PageProps> = ({ page_id, title, blocks: initialBlocks, onDe
 };
 
 export default Page;
-

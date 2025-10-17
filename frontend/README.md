@@ -9,6 +9,7 @@ The frontend will consist of a web application (built with Vite) and a desktop a
     *   **Build Tool:** Vite.js for fast development and optimized builds.
     *   **Language:** TypeScript.
     *   **Styling:** Tailwind CSS or a CSS-in-JS solution (e.g., Styled Components) for consistent styling.
+    *   **UI Library:** Mantine v8.
 *   **Setup:**
     *   Initialize a new Vite project within `frontend/web`.
     *   Configure `tsconfig.json` for TypeScript.

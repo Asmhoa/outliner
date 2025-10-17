@@ -1,48 +1,33 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { Menu, ActionIcon } from "@mantine/core";
+import { IconDots } from "@tabler/icons-react";
 
 interface PageMenuProps {
   onDelete: () => void;
+  onRename: () => void;
 }
 
-const PageMenu: React.FC<PageMenuProps> = ({ onDelete }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  const handleToggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
-
-  const handleDelete = () => {
-    onDelete();
-    setIsOpen(false);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
+const PageMenu: React.FC<PageMenuProps> = ({ onDelete, onRename }) => {
   return (
-    <div className="page-menu" ref={menuRef}>
-      <button onClick={handleToggleMenu} className="page-menu-button">
-        ...
-      </button>
-      {isOpen && (
-        <div className="page-menu-content">
-          <ul>
-            <li onClick={handleDelete}>Delete Page</li>
-          </ul>
-        </div>
-      )}
-    </div>
+    <Menu shadow="md" width={200}>
+      <Menu.Target>
+        <ActionIcon variant="subtle">
+          <IconDots />
+        </ActionIcon>
+      </Menu.Target>
+
+      <Menu.Dropdown>
+        <Menu.Item
+          onClick={onRename}
+        >
+          Rename page
+        </Menu.Item>
+        <Menu.Item
+          onClick={onDelete}
+        >
+          Delete page
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
   );
 };
 
