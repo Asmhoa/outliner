@@ -30,7 +30,7 @@ const mockWorkspaces: Workspace[] = [
   { id: "0", name: "Personal", color: "#4285F4" },
   { id: "1", name: "Work", color: "#34A853" },
   { id: "2", name: "Projects", color: "#FBBC05" },
-  { id: "3", name: "Archive", color: "#EA4335" },
+  { id: "3", name: "Archive Test Long Name", color: "#EA4335" },
   { id: "4", name: "Archive", color: "#4285F4" },
   { id: "5", name: "Archive", color: "#EA4335" },
   { id: "6", name: "Personal", color: "#4285F4" },

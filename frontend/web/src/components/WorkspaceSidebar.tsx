@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Group, Tabs, rem, Text, ScrollArea } from "@mantine/core";
 
 interface Workspace {
@@ -18,6 +18,9 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   activeWorkspaceId,
   onWorkspaceClick,
 }) => {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const NAME_LENGTH = 10;
+
   return (
     <Group gap="xs">
       <Tabs
@@ -34,6 +37,8 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                 value={workspace.id}
                 h={rem(120)}
                 w={rem(40)}
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
                 style={{
                   background: workspace.color,
                   // clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 85%)",
@@ -58,18 +63,24 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                   marginTop: index === 0 ? 0 : rem(-40),
                   position: "relative",
                   zIndex:
-                    workspaces.length -
-                    Math.abs(parseInt(activeWorkspaceId) - index),
+                    hoveredIndex === index
+                      ? 100
+                      : workspaces.length -
+                        Math.abs(parseInt(activeWorkspaceId) - index),
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: "white",
                   outline: "none",
-                  opacity: parseInt(activeWorkspaceId) === index ? "1" : "0.5",
+                  opacity:
+                    parseInt(activeWorkspaceId) === index ||
+                    hoveredIndex === index
+                      ? "1"
+                      : "0.5",
                 }}
               >
                 <Text style={{ transform: "rotate(-90deg)" }}>
-                  {workspace.name.substring(0, 3)}
+                  {workspace.name.substring(0, NAME_LENGTH)}
                 </Text>
               </Tabs.Tab>
             ))}
