@@ -106,20 +106,29 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                     textAlign: "center",
                   }}
                 >
-                  {hoveredIndex === index &&
-                  workspace.name.length > NAME_LENGTH ? (
-                    <span
-                      style={{
-                        display: "inline-block",
-                        animation: "scroll 3s linear infinite",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {workspace.name}
-                    </span>
-                  ) : (
-                    workspace.name.substring(0, NAME_LENGTH)
-                  )}
+                  {(() => {
+                    if (workspace.name.length > NAME_LENGTH) {
+                      if (hoveredIndex === index) {
+                        return (
+                          <span
+                            style={{
+                              display: "inline-block",
+                              animation: "scroll 3s linear infinite",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {workspace.name}
+                          </span>
+                        );
+                      } else {
+                        return (
+                          workspace.name.substring(0, NAME_LENGTH - 3) + "..."
+                        );
+                      }
+                    } else {
+                      return workspace.name;
+                    }
+                  })()}
                 </Text>
               </Tabs.Tab>
             ))}
