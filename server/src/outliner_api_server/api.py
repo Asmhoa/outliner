@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from data import Database
+from outliner_api_server.data import Database
 import os
 from datetime import datetime
 
@@ -23,6 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 def get_db():
     db = Database(DATABASE_PATH)
     try:
@@ -30,31 +31,38 @@ def get_db():
     finally:
         db.close_conn()
 
+
 @app.on_event("startup")
 def startup_event():
     db = Database(DATABASE_PATH)
-    db.create_new_database() # no-op if already exists
+    db.create_new_database()  # no-op if already exists
     db.close_conn()
+
 
 class Page(BaseModel):
     page_id: int
     title: str
     created_at: datetime
 
+
 class PageCreate(BaseModel):
     title: str
+
 
 class PageRename(BaseModel):
     page_id: int
     new_title: str
 
+
 class PageDelete(BaseModel):
     page_id: int
+
 
 @app.post("/pages")
 def add_page(page: PageCreate, db: Database = Depends(get_db)):
     page_id = db.add_page(page.title)
     return {"page_id": page_id}
+
 
 @app.get("/pages/{page_id}", response_model=Page)
 def get_page(page_id: int, db: Database = Depends(get_db)):
@@ -63,16 +71,19 @@ def get_page(page_id: int, db: Database = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Page not found")
     return Page(page_id=page_data[0], title=page_data[1], created_at=page_data[2])
 
+
 @app.get("/pages", response_model=list[Page])
 def get_pages(db: Database = Depends(get_db)):
     pages_data = db.get_pages()
     return [Page(page_id=p[0], title=p[1], created_at=p[2]) for p in pages_data]
+
 
 @app.put("/pages")
 def rename_page(page: PageRename, db: Database = Depends(get_db)):
     if not db.rename_page(page.page_id, page.new_title):
         raise HTTPException(status_code=404, detail="Page not found")
     return {"status": "success"}
+
 
 @app.delete("/pages")
 def delete_page(page: PageDelete, db: Database = Depends(get_db)):
@@ -97,6 +108,7 @@ class BlockCreate(BaseModel):
     page_id: int | None = None
     parent_block_id: int | None = None
 
+
 class BlockUpdateContent(BaseModel):
     block_id: int
     new_content: str
@@ -107,8 +119,10 @@ class BlockUpdateParent(BaseModel):
     new_page_id: int | None = None
     new_parent_block_id: int | None = None
 
+
 class BlockDelete(BaseModel):
     block_id: int
+
 
 @app.post("/blocks", response_model=Block)
 def add_block(block: BlockCreate, db: Database = Depends(get_db)):
@@ -127,6 +141,7 @@ def add_block(block: BlockCreate, db: Database = Depends(get_db)):
         created_at=block_data[5],
     )
 
+
 @app.get("/block/{block_id}", response_model=Block)
 def get_block(block_id: int, db: Database = Depends(get_db)):
     block_data = db.get_block_content_by_id(block_id)
@@ -140,6 +155,7 @@ def get_block(block_id: int, db: Database = Depends(get_db)):
         position=block_data[4],
         created_at=block_data[5],
     )
+
 
 @app.get("/blocks/{page_id}", response_model=list[Block])
 def get_blocks(page_id: int, db: Database = Depends(get_db)):
@@ -169,7 +185,9 @@ def update_block_parent(block: BlockUpdateParent, db: Database = Depends(get_db)
     if not db.update_block_parent(
         block.block_id, block.new_page_id, block.new_parent_block_id
     ):
-        raise HTTPException(status_code=404, detail="Block not found or invalid parent update")
+        raise HTTPException(
+            status_code=404, detail="Block not found or invalid parent update"
+        )
     return {"status": "success"}
 
 
