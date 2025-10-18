@@ -63,3 +63,23 @@ The frontend will consist of a web application (built with Vite) and a desktop a
     1.  Building `frontend/ui`.
     2.  Building `frontend/web`.
     3.  Building and packaging `frontend/desktop`.
+
+**5. Testing**
+
+*   **Unit Testing:**
+    *   **Framework:** Vitest for running unit and component tests.
+    *   **Library:** React Testing Library for rendering components and simulating user interactions.
+    *   **Setup:**
+        *   Configuration is in `vite.config.ts`.
+        *   Test files are located alongside the components they test (e.g., `*.test.tsx`).
+    *   **Running Tests:**
+        *   `npm test` or `vitest`
+*   **End-to-End Testing:**
+    *   **Framework:** Playwright for end-to-end testing of the web application.
+    *   **Setup:**
+        *   Configuration is in `playwright.config.ts`.
+        *   Tests are located in the `tests/` directory.
+    *   **Running Tests:**
+        *   `npx playwright test`: Run all tests.
+        *   `npx playwright test --ui`: Run tests in UI mode.
+        *   `npx playwright show-report`: View the test report.
