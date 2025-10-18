@@ -3,6 +3,8 @@ server/src/data.db
 
 # Python env
 __pycache__/
+env/
+venv/
 
 # MacOS
 .DS_Store
