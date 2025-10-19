@@ -9,7 +9,7 @@ import log from "../../utils/logger";
 
 interface SearchBoxProps {
   // onAddPage: (title: string) => void;
-  navbarVisibility: "visible" | "sidebar-collapsed" | "navbar-collapsed";
+  navbarVisibility: "visible" | "workspace-collapsed" | "sidebar-collapsed";
   onLeftSidebarToggle: () => void;
   rightSidebarCollapsed: boolean;
   onRightSidebarToggle: () => void;

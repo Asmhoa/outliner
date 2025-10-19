@@ -36,7 +36,7 @@ interface LeftSidebarProps {
   toggle: () => void;
   navbarVisibility: "visible" | "workspace-collapsed" | "sidebar-collapsed";
   workspaces: Workspace[];
-  handleAddNewWorkspace: (newWorkspace: Workspace) => void;
+  setWorkspaces: (ws: Workspace[]) => void;
   activeWorkspaceId: number | null;
   setActiveWorkspaceId: (id: number) => void;
   databases: { value: string; label: string }[];
@@ -49,7 +49,7 @@ const LeftSidebar = ({
   toggle,
   navbarVisibility,
   workspaces,
-  handleAddNewWorkspace,
+  setWorkspaces,
   activeWorkspaceId,
   setActiveWorkspaceId,
   databases,
@@ -64,7 +64,7 @@ const LeftSidebar = ({
         {navbarVisibility === "visible" && (
           <WorkspaceSidebar
             workspaces={workspaces}
-            handleAddNewWorkspace={handleAddNewWorkspace}
+            setWorkspaces={setWorkspaces}
             activeWorkspaceId={activeWorkspaceId}
             setActiveWorkspaceId={setActiveWorkspaceId}
           />

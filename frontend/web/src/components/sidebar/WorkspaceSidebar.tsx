@@ -15,20 +15,24 @@ import {
   Portal,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { addWorkspaceWorkspacesPost, type Workspace } from "../../api-client";
+import {
+  addWorkspaceWorkspacesPost,
+  updateWorkspaceWorkspacesPut,
+  type Workspace,
+} from "../../api-client";
 import { IconPlus } from "@tabler/icons-react";
 import log from "../../utils/logger";
 
 interface WorkspaceSidebarProps {
   workspaces: Workspace[];
-  handleAddNewWorkspace: (newWorkspace: Workspace) => void;
+  setWorkspaces: (ws: Workspace[]) => void;
   activeWorkspaceId: number;
   setActiveWorkspaceId: (id: number) => void;
 }
 
 const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   workspaces,
-  handleAddNewWorkspace,
+  setWorkspaces,
   activeWorkspaceId,
   setActiveWorkspaceId,
 }) => {
@@ -36,6 +40,13 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   const [opened, { open, close }] = useDisclosure(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [newWorkspaceColor, setNewWorkspaceColor] = useState("#FBBC05");
+  const [editModalOpened, { open: openEditModal, close: closeEditModal }] =
+    useDisclosure(false);
+  const [editingWorkspace, setEditingWorkspace] = useState<Workspace | null>(
+    null,
+  );
+  const [editWorkspaceName, setEditWorkspaceName] = useState("");
+  const [editWorkspaceColor, setEditWorkspaceColor] = useState("#FBBC05");
 
   const activeWorkspacePosition = workspaces.findIndex(
     (ws) => ws.workspace_id === activeWorkspaceId,
@@ -52,7 +63,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
     );
   }
 
-  const handleChangedWorkspace = (tabValuePosition: string | null): void => {
+  const handleSelectWorkspace = (tabValuePosition: string | null): void => {
     // <Tabs> reads the value of the <Tab> and sends the value
     // The value in our case is the Position in the workspaces array, but as a string
     if (tabValuePosition !== null) {
@@ -69,13 +80,36 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         name: newWorkspaceName,
         color: newWorkspaceColor,
       },
-    }).then((newWorkspace) => {
-      log.debug("New workspace added:", newWorkspace.data);
-      handleAddNewWorkspace(newWorkspace.data as Workspace);
+    }).then((newWs) => {
+      const newWorkspace = newWs.data as Workspace;
+      log.debug("New workspace added:", newWorkspace);
+      setWorkspaces([workspaces[0], newWorkspace, ...workspaces.splice(1)]);
       close();
       setNewWorkspaceName("");
-      setNewWorkspaceColor("#228BE6");
+      setNewWorkspaceColor("");
     });
+  };
+
+  const handleUpdateWorkspaceSubmit = () => {
+    if (editingWorkspace) {
+      updateWorkspaceWorkspacesPut({
+        body: {
+          workspace_id: editingWorkspace.workspace_id,
+          new_name: editWorkspaceName,
+          new_color: editWorkspaceColor,
+        },
+      })
+        .then((updatedWorkspace) => {
+          log.debug("Workspace updated:", updatedWorkspace.data);
+          handleUpdateWorkspace(updatedWorkspace.data as Workspace);
+          closeEditModal();
+          setEditWorkspaceName("");
+          setEditWorkspaceColor("#FBBC05");
+        })
+        .catch((error) => {
+          log.error("Error updating workspace:", error);
+        });
+    }
   };
 
   return (
@@ -124,6 +158,50 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
           Create Workspace
         </Button>
       </Modal>
+      <Modal
+        opened={editModalOpened}
+        onClose={closeEditModal}
+        title="Edit Workspace"
+        centered
+        styles={{
+          inner: {
+            left: 0,
+          },
+        }}
+      >
+        <TextInput
+          label="Workspace Name"
+          placeholder="Enter workspace name"
+          value={editWorkspaceName}
+          onChange={(event) => setEditWorkspaceName(event.currentTarget.value)}
+        />
+        <ColorInput
+          label="Workspace Color"
+          value={editWorkspaceColor}
+          onChange={setEditWorkspaceColor}
+          format="hex"
+          withEyeDropper={false}
+          swatches={[
+            "#25262b",
+            "#868e96",
+            "#fa5252",
+            "#e64980",
+            "#be4bdb",
+            "#7950f2",
+            "#4c6ef5",
+            "#228be6",
+            "#15aabf",
+            "#12b886",
+            "#40c057",
+            "#82c91e",
+            "#fab005",
+            "#fd7e14",
+          ]}
+        />
+        <Button onClick={handleUpdateWorkspaceSubmit} mt="md">
+          Update Workspace
+        </Button>
+      </Modal>
       <ActionIcon
         w="100%"
         size="xl"
@@ -140,7 +218,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         variant="unstyled"
         orientation="vertical"
         // value={activeWorkspaceId}
-        onChange={handleChangedWorkspace}
+        onChange={handleSelectWorkspace}
         loop={false}
       >
         <ScrollArea h="100vh" type="never">
@@ -153,6 +231,12 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                 w={rem(40)}
                 onMouseEnter={() => setHoveredIndex(index)}
                 onMouseLeave={() => setHoveredIndex(null)}
+                onDoubleClick={() => {
+                  setEditingWorkspace(workspace);
+                  setEditWorkspaceName(workspace.name);
+                  setEditWorkspaceColor(workspace.color);
+                  openEditModal();
+                }}
                 style={{
                   background: workspace.color,
                   boxShadow: (() => {

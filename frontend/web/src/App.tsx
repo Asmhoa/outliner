@@ -22,13 +22,6 @@ import {
 import SearchBox from "./components/sidebar/SearchBox";
 import LeftSidebar from "./components/sidebar/LeftSidebar";
 
-// const mockWorkspaces: Workspace[] = [
-//   { id: "0", name: "Personal", color: "#4285F4" },
-//   { id: "1", name: "Work", color: "#34A853" },
-//   { id: "2", name: "Projects", color: "#FBBC05" },
-//   { id: "3", name: "Archive Test Long Name", color: "#EA4335" },
-// ];
-
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
 function App() {
@@ -61,9 +54,24 @@ function App() {
     }
   }
 
-  const handleAddNewWorkspace = (newWorkspace: Workspace) => {
-    setWorkspaces([workspaces[0], newWorkspace, ...workspaces.splice(1)]);
-  };
+  // const handleUpdateWorkspace = (updatedWorkspace: Workspace) => {
+  //   const replaceIndex = workspaces.findIndex(
+  //     (ws) => ws.workspace_id === updatedWorkspace.workspace_id,
+  //   );
+  //   console.log(updatedWorkspace);
+  //   setWorkspaces([
+  //     ...workspaces.slice(0, replaceIndex),
+  //     updatedWorkspace,
+  //     ...workspaces.slice(replaceIndex + 1),
+  //   ]);
+  //   // setWorkspaces(prevWorkspaces =>
+  //   //   prevWorkspaces.map(ws =>
+  //   //     ws.workspace_id === updatedWorkspace.workspace_id
+  //   //       ? { ...updatedWorkspace } // Create a new object to ensure React detects changes
+  //   //       : ws
+  //   //   )
+  //   // );
+  // };
 
   useEffect(() => {
     getAllWorkspaces();
@@ -215,7 +223,7 @@ function App() {
         toggle={toggle}
         navbarVisibility={navbarVisibility}
         workspaces={workspaces}
-        handleAddNewWorkspace={handleAddNewWorkspace}
+        setWorkspaces={setWorkspaces}
         activeWorkspaceId={activeWorkspaceId}
         setActiveWorkspaceId={setActiveWorkspaceId}
         databases={databases}
