@@ -13,10 +13,12 @@ import {
   Button,
   ColorInput,
   Portal,
+  Alert,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
   addWorkspaceWorkspacesPost,
+  deleteWorkspaceWorkspacesDelete,
   updateWorkspaceWorkspacesPut,
   type Workspace,
 } from "../../api-client";
@@ -56,6 +58,8 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   const [editWorkspaceColor, setEditWorkspaceColor] = useState("#FBBC05");
   const [editModalOpened, { open: openEditModal, close: closeEditModal }] =
     useDisclosure(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   if (activeWorkspaceId === null) {
     // data hasn't loaded yet
@@ -117,6 +121,40 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         })
         .catch((error) => {
           log.error("Error updating workspace:", error);
+        });
+    }
+  };
+
+  const handleDeleteWorkspace = () => {
+    if (editingWorkspace) {
+      deleteWorkspaceWorkspacesDelete({
+        body: {
+          workspace_id: editingWorkspace.workspace_id,
+        },
+      })
+        .then(() => {
+          log.debug("Workspace deleted");
+          // Remove the deleted workspace from the list
+          const updatedWorkspaces = workspaces.filter(
+            (ws) => ws.workspace_id !== editingWorkspace.workspace_id,
+          );
+          setWorkspaces(updatedWorkspaces);
+
+          // If the deleted workspace was the active one, switch to the first workspace
+          if (editingWorkspace.workspace_id === activeWorkspaceId) {
+            if (updatedWorkspaces.length > 0) {
+              setActiveWorkspaceId(updatedWorkspaces[0].workspace_id);
+            }
+          }
+
+          closeEditModal();
+          setEditingWorkspace(null);
+          setDeleteConfirmation(false);
+          setDeleteError(null);
+        })
+        .catch((error) => {
+          log.error("Error deleting workspace:", error);
+          setDeleteError("Failed to delete workspace. Please try again.");
         });
     }
   };
@@ -207,9 +245,46 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
             "#fd7e14",
           ]}
         />
-        <Button onClick={handleUpdateWorkspaceSubmit} mt="md">
-          Update Workspace
-        </Button>
+        <Group>
+          <Button onClick={handleUpdateWorkspaceSubmit} mt="md">
+            Update Workspace
+          </Button>
+          {deleteError && (
+            <Alert title="Error" color="red" mt="md">
+              {deleteError}
+            </Alert>
+          )}
+          {editingWorkspace?.workspace_id !== 0 && !deleteConfirmation ? (
+            <Button
+              onClick={() => setDeleteConfirmation(true)}
+              mt="md"
+              color="red"
+              variant="outline"
+            >
+              Delete Workspace
+            </Button>
+          ) : (
+            editingWorkspace?.workspace_id !== 0 && (
+              <Group mt="md">
+                <Button onClick={handleDeleteWorkspace} color="red">
+                  Confirm Delete
+                </Button>
+                <Button
+                  onClick={() => setDeleteConfirmation(false)}
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+              </Group>
+            )
+          )}
+        </Group>
+        {deleteConfirmation && (
+          <Alert title="Warning" color="yellow" mt="md">
+            This action cannot be undone. All pages and content in this
+            workspace will be permanently deleted.
+          </Alert>
+        )}
       </Modal>
       <ActionIcon
         w="100%"
