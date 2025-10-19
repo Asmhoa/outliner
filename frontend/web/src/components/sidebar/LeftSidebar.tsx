@@ -22,6 +22,7 @@ import {
 } from "@tabler/icons-react";
 import WorkspaceSidebar from "./WorkspaceSidebar";
 import type { Page as PageType } from "../../api-client";
+import log from "../../utils/logger";
 
 interface Workspace {
   id: string;
@@ -93,17 +94,17 @@ const LeftSidebar = ({
             <NavLink
               label="All Pages"
               leftSection={<IconLayoutDashboard />}
-              onClick={() => console.log("Clicked All Pages")}
+              onClick={() => log.debug("[LeftSidebar] All Pages clicked")}
             />
             <NavLink
               label="Graph View"
               leftSection={<IconGitFork />}
-              onClick={() => console.log("Clicked Graph View")}
+              onClick={() => log.debug("[LeftSidebar] Graph View clicked")}
             />
             <NavLink
               label="Assets"
               leftSection={<IconPaperclip />}
-              onClick={() => console.log("Clicked Assets")}
+              onClick={() => log.debug("[LeftSidebar] Assets clicked")}
             />
           </AppShell.Section>
           <Divider />
@@ -115,15 +116,15 @@ const LeftSidebar = ({
             >
               <NavLink
                 label="Favorite Page 1"
-                onClick={() => console.log("Clicked Favorite Page 1")}
+                onClick={() => log.debug("[LeftSidebar] Favorite Page 1 clicked")}
               />
               <NavLink
                 label="Favorite Page 2"
-                onClick={() => console.log("Clicked Favorite Page 2")}
+                onClick={() => log.debug("[LeftSidebar] Favorite Page 2 clicked")}
               />
               <NavLink
                 label="Favorite Page 3"
-                onClick={() => console.log("Clicked Favorite Page 3")}
+                onClick={() => log.debug("[LeftSidebar] Favorite Page 3 clicked")}
               />
             </NavLink>
           </AppShell.Section>
@@ -135,15 +136,15 @@ const LeftSidebar = ({
             >
               <NavLink
                 label="View Page 1"
-                onClick={() => console.log("Clicked View Page 1")}
+                onClick={() => log.debug("[LeftSidebar] View Page 1 clicked")}
               />
               <NavLink
                 label="View Page 2"
-                onClick={() => console.log("Clicked View Page 2")}
+                onClick={() => log.debug("[LeftSidebar] View Page 2 clicked")}
               />
               <NavLink
                 label="View Page 3"
-                onClick={() => console.log("Clicked View Page 3")}
+                onClick={() => log.debug("[LeftSidebar] View Page 3 clicked")}
               />
             </NavLink>
           </AppShell.Section>*/}
@@ -155,15 +156,15 @@ const LeftSidebar = ({
             >
               <NavLink
                 label="Note Page 1"
-                onClick={() => console.log("Clicked Note Page 1")}
+                onClick={() => log.debug("[LeftSidebar] Note Page 1 clicked")}
               />
               <NavLink
                 label="Note Page 2"
-                onClick={() => console.log("Clicked Note Page 2")}
+                onClick={() => log.debug("[LeftSidebar] Note Page 2 clicked")}
               />
               <NavLink
                 label="Note Page 3"
-                onClick={() => console.log("Clicked Note Page 3")}
+                onClick={() => log.debug("[LeftSidebar] Note Page 3 clicked")}
               />
             </NavLink>
           </AppShell.Section>

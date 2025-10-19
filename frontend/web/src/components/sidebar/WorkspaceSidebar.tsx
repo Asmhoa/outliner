@@ -75,7 +75,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
     // <Tabs> reads the value of the <Tab> and sends the value
     // The value in our case is the Position in the workspaces array, but as a string
     if (tabValuePosition !== null) {
-      console.log("called");
+      log.debug("[WorkspaceSidebar] Workspace selected", { tabValuePosition });
       const changeToWorkspaceId =
         workspaces[parseInt(tabValuePosition)].workspace_id;
       setActiveWorkspaceId(changeToWorkspaceId);
@@ -90,7 +90,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
       },
     }).then((newWs) => {
       const newWorkspace = newWs.data as Workspace;
-      log.debug("New workspace added:", newWorkspace);
+      log.debug("[WorkspaceSidebar] New workspace added", { workspace: newWorkspace });
       setWorkspaces([workspaces[0], newWorkspace, ...workspaces.splice(1)]);
       close();
       setNewWorkspaceName("");
@@ -108,7 +108,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         },
       })
         .then(() => {
-          log.debug("Workspace updated");
+          log.debug("[WorkspaceSidebar] Workspace updated", { workspace_id: editingWorkspace.workspace_id });
           const ws = workspaces.find(
             (ws) => ws.workspace_id === editingWorkspace.workspace_id,
           ) as Workspace;
@@ -133,7 +133,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         },
       })
         .then(() => {
-          log.debug("Workspace deleted");
+          log.debug("[WorkspaceSidebar] Workspace deleted", { workspace_id: editingWorkspace.workspace_id });
           // Remove the deleted workspace from the list
           const updatedWorkspaces = workspaces.filter(
             (ws) => ws.workspace_id !== editingWorkspace.workspace_id,

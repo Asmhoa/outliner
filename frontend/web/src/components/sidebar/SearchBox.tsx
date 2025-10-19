@@ -33,7 +33,7 @@ export default function SearchBox({
         </ActionIcon>
         <ActionIcon
           variant="subtle"
-          onClick={() => console.log("Search button clicked")}
+          onClick={() => log.debug("[SearchBox] Search button clicked")}
         >
           <IconSearch style={{ width: rem(16), height: rem(16) }} />
         </ActionIcon>

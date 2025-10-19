@@ -87,21 +87,20 @@ function App() {
   };
 
   const fetchPages = useCallback(async () => {
-    log.debug("Fetching pages...");
+    log.debug("[App] Fetching pages...");
     const response = await getPagesPagesGet();
     if (response.data) {
-      log.debug(response.data);
-      log.debug(`Fetched ${response.data.length} pages.`);
+      log.debug(`[App] Fetched ${response.data.length} pages`);
       setPages(response.data);
       if (response.data.length > 0 && currentPageId === null) {
-        log.debug(`Setting current page to ${response.data[0].page_id}`);
+        log.debug(`[App] Setting current page to ${response.data[0].page_id}`);
         setCurrentPageId(response.data[0].page_id);
       }
     }
   }, [currentPageId]);
 
   const handleDeletePage = async (page_id: number) => {
-    log.debug(`Deleting page with page_id: ${page_id}`);
+    log.debug(`[App] Deleting page`, { page_id });
     await deletePagePagesPageIdDelete({ path: { page_id } });
     fetchPages();
     setCurrentPageId(null);
@@ -114,16 +113,16 @@ function App() {
   };
 
   const handleAddPage = async (title: string) => {
-    log.debug(`Adding new page with title: "${title}"`);
+    log.debug(`[App] Adding new page`, { title });
     await addPagePagesPost({ body: { title } });
     fetchPages();
   };
 
   useEffect(() => {
-    log.debug(`Current page ID changed to: ${currentPageId}`);
+    log.debug(`[App] Current page ID changed`, { currentPageId });
     const fetchTitle = async () => {
       if (!currentPageId) return;
-      log.debug(`Fetching title for page_id: ${currentPageId}`);
+      log.debug(`[App] Fetching title`, { page_id: currentPageId });
       const response = await getPagePagesPageIdGet({
         path: { page_id: currentPageId },
       });
@@ -134,15 +133,13 @@ function App() {
 
     const fetchBlocks = async () => {
       if (!currentPageId) return;
-      log.debug(`Fetching blocks for page_id: ${currentPageId}`);
+      log.debug(`[App] Fetching blocks`, { page_id: currentPageId });
       const response = await getBlocksBlocksPageIdGet({
         path: { page_id: currentPageId },
       });
       if (response.data) {
         if (response.data.length === 0) {
-          log.debug(
-            `No blocks found for page_id: ${currentPageId}, creating a new one.`,
-          );
+          log.debug(`[App] No blocks found, creating new block`, { page_id: currentPageId });
           const newBlock = await addBlockBlocksPost({
             body: { page_id: currentPageId, content: "", position: 0 },
           });
@@ -150,9 +147,7 @@ function App() {
             setBlocks([newBlock.data]);
           }
         } else {
-          log.debug(
-            `Fetched ${response.data.length} blocks for page_id: ${currentPageId}`,
-          );
+          log.debug(`[App] Fetched blocks`, { count: response.data.length, page_id: currentPageId });
           setBlocks(response.data);
         }
       }
