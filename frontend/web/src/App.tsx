@@ -1,4 +1,4 @@
-import { AppShell } from "@mantine/core";
+import { AppShell, Portal } from "@mantine/core";
 
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState, useCallback } from "react";
@@ -220,7 +220,6 @@ function App() {
         setActiveWorkspaceId={setActiveWorkspaceId}
         databases={databases}
       />
-
       <AppShell.Main>
         {currentPageId && (
           <Page

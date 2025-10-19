@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   ActionIcon,
   Group,
@@ -8,7 +8,13 @@ import {
   ScrollArea,
   Stack,
   Skeleton,
+  Modal,
+  TextInput,
+  Button,
+  ColorInput,
+  Portal,
 } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { addWorkspaceWorkspacesPost, type Workspace } from "../../api-client";
 import { IconPlus } from "@tabler/icons-react";
 import log from "../../utils/logger";
@@ -27,6 +33,10 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   setActiveWorkspaceId,
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [opened, { open, close }] = useDisclosure(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState("");
+  const [newWorkspaceColor, setNewWorkspaceColor] = useState("#FBBC05");
+
   const activeWorkspacePosition = workspaces.findIndex(
     (ws) => ws.workspace_id === activeWorkspaceId,
   );
@@ -53,26 +63,73 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
     }
   };
 
-  const handleNewWorkspace = () => {
+  const handleCreateWorkspace = () => {
     addWorkspaceWorkspacesPost({
       body: {
-        name: "Test 2",
-        color: "#FBBC05",
+        name: newWorkspaceName,
+        color: newWorkspaceColor,
       },
     }).then((newWorkspace) => {
       log.debug("New workspace added:", newWorkspace.data);
       handleAddNewWorkspace(newWorkspace.data as Workspace);
+      close();
+      setNewWorkspaceName("");
+      setNewWorkspaceColor("#228BE6");
     });
   };
 
   return (
     <Stack gap={0}>
+      <Modal
+        opened={opened}
+        onClose={close}
+        title="Create New Workspace"
+        centered
+        styles={{
+          inner: {
+            left: 0,
+          },
+        }}
+      >
+        <TextInput
+          label="Workspace Name"
+          placeholder="Enter workspace name"
+          value={newWorkspaceName}
+          onChange={(event) => setNewWorkspaceName(event.currentTarget.value)}
+        />
+        <ColorInput
+          label="Workspace Color"
+          value={newWorkspaceColor}
+          onChange={setNewWorkspaceColor}
+          format="hex"
+          withEyeDropper={false}
+          swatches={[
+            "#25262b",
+            "#868e96",
+            "#fa5252",
+            "#e64980",
+            "#be4bdb",
+            "#7950f2",
+            "#4c6ef5",
+            "#228be6",
+            "#15aabf",
+            "#12b886",
+            "#40c057",
+            "#82c91e",
+            "#fab005",
+            "#fd7e14",
+          ]}
+        />
+        <Button onClick={handleCreateWorkspace} mt="md">
+          Create Workspace
+        </Button>
+      </Modal>
       <ActionIcon
         w="100%"
         size="xl"
         variant="default"
         radius="0"
-        onClick={handleNewWorkspace}
+        onClick={open}
         style={{
           boxShadow: "inset -2px 1px 4px rgba(0,0,0,0.3)",
         }}
