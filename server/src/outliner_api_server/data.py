@@ -36,7 +36,7 @@ class Database:
             CREATE TABLE IF NOT EXISTS workspaces (
                 workspace_id INTEGER PRIMARY KEY,
                 name VARCHAR(255),
-                color BLOB(3)
+                color BLOB(3) NOT NULL
             );
         """)
         self.conn.commit()

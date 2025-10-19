@@ -45,7 +45,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   const NAME_DISPLAY_LENGTH = 10;
 
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
-  const [newWorkspaceColor, setNewWorkspaceColor] = useState("");
+  const [newWorkspaceColor, setNewWorkspaceColor] = useState("#FBBC05");
   const [
     createModalOpened,
     { open: openCreateModal, close: closeCreateModal },
@@ -117,7 +117,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
           closeEditModal();
           setEditingWorkspace(null);
           setEditWorkspaceName("");
-          // setEditWorkspaceColor("#FBBC05");
+          setEditWorkspaceColor("#FBBC05");
         })
         .catch((error) => {
           log.error("Error updating workspace:", error);
@@ -200,6 +200,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
             "#fab005",
             "#fd7e14",
           ]}
+          required={true}
         />
         <Button onClick={handleCreateWorkspace} mt="md">
           Create Workspace
@@ -244,6 +245,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
             "#fab005",
             "#fd7e14",
           ]}
+          required={true}
         />
         <Group>
           <Button onClick={handleUpdateWorkspaceSubmit} mt="md">
