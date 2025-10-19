@@ -37,21 +37,25 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   setActiveWorkspaceId,
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [opened, { open, close }] = useDisclosure(false);
+  const activeWorkspacePosition = workspaces.findIndex(
+    (ws) => ws.workspace_id === activeWorkspaceId,
+  );
+  const NAME_DISPLAY_LENGTH = 10;
+
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
-  const [newWorkspaceColor, setNewWorkspaceColor] = useState("#FBBC05");
-  const [editModalOpened, { open: openEditModal, close: closeEditModal }] =
-    useDisclosure(false);
+  const [newWorkspaceColor, setNewWorkspaceColor] = useState("");
+  const [
+    createModalOpened,
+    { open: openCreateModal, close: closeCreateModal },
+  ] = useDisclosure(false);
+
   const [editingWorkspace, setEditingWorkspace] = useState<Workspace | null>(
     null,
   );
   const [editWorkspaceName, setEditWorkspaceName] = useState("");
   const [editWorkspaceColor, setEditWorkspaceColor] = useState("#FBBC05");
-
-  const activeWorkspacePosition = workspaces.findIndex(
-    (ws) => ws.workspace_id === activeWorkspaceId,
-  );
-  const NAME_DISPLAY_LENGTH = 10;
+  const [editModalOpened, { open: openEditModal, close: closeEditModal }] =
+    useDisclosure(false);
 
   if (activeWorkspaceId === null) {
     // data hasn't loaded yet
@@ -86,7 +90,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
       setWorkspaces([workspaces[0], newWorkspace, ...workspaces.splice(1)]);
       close();
       setNewWorkspaceName("");
-      setNewWorkspaceColor("");
+      // setNewWorkspaceColor("");
     });
   };
 
@@ -99,12 +103,17 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
           new_color: editWorkspaceColor,
         },
       })
-        .then((updatedWorkspace) => {
-          log.debug("Workspace updated:", updatedWorkspace.data);
-          handleUpdateWorkspace(updatedWorkspace.data as Workspace);
+        .then(() => {
+          log.debug("Workspace updated");
+          const ws = workspaces.find(
+            (ws) => ws.workspace_id === editingWorkspace.workspace_id,
+          ) as Workspace;
+          ws.name = editWorkspaceName;
+          ws.color = editWorkspaceColor;
           closeEditModal();
+          setEditingWorkspace(null);
           setEditWorkspaceName("");
-          setEditWorkspaceColor("#FBBC05");
+          // setEditWorkspaceColor("#FBBC05");
         })
         .catch((error) => {
           log.error("Error updating workspace:", error);
@@ -115,8 +124,8 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   return (
     <Stack gap={0}>
       <Modal
-        opened={opened}
-        onClose={close}
+        opened={createModalOpened}
+        onClose={closeCreateModal}
         title="Create New Workspace"
         centered
         styles={{
@@ -207,7 +216,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         size="xl"
         variant="default"
         radius="0"
-        onClick={open}
+        onClick={openCreateModal}
         style={{
           boxShadow: "inset -2px 1px 4px rgba(0,0,0,0.3)",
         }}

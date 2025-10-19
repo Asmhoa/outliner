@@ -54,25 +54,6 @@ function App() {
     }
   }
 
-  // const handleUpdateWorkspace = (updatedWorkspace: Workspace) => {
-  //   const replaceIndex = workspaces.findIndex(
-  //     (ws) => ws.workspace_id === updatedWorkspace.workspace_id,
-  //   );
-  //   console.log(updatedWorkspace);
-  //   setWorkspaces([
-  //     ...workspaces.slice(0, replaceIndex),
-  //     updatedWorkspace,
-  //     ...workspaces.slice(replaceIndex + 1),
-  //   ]);
-  //   // setWorkspaces(prevWorkspaces =>
-  //   //   prevWorkspaces.map(ws =>
-  //   //     ws.workspace_id === updatedWorkspace.workspace_id
-  //   //       ? { ...updatedWorkspace } // Create a new object to ensure React detects changes
-  //   //       : ws
-  //   //   )
-  //   // );
-  // };
-
   useEffect(() => {
     getAllWorkspaces();
   }, []);
