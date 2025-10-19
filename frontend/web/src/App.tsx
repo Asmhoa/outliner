@@ -14,17 +14,20 @@ import {
   getPagesPagesGet,
   deletePagePagesDelete,
   addBlockBlocksPost,
+  getWorkspacesWorkspacesGet,
   type Block,
   type Page as PageType,
+  type Workspace,
 } from "./api-client";
 import SearchBox from "./components/sidebar/SearchBox";
 import LeftSidebar from "./components/sidebar/LeftSidebar";
 
-interface Workspace {
-  id: string;
-  name: string;
-  color: string; // For tab color
-}
+// const mockWorkspaces: Workspace[] = [
+//   { id: "0", name: "Personal", color: "#4285F4" },
+//   { id: "1", name: "Work", color: "#34A853" },
+//   { id: "2", name: "Projects", color: "#FBBC05" },
+//   { id: "3", name: "Archive Test Long Name", color: "#EA4335" },
+// ];
 
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
@@ -34,13 +37,41 @@ function App() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [pages, setPages] = useState<PageType[]>([]);
   const [opened, { toggle }] = useDisclosure();
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(
-    mockWorkspaces[0].id,
+
+  const [isRenaming, setIsRenaming] = useState(false);
+
+  // Load things from the DB
+  // Workspaces
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<number | null>(
+    null,
   );
+
+  async function getAllWorkspaces() {
+    const all_workspaces = await getWorkspacesWorkspacesGet();
+    setWorkspaces(all_workspaces.data as Workspace[]);
+    setActiveWorkspaceId(0);
+  }
+
+  const handleAddNewWorkspace = (newWorkspace: Workspace) => {
+    setWorkspaces([...workspaces, newWorkspace]);
+  };
+
+  useEffect(() => {
+    getAllWorkspaces();
+  }, [activeWorkspaceId]);
+
+  // Other
+  const databases = [
+    { value: "db1", label: "Database 1" },
+    { value: "db2", label: "Database 2" },
+    { value: "db3", label: "Database 3" },
+  ];
+
+  // UI elements visibility
   const [navbarVisibility, setNavbarVisibility] =
     useState<NavbarVisibility>("visible");
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
-  const [isRenaming, setIsRenaming] = useState(false);
 
   const handleRightSidebarToggle = () => {
     setRightSidebarCollapsed(!rightSidebarCollapsed);
@@ -57,12 +88,6 @@ function App() {
       return "visible";
     });
   };
-
-  const databases = [
-    { value: "db1", label: "Database 1" },
-    { value: "db2", label: "Database 2" },
-    { value: "db3", label: "Database 3" },
-  ];
 
   const fetchPages = useCallback(async () => {
     log.debug("Fetching pages...");
@@ -181,9 +206,10 @@ function App() {
         setCurrentPageId={setCurrentPageId}
         toggle={toggle}
         navbarVisibility={navbarVisibility}
-        workspaces={mockWorkspaces}
+        workspaces={workspaces}
+        handleAddNewWorkspace={handleAddNewWorkspace}
         activeWorkspaceId={activeWorkspaceId}
-        onWorkspaceClick={setActiveWorkspaceId}
+        setActiveWorkspaceId={setActiveWorkspaceId}
         databases={databases}
       />
 
@@ -198,10 +224,6 @@ function App() {
             setIsRenaming={setIsRenaming}
             handleDeletePage={handleDeletePage}
             handleRenamePage={handleRenamePage}
-            // handleLeftSidebarToggle={handleLeftSidebarToggle}
-            // handleRightSidebarToggle={handleRightSidebarToggle}
-            navbarVisibility={navbarVisibility}
-            rightSidebarCollapsed={rightSidebarCollapsed}
           />
         )}
       </AppShell.Main>

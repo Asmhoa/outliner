@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ActionIcon,
   Group,
@@ -7,28 +7,52 @@ import {
   Text,
   ScrollArea,
   Stack,
+  Skeleton,
 } from "@mantine/core";
+import { addWorkspaceWorkspacesPost, type Workspace } from "../../api-client";
 import { IconPlus } from "@tabler/icons-react";
-
-interface Workspace {
-  id: string;
-  name: string;
-  color: string;
-}
+import log from "../../utils/logger";
 
 interface WorkspaceSidebarProps {
   workspaces: Workspace[];
-  activeWorkspaceId: string | null;
-  onWorkspaceClick: (id: string) => void;
+  handleAddNewWorkspace: (newWorkspace: Workspace) => void;
+  activeWorkspaceId: number;
+  setActiveWorkspaceId: (id: number) => void;
 }
 
 const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   workspaces,
+  handleAddNewWorkspace,
   activeWorkspaceId,
-  onWorkspaceClick,
+  setActiveWorkspaceId,
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const NAME_LENGTH = 10;
+  const activeWorkspacePosition = workspaces.findIndex(
+    (ws) => ws.workspace_id === activeWorkspaceId,
+  );
+  const NAME_DISPLAY_LENGTH = 10;
+
+  if (activeWorkspaceId === null) {
+    // data hasn't loaded yet
+    // On data load, activeWorkspaceId is set to default Workspace
+    return (
+      <>
+        <Skeleton height={50} width="100%" />
+      </>
+    );
+  }
+
+  const handleNewWorkspace = () => {
+    addWorkspaceWorkspacesPost({
+      body: {
+        name: "test",
+        color: "#FBBC05",
+      },
+    }).then((newWorkspace) => {
+      log.debug("New workspace added:", newWorkspace.data);
+      handleAddNewWorkspace(newWorkspace.data as Workspace);
+    });
+  };
 
   return (
     <Stack gap={0}>
@@ -37,7 +61,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         size="xl"
         variant="default"
         radius="0"
-        onClick={() => console.log("New workspace added")}
+        onClick={handleNewWorkspace}
         style={{
           boxShadow: "inset -2px 1px 4px rgba(0,0,0,0.3)",
         }}
@@ -47,15 +71,15 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
       <Tabs
         variant="unstyled"
         orientation="vertical"
-        value={activeWorkspaceId}
-        onChange={onWorkspaceClick}
+        // value={activeWorkspaceId}
+        // onChange={onWorkspaceClick}
       >
         <ScrollArea h="100vh" type="never">
           <Tabs.List>
             {workspaces.map((workspace, index) => (
               <Tabs.Tab
-                key={workspace.id}
-                value={workspace.id}
+                key={index}
+                value={index.toString()}
                 h={rem(120)}
                 w={rem(40)}
                 onMouseEnter={() => setHoveredIndex(index)}
@@ -64,7 +88,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                   background: workspace.color,
                   boxShadow: (() => {
                     const unselected =
-                      index === parseInt(activeWorkspaceId)
+                      index === activeWorkspacePosition
                         ? ""
                         : "inset -2px 0 2px rgba(0,0,0,0.3), ";
                     switch (index) {
@@ -86,15 +110,14 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                     hoveredIndex === index
                       ? 100
                       : workspaces.length -
-                        Math.abs(parseInt(activeWorkspaceId) - index),
+                        Math.abs(activeWorkspacePosition - index),
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: "white",
                   outline: "none",
                   opacity:
-                    parseInt(activeWorkspaceId) === index ||
-                    hoveredIndex === index
+                    activeWorkspacePosition === index || hoveredIndex === index
                       ? "1"
                       : "0.75",
                   overflow: "hidden",
@@ -110,7 +133,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                   }}
                 >
                   {(() => {
-                    if (workspace.name.length > NAME_LENGTH) {
+                    if (workspace.name.length > NAME_DISPLAY_LENGTH) {
                       if (hoveredIndex === index) {
                         return (
                           <span
@@ -125,7 +148,8 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                         );
                       } else {
                         return (
-                          workspace.name.substring(0, NAME_LENGTH - 3) + "..."
+                          workspace.name.substring(0, NAME_DISPLAY_LENGTH - 3) +
+                          "..."
                         );
                       }
                     } else {
@@ -140,7 +164,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         <div
           style={{
             width: "10px",
-            backgroundColor: workspaces[activeWorkspaceId].color,
+            backgroundColor: workspaces[activeWorkspacePosition].color,
           }}
         ></div>
       </Tabs>

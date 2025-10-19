@@ -250,7 +250,7 @@ def test_add_workspace(db):
     assert isinstance(workspace_id, int)
     cursor = db.conn.cursor()
     cursor.execute(
-        "SELECT title, color FROM workspaces WHERE workspace_id = ?", (workspace_id,)
+        "SELECT name, color FROM workspaces WHERE workspace_id = ?", (workspace_id,)
     )
     title, color = cursor.fetchone()
     assert title == "Test Workspace"
@@ -263,7 +263,7 @@ def test_get_workspace_by_id(db):
     workspace = db.get_workspace_by_id(workspace_id)
     assert workspace[0] == workspace_id
     assert workspace[1] == "Test Workspace"
-    assert workspace[2] == "#00ff00"
+    assert workspace[2] == "#00FF00"
 
 
 def test_get_workspaces(db):
@@ -271,11 +271,11 @@ def test_get_workspaces(db):
     db.add_workspace("Workspace 1", "#FF0000")
     db.add_workspace("Workspace 2", "#00FF00")
     workspaces = db.get_workspaces()
-    assert len(workspaces) == 2
-    assert workspaces[0][1] == "Workspace 1"
-    assert workspaces[0][2] == "#ff0000"
-    assert workspaces[1][1] == "Workspace 2"
-    assert workspaces[1][2] == "#00ff00"
+    assert len(workspaces) == 3  # Including default workspace
+    assert workspaces[1][1] == "Workspace 1"
+    assert workspaces[1][2] == "#FF0000"
+    assert workspaces[2][1] == "Workspace 2"
+    assert workspaces[2][2] == "#00FF00"
 
 
 def test_update_workspace(db):
@@ -285,7 +285,7 @@ def test_update_workspace(db):
     assert result is True
     workspace = db.get_workspace_by_id(workspace_id)
     assert workspace[1] == "New Title"
-    assert workspace[2] == "#0000ff"
+    assert workspace[2] == "#0000FF"
 
 
 def test_update_nonexistent_workspace(db):

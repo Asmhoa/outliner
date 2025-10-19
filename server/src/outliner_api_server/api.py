@@ -201,18 +201,18 @@ def delete_block(block: BlockDelete, db: Database = Depends(get_db)):
 # Route for workspaces
 class Workspace(BaseModel):
     workspace_id: int
-    title: str
+    name: str
     color: str
 
 
 class WorkspaceCreate(BaseModel):
-    title: str
+    name: str
     color: str
 
 
 class WorkspaceUpdate(BaseModel):
     workspace_id: int
-    new_title: str
+    new_name: str
     new_color: str
 
 
@@ -222,13 +222,13 @@ class WorkspaceDelete(BaseModel):
 
 @app.post("/workspaces", response_model=Workspace)
 def add_workspace(workspace: WorkspaceCreate, db: Database = Depends(get_db)):
-    workspace_id = db.add_workspace(workspace.title, workspace.color)
+    workspace_id = db.add_workspace(workspace.name, workspace.color)
     workspace_data = db.get_workspace_by_id(workspace_id)
     if not workspace_data:
         raise HTTPException(status_code=404, detail="Workspace not found")
     return Workspace(
         workspace_id=workspace_data[0],
-        title=workspace_data[1],
+        name=workspace_data[1],
         color=workspace_data[2],
     )
 
@@ -240,7 +240,7 @@ def get_workspace(workspace_id: int, db: Database = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Workspace not found")
     return Workspace(
         workspace_id=workspace_data[0],
-        title=workspace_data[1],
+        name=workspace_data[1],
         color=workspace_data[2],
     )
 
@@ -249,14 +249,14 @@ def get_workspace(workspace_id: int, db: Database = Depends(get_db)):
 def get_workspaces(db: Database = Depends(get_db)):
     workspaces_data = db.get_workspaces()
     return [
-        Workspace(workspace_id=w[0], title=w[1], color=w[2]) for w in workspaces_data
+        Workspace(workspace_id=w[0], name=w[1], color=w[2]) for w in workspaces_data
     ]
 
 
 @app.put("/workspaces")
 def update_workspace(workspace: WorkspaceUpdate, db: Database = Depends(get_db)):
     if not db.update_workspace(
-        workspace.workspace_id, workspace.new_title, workspace.new_color
+        workspace.workspace_id, workspace.new_name, workspace.new_color
     ):
         raise HTTPException(status_code=404, detail="Workspace not found")
     return {"status": "success"}

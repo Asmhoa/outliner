@@ -20,10 +20,6 @@ interface PageProps {
   setIsRenaming: (isRenaming: boolean) => void;
   handleDeletePage: (page_id: number) => void;
   handleRenamePage: () => void;
-  // handleChevronClick: () => void;
-  // handleRightSidebarToggle: () => void;
-  navbarVisibility: string;
-  rightSidebarCollapsed: boolean;
 }
 
 const Page: React.FC<PageProps> = ({
@@ -34,10 +30,6 @@ const Page: React.FC<PageProps> = ({
   setIsRenaming,
   handleDeletePage,
   handleRenamePage,
-  // handleChevronClick,
-  // handleRightSidebarToggle,
-  navbarVisibility,
-  rightSidebarCollapsed,
 }) => {
   const [pageTitle, setPageTitle] = useState(title);
   const [blocks, setBlocks] = useState<BlockType[]>(initialBlocks);
@@ -162,11 +154,6 @@ const Page: React.FC<PageProps> = ({
             }}
             onRename={handleRenamePage}
           />
-          {/*{rightSidebarCollapsed && (
-            <Button onClick={handleRightSidebarToggle} variant="subtle">
-              <IconChevronLeft />
-            </Button>
-          )}*/}
         </Group>
       </Group>
       {blocks.map((block) => (

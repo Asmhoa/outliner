@@ -30,17 +30,31 @@ class Database:
 
     def _create_table_workspaces(self) -> None:
         """
-        Creates the 'pages' table in the specified sqlite3 database.
+        Creates the 'workspaces' table in the specified sqlite3 database.
         """
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS workspaces (
                 workspace_id INTEGER PRIMARY KEY,
-                title VARCHAR(255),
+                name VARCHAR(255),
                 color BLOB(3)
             );
         """)
         self.conn.commit()
-        # logger.debug(f"Table 'pages' created or already exists in '{self.db_name}'.")
+        logger.debug(
+            f"Table 'workspaces' created or already exists in '{self.db_name}'."
+        )
+        # Create default workspace if it doesn't exist
+        self.cursor.execute("SELECT 1 FROM workspaces WHERE workspace_id = 0")
+        if self.cursor.fetchone() is None:
+            default_name = "Default"
+            default_color = "#4285F4"
+            color_bytes = bytes.fromhex(default_color.lstrip("#"))
+            self.cursor.execute(
+                "INSERT INTO workspaces (workspace_id, name, color) VALUES (?, ?, ?)",
+                (0, default_name, color_bytes),
+            )
+            self.conn.commit()
+            logger.debug(f"Default workspace '{default_name}' with ID 0 created.")
 
     def _create_table_pages(self) -> None:
         """
@@ -90,19 +104,19 @@ class Database:
 
     # CRUD:- workspaces
 
-    def add_workspace(self, title: str, color: str) -> int:
+    def add_workspace(self, name: str, color: str) -> int:
         """
         Adds a new workspace to the database.
         Returns the ID of the newly created workspace.
         """
         color_bytes = bytes.fromhex(color.lstrip("#"))
         self.cursor.execute(
-            "INSERT INTO workspaces (title, color) VALUES (?, ?)", (title, color_bytes)
+            "INSERT INTO workspaces (name, color) VALUES (?, ?)", (name, color_bytes)
         )
         self.conn.commit()
         new_workspace_id = self.cursor.lastrowid
         logger.debug(
-            f"Workspace '{title}' added successfully with ID: {new_workspace_id}"
+            f"Workspace '{name}' added successfully with ID: {new_workspace_id}"
         )
         return new_workspace_id
 
@@ -111,24 +125,24 @@ class Database:
         Retrieves a workspace by its ID.
         """
         self.cursor.execute(
-            "SELECT workspace_id, title, color FROM workspaces WHERE workspace_id = ?",
+            "SELECT workspace_id, name, color FROM workspaces WHERE workspace_id = ?",
             (workspace_id,),
         )
         row = self.cursor.fetchone()
         if row:
-            return row[0], row[1], f"#{row[2].hex()}"
+            return row[0], row[1], f"#{row[2].hex().upper()}"
         return None
 
     def get_workspaces(self):
         """
         Retrieves all workspaces from the database.
         """
-        self.cursor.execute("SELECT workspace_id, title, color FROM workspaces")
+        self.cursor.execute("SELECT workspace_id, name, color FROM workspaces")
         rows = self.cursor.fetchall()
-        return [(row[0], row[1], f"#{row[2].hex()}") for row in rows]
+        return [(row[0], row[1], f"#{row[2].hex().upper()}") for row in rows]
 
     def update_workspace(
-        self, workspace_id: int, new_title: str, new_color: str
+        self, workspace_id: int, new_name: str, new_color: str
     ) -> bool:
         """
         Updates an existing workspace.
@@ -136,8 +150,8 @@ class Database:
         """
         color_bytes = bytes.fromhex(new_color.lstrip("#"))
         self.cursor.execute(
-            "UPDATE workspaces SET title = ?, color = ? WHERE workspace_id = ?",
-            (new_title, color_bytes, workspace_id),
+            "UPDATE workspaces SET name = ?, color = ? WHERE workspace_id = ?",
+            (new_name, color_bytes, workspace_id),
         )
         self.conn.commit()
         if self.cursor.rowcount > 0:

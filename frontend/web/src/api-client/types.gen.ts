@@ -187,9 +187,9 @@ export type Workspace = {
      */
     workspace_id: number;
     /**
-     * Title
+     * Name
      */
-    title: string;
+    name: string;
     /**
      * Color
      */
@@ -201,9 +201,9 @@ export type Workspace = {
  */
 export type WorkspaceCreate = {
     /**
-     * Title
+     * Name
      */
-    title: string;
+    name: string;
     /**
      * Color
      */
@@ -229,9 +229,9 @@ export type WorkspaceUpdate = {
      */
     workspace_id: number;
     /**
-     * New Title
+     * New Name
      */
-    new_title: string;
+    new_name: string;
     /**
      * New Color
      */
