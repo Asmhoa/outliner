@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -9,7 +10,18 @@ from datetime import datetime
 current_dir = os.path.dirname(os.path.realpath(__file__))
 DATABASE_PATH = os.path.join(current_dir, "data.db")
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    db = Database(DATABASE_PATH)
+    db.create_new_database()  # no-op if already exists
+    db.close_conn()
+    yield
+    # Shutdown (if needed)
+
+
+app = FastAPI(lifespan=lifespan)
 
 origins = [
     "http://localhost:5173",
@@ -32,12 +44,6 @@ def get_db():
         db.close_conn()
 
 
-@app.on_event("startup")
-def startup_event():
-    db = Database(DATABASE_PATH)
-    db.create_new_database()  # no-op if already exists
-    db.close_conn()
-
 
 class Page(BaseModel):
     page_id: int
@@ -54,8 +60,7 @@ class PageRename(BaseModel):
     new_title: str
 
 
-class PageDelete(BaseModel):
-    page_id: int
+
 
 
 @app.post("/pages")
@@ -85,9 +90,9 @@ def rename_page(page: PageRename, db: Database = Depends(get_db)):
     return {"status": "success"}
 
 
-@app.delete("/pages")
-def delete_page(page: PageDelete, db: Database = Depends(get_db)):
-    if not db.delete_page(page.page_id):
+@app.delete("/pages/{page_id}")
+def delete_page(page_id: int, db: Database = Depends(get_db)):
+    if not db.delete_page(page_id):
         raise HTTPException(status_code=404, detail="Page not found")
     return {"status": "success"}
 
@@ -120,8 +125,7 @@ class BlockUpdateParent(BaseModel):
     new_parent_block_id: int | None = None
 
 
-class BlockDelete(BaseModel):
-    block_id: int
+
 
 
 @app.post("/blocks", response_model=Block)
@@ -191,9 +195,9 @@ def update_block_parent(block: BlockUpdateParent, db: Database = Depends(get_db)
     return {"status": "success"}
 
 
-@app.delete("/blocks")
-def delete_block(block: BlockDelete, db: Database = Depends(get_db)):
-    if not db.delete_block(block.block_id):
+@app.delete("/blocks/{block_id}")
+def delete_block(block_id: int, db: Database = Depends(get_db)):
+    if not db.delete_block(block_id):
         raise HTTPException(status_code=404, detail="Block not found")
     return {"status": "success"}
 
@@ -216,8 +220,7 @@ class WorkspaceUpdate(BaseModel):
     new_color: str
 
 
-class WorkspaceDelete(BaseModel):
-    workspace_id: int
+
 
 
 @app.post("/workspaces", response_model=Workspace)
@@ -262,8 +265,8 @@ def update_workspace(workspace: WorkspaceUpdate, db: Database = Depends(get_db))
     return {"status": "success"}
 
 
-@app.delete("/workspaces")
-def delete_workspace(workspace: WorkspaceDelete, db: Database = Depends(get_db)):
-    if not db.delete_workspace(workspace.workspace_id):
+@app.delete("/workspaces/{workspace_id}")
+def delete_workspace(workspace_id: int, db: Database = Depends(get_db)):
+    if not db.delete_workspace(workspace_id):
         raise HTTPException(status_code=404, detail="Workspace not found")
     return {"status": "success"}

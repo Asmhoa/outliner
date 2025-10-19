@@ -12,7 +12,7 @@ import {
   getBlocksBlocksPageIdGet,
   addPagePagesPost,
   getPagesPagesGet,
-  deletePagePagesDelete,
+  deletePagePagesPageIdDelete,
   addBlockBlocksPost,
   getWorkspacesWorkspacesGet,
   type Block,
@@ -90,6 +90,7 @@ function App() {
     log.debug("Fetching pages...");
     const response = await getPagesPagesGet();
     if (response.data) {
+      log.debug(response.data);
       log.debug(`Fetched ${response.data.length} pages.`);
       setPages(response.data);
       if (response.data.length > 0 && currentPageId === null) {
@@ -101,7 +102,7 @@ function App() {
 
   const handleDeletePage = async (page_id: number) => {
     log.debug(`Deleting page with page_id: ${page_id}`);
-    await deletePagePagesDelete({ body: { page_id } });
+    await deletePagePagesPageIdDelete({ path: { page_id } });
     fetchPages();
     setCurrentPageId(null);
     setTitle("");

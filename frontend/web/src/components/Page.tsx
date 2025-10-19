@@ -3,7 +3,7 @@ import Block from "./Block";
 import {
   renamePagePagesPut,
   addBlockBlocksPost,
-  deleteBlockBlocksDelete,
+  deleteBlockBlocksBlockIdDelete,
 } from "../api-client/sdk.gen";
 import log from "../utils/logger";
 import { Button, Group } from "@mantine/core";
@@ -112,7 +112,7 @@ const Page: React.FC<PageProps> = ({
         const currentIndex = blocks.findIndex(
           (block) => block.block_id === currentBlockId,
         );
-        await deleteBlockBlocksDelete({ body: { block_id: currentBlockId } });
+        await deleteBlockBlocksBlockIdDelete({ path: { block_id: currentBlockId } });
         const newBlocks = blocks.filter(
           (block) => block.block_id !== currentBlockId,
         );

@@ -18,7 +18,7 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import {
   addWorkspaceWorkspacesPost,
-  deleteWorkspaceWorkspacesDelete,
+  deleteWorkspaceWorkspacesWorkspaceIdDelete,
   updateWorkspaceWorkspacesPut,
   type Workspace,
 } from "../../api-client";
@@ -127,8 +127,8 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
 
   const handleDeleteWorkspace = () => {
     if (editingWorkspace) {
-      deleteWorkspaceWorkspacesDelete({
-        body: {
+      deleteWorkspaceWorkspacesWorkspaceIdDelete({
+        path: {
           workspace_id: editingWorkspace.workspace_id,
         },
       })

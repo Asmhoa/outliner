@@ -57,16 +57,6 @@ export type BlockCreate = {
 };
 
 /**
- * BlockDelete
- */
-export type BlockDelete = {
-    /**
-     * Block Id
-     */
-    block_id: number;
-};
-
-/**
  * BlockUpdateContent
  */
 export type BlockUpdateContent = {
@@ -137,16 +127,6 @@ export type PageCreate = {
 };
 
 /**
- * PageDelete
- */
-export type PageDelete = {
-    /**
-     * Page Id
-     */
-    page_id: number;
-};
-
-/**
  * PageRename
  */
 export type PageRename = {
@@ -211,16 +191,6 @@ export type WorkspaceCreate = {
 };
 
 /**
- * WorkspaceDelete
- */
-export type WorkspaceDelete = {
-    /**
-     * Workspace Id
-     */
-    workspace_id: number;
-};
-
-/**
  * WorkspaceUpdate
  */
 export type WorkspaceUpdate = {
@@ -236,29 +206,6 @@ export type WorkspaceUpdate = {
      * New Color
      */
     new_color: string;
-};
-
-export type DeletePagePagesDeleteData = {
-    body: PageDelete;
-    path?: never;
-    query?: never;
-    url: '/pages';
-};
-
-export type DeletePagePagesDeleteErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type DeletePagePagesDeleteError = DeletePagePagesDeleteErrors[keyof DeletePagePagesDeleteErrors];
-
-export type DeletePagePagesDeleteResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
 };
 
 export type GetPagesPagesGetData = {
@@ -324,6 +271,34 @@ export type RenamePagePagesPutResponses = {
     200: unknown;
 };
 
+export type DeletePagePagesPageIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Page Id
+         */
+        page_id: number;
+    };
+    query?: never;
+    url: '/pages/{page_id}';
+};
+
+export type DeletePagePagesPageIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeletePagePagesPageIdDeleteError = DeletePagePagesPageIdDeleteErrors[keyof DeletePagePagesPageIdDeleteErrors];
+
+export type DeletePagePagesPageIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type GetPagePagesPageIdGetData = {
     body?: never;
     path: {
@@ -353,29 +328,6 @@ export type GetPagePagesPageIdGetResponses = {
 };
 
 export type GetPagePagesPageIdGetResponse = GetPagePagesPageIdGetResponses[keyof GetPagePagesPageIdGetResponses];
-
-export type DeleteBlockBlocksDeleteData = {
-    body: BlockDelete;
-    path?: never;
-    query?: never;
-    url: '/blocks';
-};
-
-export type DeleteBlockBlocksDeleteErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type DeleteBlockBlocksDeleteError = DeleteBlockBlocksDeleteErrors[keyof DeleteBlockBlocksDeleteErrors];
-
-export type DeleteBlockBlocksDeleteResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
 
 export type AddBlockBlocksPostData = {
     body: BlockCreate;
@@ -509,23 +461,28 @@ export type UpdateBlockParentBlocksParentPutResponses = {
     200: unknown;
 };
 
-export type DeleteWorkspaceWorkspacesDeleteData = {
-    body: WorkspaceDelete;
-    path?: never;
+export type DeleteBlockBlocksBlockIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Block Id
+         */
+        block_id: number;
+    };
     query?: never;
-    url: '/workspaces';
+    url: '/blocks/{block_id}';
 };
 
-export type DeleteWorkspaceWorkspacesDeleteErrors = {
+export type DeleteBlockBlocksBlockIdDeleteErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type DeleteWorkspaceWorkspacesDeleteError = DeleteWorkspaceWorkspacesDeleteErrors[keyof DeleteWorkspaceWorkspacesDeleteErrors];
+export type DeleteBlockBlocksBlockIdDeleteError = DeleteBlockBlocksBlockIdDeleteErrors[keyof DeleteBlockBlocksBlockIdDeleteErrors];
 
-export type DeleteWorkspaceWorkspacesDeleteResponses = {
+export type DeleteBlockBlocksBlockIdDeleteResponses = {
     /**
      * Successful Response
      */
@@ -591,6 +548,34 @@ export type UpdateWorkspaceWorkspacesPutErrors = {
 export type UpdateWorkspaceWorkspacesPutError = UpdateWorkspaceWorkspacesPutErrors[keyof UpdateWorkspaceWorkspacesPutErrors];
 
 export type UpdateWorkspaceWorkspacesPutResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type DeleteWorkspaceWorkspacesWorkspaceIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Workspace Id
+         */
+        workspace_id: number;
+    };
+    query?: never;
+    url: '/workspaces/{workspace_id}';
+};
+
+export type DeleteWorkspaceWorkspacesWorkspaceIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteWorkspaceWorkspacesWorkspaceIdDeleteError = DeleteWorkspaceWorkspacesWorkspaceIdDeleteErrors[keyof DeleteWorkspaceWorkspacesWorkspaceIdDeleteErrors];
+
+export type DeleteWorkspaceWorkspacesWorkspaceIdDeleteResponses = {
     /**
      * Successful Response
      */
