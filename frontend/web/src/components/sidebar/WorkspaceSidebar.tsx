@@ -42,10 +42,21 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
     );
   }
 
+  const handleChangedWorkspace = (tabValuePosition: string | null): void => {
+    // <Tabs> reads the value of the <Tab> and sends the value
+    // The value in our case is the Position in the workspaces array, but as a string
+    if (tabValuePosition !== null) {
+      console.log("called");
+      const changeToWorkspaceId =
+        workspaces[parseInt(tabValuePosition)].workspace_id;
+      setActiveWorkspaceId(changeToWorkspaceId);
+    }
+  };
+
   const handleNewWorkspace = () => {
     addWorkspaceWorkspacesPost({
       body: {
-        name: "test",
+        name: "Test 2",
         color: "#FBBC05",
       },
     }).then((newWorkspace) => {
@@ -72,7 +83,8 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         variant="unstyled"
         orientation="vertical"
         // value={activeWorkspaceId}
-        // onChange={onWorkspaceClick}
+        onChange={handleChangedWorkspace}
+        loop={false}
       >
         <ScrollArea h="100vh" type="never">
           <Tabs.List>

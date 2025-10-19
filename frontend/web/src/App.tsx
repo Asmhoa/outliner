@@ -48,18 +48,26 @@ function App() {
   );
 
   async function getAllWorkspaces() {
-    const all_workspaces = await getWorkspacesWorkspacesGet();
-    setWorkspaces(all_workspaces.data as Workspace[]);
-    setActiveWorkspaceId(0);
+    const all_workspaces = (await getWorkspacesWorkspacesGet())
+      .data as Workspace[];
+    const sorted_workspaces = [
+      // Structure default first then most recent
+      all_workspaces[0],
+      ...all_workspaces.slice(1).reverse(),
+    ];
+    setWorkspaces(sorted_workspaces);
+    if (activeWorkspaceId === null) {
+      setActiveWorkspaceId(0);
+    }
   }
 
   const handleAddNewWorkspace = (newWorkspace: Workspace) => {
-    setWorkspaces([...workspaces, newWorkspace]);
+    setWorkspaces([workspaces[0], newWorkspace, ...workspaces.splice(1)]);
   };
 
   useEffect(() => {
     getAllWorkspaces();
-  }, [activeWorkspaceId]);
+  }, []);
 
   // Other
   const databases = [
