@@ -5,12 +5,15 @@ from sqlite3 import connect, Cursor, Connection
 
 logger = logging.getLogger(__name__)
 
-class Database:
 
+class Database:
     def __init__(self, db_name: str) -> None:
         self.db_name: str = db_name
         # NOTE: in api.py, we use a separate Database() object for each request
         # So one conn is used by only 1 request, making it safe to not check same thread
+        # This is required since the api server thread that creates a Database object
+        # is a different one from the one that executes a query.
+        # TODO: add a pytest to ensure each api function has its own Depends()
         self.conn: Connection = connect(self.db_name, check_same_thread=False)
         self.cursor: Cursor = self.conn.cursor()
         self.cursor.execute("PRAGMA foreign_keys = ON")
@@ -25,13 +28,27 @@ class Database:
         self.conn.close()
         logger.debug(f"Database connection to '{self.db_name}' closed.")
 
+    def _create_table_workspaces(self) -> None:
+        """
+        Creates the 'pages' table in the specified sqlite3 database.
+        """
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS workspaces (
+                workspace_id INTEGER PRIMARY KEY,
+                title VARCHAR(255),
+                color BLOB(3)
+            );
+        """)
+        self.conn.commit()
+        # logger.debug(f"Table 'pages' created or already exists in '{self.db_name}'.")
+
     def _create_table_pages(self) -> None:
         """
         Creates the 'pages' table in the specified sqlite3 database.
         """
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS pages (
-                page_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                page_id INTEGER PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -45,7 +62,7 @@ class Database:
         """
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS blocks (
-                block_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                block_id INTEGER PRIMARY KEY,
                 content TEXT NOT NULL,
                 page_id INTEGER NULL,
                 parent_block_id INTEGER NULL,
@@ -67,8 +84,84 @@ class Database:
         """
         Initializes the database by creating necessary tables.
         """
+        self._create_table_workspaces()
         self._create_table_pages()
         self._create_table_blocks()
+
+    # CRUD:- workspaces
+
+    def add_workspace(self, title: str, color: str) -> int:
+        """
+        Adds a new workspace to the database.
+        Returns the ID of the newly created workspace.
+        """
+        color_bytes = bytes.fromhex(color.lstrip("#"))
+        self.cursor.execute(
+            "INSERT INTO workspaces (title, color) VALUES (?, ?)", (title, color_bytes)
+        )
+        self.conn.commit()
+        new_workspace_id = self.cursor.lastrowid
+        logger.debug(
+            f"Workspace '{title}' added successfully with ID: {new_workspace_id}"
+        )
+        return new_workspace_id
+
+    def get_workspace_by_id(self, workspace_id: int):
+        """
+        Retrieves a workspace by its ID.
+        """
+        self.cursor.execute(
+            "SELECT workspace_id, title, color FROM workspaces WHERE workspace_id = ?",
+            (workspace_id,),
+        )
+        row = self.cursor.fetchone()
+        if row:
+            return row[0], row[1], f"#{row[2].hex()}"
+        return None
+
+    def get_workspaces(self):
+        """
+        Retrieves all workspaces from the database.
+        """
+        self.cursor.execute("SELECT workspace_id, title, color FROM workspaces")
+        rows = self.cursor.fetchall()
+        return [(row[0], row[1], f"#{row[2].hex()}") for row in rows]
+
+    def update_workspace(
+        self, workspace_id: int, new_title: str, new_color: str
+    ) -> bool:
+        """
+        Updates an existing workspace.
+        Returns True if successful, False otherwise.
+        """
+        color_bytes = bytes.fromhex(new_color.lstrip("#"))
+        self.cursor.execute(
+            "UPDATE workspaces SET title = ?, color = ? WHERE workspace_id = ?",
+            (new_title, color_bytes, workspace_id),
+        )
+        self.conn.commit()
+        if self.cursor.rowcount > 0:
+            logger.debug(f"Workspace ID {workspace_id} updated.")
+            return True
+        else:
+            logger.debug(f"Workspace ID {workspace_id} not found or no change.")
+            return False
+
+    def delete_workspace(self, workspace_id: int) -> bool:
+        """
+        Deletes a workspace.
+        Returns True if successful, False otherwise.
+        """
+        self.cursor.execute(
+            "DELETE FROM workspaces WHERE workspace_id = ?", (workspace_id,)
+        )
+        self.conn.commit()
+        if self.cursor.rowcount > 0:
+            logger.debug(f"Workspace ID {workspace_id} deleted successfully.")
+            return True
+        else:
+            logger.debug(f"Workspace ID {workspace_id} not found.")
+            return False
 
     # CRUD:- pages
 
@@ -102,7 +195,9 @@ class Database:
         Renames an existing page.
         Returns True if successful, False otherwise.
         """
-        self.cursor.execute("UPDATE pages SET title = ? WHERE page_id = ?", (new_title, page_id))
+        self.cursor.execute(
+            "UPDATE pages SET title = ? WHERE page_id = ?", (new_title, page_id)
+        )
         self.conn.commit()
         if self.cursor.rowcount > 0:
             logger.debug(f"Page ID {page_id} renamed to '{new_title}'.")
@@ -127,7 +222,13 @@ class Database:
 
     # CRUD:- blocks
 
-    def add_block(self, content: str, position: int, page_id: int = None, parent_block_id: int = None) -> int:
+    def add_block(
+        self,
+        content: str,
+        position: int,
+        page_id: int = None,
+        parent_block_id: int = None,
+    ) -> int:
         """
         Adds a new block to a page or as a child of another block.
         Returns the ID of the newly created block.
@@ -135,22 +236,28 @@ class Database:
         if page_id is not None and parent_block_id is None:
             self.cursor.execute(
                 "INSERT INTO blocks (content, page_id, position) VALUES (?, ?, ?)",
-                (content, page_id, position)
+                (content, page_id, position),
             )
             logger.debug(f"Block added to page ID {page_id}: '{content[:50]}...'")
         elif parent_block_id is not None and page_id is None:
             self.cursor.execute(
                 "INSERT INTO blocks (content, parent_block_id, position) VALUES (?, ?, ?)",
-                (content, parent_block_id, position)
+                (content, parent_block_id, position),
             )
-            logger.debug(f"Block added under parent block ID {parent_block_id}: '{content[:50]}...'")
+            logger.debug(
+                f"Block added under parent block ID {parent_block_id}: '{content[:50]}...'"
+            )
         else:
-            logger.error("A block must be associated with either a page_id or a parent_block_id, but not both.")
-            return None # Or raise an exception
+            logger.error(
+                "A block must be associated with either a page_id or a parent_block_id, but not both."
+            )
+            return None  # Or raise an exception
 
         self.conn.commit()
         new_block_id = self.cursor.lastrowid
-        logger.debug(f"Block with content '{content[:50]}...' added successfully with ID: {new_block_id}")
+        logger.debug(
+            f"Block with content '{content[:50]}...' added successfully with ID: {new_block_id}"
+        )
         return new_block_id
 
     def get_blocks_by_page(self, page_id: int):
@@ -172,7 +279,9 @@ class Database:
         Updates the content of an existing block.
         Returns True if successful, False otherwise.
         """
-        self.cursor.execute("UPDATE blocks SET content = ? WHERE block_id = ?", (new_content, block_id))
+        self.cursor.execute(
+            "UPDATE blocks SET content = ? WHERE block_id = ?", (new_content, block_id)
+        )
         self.conn.commit()
         if self.cursor.rowcount > 0:
             logger.debug(f"Block ID {block_id} content updated.")
@@ -181,7 +290,9 @@ class Database:
             logger.debug(f"Block ID {block_id} not found or no change in content.")
             return False
 
-    def update_block_parent(self, block_id: int, new_page_id: int = None, new_parent_block_id: int = None) -> bool:
+    def update_block_parent(
+        self, block_id: int, new_page_id: int = None, new_parent_block_id: int = None
+    ) -> bool:
         """
         Updates the parent of an existing block. A block can either have a page_id or a parent_block_id, but not both.
         Returns True if successful, False otherwise.
@@ -189,17 +300,23 @@ class Database:
         if new_page_id is not None and new_parent_block_id is None:
             self.cursor.execute(
                 "UPDATE blocks SET page_id = ?, parent_block_id = NULL WHERE block_id = ?",
-                (new_page_id, block_id)
+                (new_page_id, block_id),
             )
-            logger.debug(f"Block ID {block_id} parent updated to page ID {new_page_id}.")
+            logger.debug(
+                f"Block ID {block_id} parent updated to page ID {new_page_id}."
+            )
         elif new_parent_block_id is not None and new_page_id is None:
             self.cursor.execute(
                 "UPDATE blocks SET parent_block_id = ?, page_id = NULL WHERE block_id = ?",
-                (new_parent_block_id, block_id)
+                (new_parent_block_id, block_id),
             )
-            logger.debug(f"Block ID {block_id} parent updated to parent block ID {new_parent_block_id}.")
+            logger.debug(
+                f"Block ID {block_id} parent updated to parent block ID {new_parent_block_id}."
+            )
         else:
-            logger.error("A block must be associated with either a page_id or a parent_block_id, but not both. No update performed for block ID {block_id}.")
+            logger.error(
+                "A block must be associated with either a page_id or a parent_block_id, but not both. No update performed for block ID {block_id}."
+            )
             return False
 
         self.conn.commit()

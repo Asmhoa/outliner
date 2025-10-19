@@ -242,3 +242,68 @@ def test_update_block_parent_nonexistent_block(db):
     page_id = db.add_page("Test Page")
     result = db.update_block_parent(999, new_page_id=page_id)
     assert result is False
+
+
+def test_add_workspace(db):
+    """Test adding a new workspace."""
+    workspace_id = db.add_workspace("Test Workspace", "#FF0000")
+    assert isinstance(workspace_id, int)
+    cursor = db.conn.cursor()
+    cursor.execute(
+        "SELECT title, color FROM workspaces WHERE workspace_id = ?", (workspace_id,)
+    )
+    title, color = cursor.fetchone()
+    assert title == "Test Workspace"
+    assert color == b"\xff\x00\x00"
+
+
+def test_get_workspace_by_id(db):
+    """Test retrieving a workspace by its ID."""
+    workspace_id = db.add_workspace("Test Workspace", "#00FF00")
+    workspace = db.get_workspace_by_id(workspace_id)
+    assert workspace[0] == workspace_id
+    assert workspace[1] == "Test Workspace"
+    assert workspace[2] == "#00ff00"
+
+
+def test_get_workspaces(db):
+    """Test retrieving all workspaces."""
+    db.add_workspace("Workspace 1", "#FF0000")
+    db.add_workspace("Workspace 2", "#00FF00")
+    workspaces = db.get_workspaces()
+    assert len(workspaces) == 2
+    assert workspaces[0][1] == "Workspace 1"
+    assert workspaces[0][2] == "#ff0000"
+    assert workspaces[1][1] == "Workspace 2"
+    assert workspaces[1][2] == "#00ff00"
+
+
+def test_update_workspace(db):
+    """Test updating an existing workspace."""
+    workspace_id = db.add_workspace("Old Title", "#FF0000")
+    result = db.update_workspace(workspace_id, "New Title", "#0000FF")
+    assert result is True
+    workspace = db.get_workspace_by_id(workspace_id)
+    assert workspace[1] == "New Title"
+    assert workspace[2] == "#0000ff"
+
+
+def test_update_nonexistent_workspace(db):
+    """Test updating a non-existent workspace."""
+    result = db.update_workspace(999, "New Title", "#0000FF")
+    assert result is False
+
+
+def test_delete_workspace(db):
+    """Test deleting a workspace."""
+    workspace_id = db.add_workspace("Test Workspace", "#FF0000")
+    result = db.delete_workspace(workspace_id)
+    assert result is True
+    workspace = db.get_workspace_by_id(workspace_id)
+    assert workspace is None
+
+
+def test_delete_nonexistent_workspace(db):
+    """Test deleting a non-existent workspace."""
+    result = db.delete_workspace(999)
+    assert result is False

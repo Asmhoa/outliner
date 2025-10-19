@@ -196,3 +196,74 @@ def delete_block(block: BlockDelete, db: Database = Depends(get_db)):
     if not db.delete_block(block.block_id):
         raise HTTPException(status_code=404, detail="Block not found")
     return {"status": "success"}
+
+
+# Route for workspaces
+class Workspace(BaseModel):
+    workspace_id: int
+    title: str
+    color: str
+
+
+class WorkspaceCreate(BaseModel):
+    title: str
+    color: str
+
+
+class WorkspaceUpdate(BaseModel):
+    workspace_id: int
+    new_title: str
+    new_color: str
+
+
+class WorkspaceDelete(BaseModel):
+    workspace_id: int
+
+
+@app.post("/workspaces", response_model=Workspace)
+def add_workspace(workspace: WorkspaceCreate, db: Database = Depends(get_db)):
+    workspace_id = db.add_workspace(workspace.title, workspace.color)
+    workspace_data = db.get_workspace_by_id(workspace_id)
+    if not workspace_data:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return Workspace(
+        workspace_id=workspace_data[0],
+        title=workspace_data[1],
+        color=workspace_data[2],
+    )
+
+
+@app.get("/workspaces/{workspace_id}", response_model=Workspace)
+def get_workspace(workspace_id: int, db: Database = Depends(get_db)):
+    workspace_data = db.get_workspace_by_id(workspace_id)
+    if not workspace_data:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return Workspace(
+        workspace_id=workspace_data[0],
+        title=workspace_data[1],
+        color=workspace_data[2],
+    )
+
+
+@app.get("/workspaces", response_model=list[Workspace])
+def get_workspaces(db: Database = Depends(get_db)):
+    workspaces_data = db.get_workspaces()
+    return [
+        Workspace(workspace_id=w[0], title=w[1], color=w[2]) for w in workspaces_data
+    ]
+
+
+@app.put("/workspaces")
+def update_workspace(workspace: WorkspaceUpdate, db: Database = Depends(get_db)):
+    if not db.update_workspace(
+        workspace.workspace_id, workspace.new_title, workspace.new_color
+    ):
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return {"status": "success"}
+
+
+@app.delete("/workspaces")
+def delete_workspace(workspace: WorkspaceDelete, db: Database = Depends(get_db)):
+    if not db.delete_workspace(workspace.workspace_id):
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return {"status": "success"}

@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddBlockBlocksPostData, AddBlockBlocksPostErrors, AddBlockBlocksPostResponses, AddPagePagesPostData, AddPagePagesPostErrors, AddPagePagesPostResponses, DeleteBlockBlocksDeleteData, DeleteBlockBlocksDeleteErrors, DeleteBlockBlocksDeleteResponses, DeletePagePagesDeleteData, DeletePagePagesDeleteErrors, DeletePagePagesDeleteResponses, GetBlockBlockBlockIdGetData, GetBlockBlockBlockIdGetErrors, GetBlockBlockBlockIdGetResponses, GetBlocksBlocksPageIdGetData, GetBlocksBlocksPageIdGetErrors, GetBlocksBlocksPageIdGetResponses, GetPagePagesPageIdGetData, GetPagePagesPageIdGetErrors, GetPagePagesPageIdGetResponses, GetPagesPagesGetData, GetPagesPagesGetResponses, RenamePagePagesPutData, RenamePagePagesPutErrors, RenamePagePagesPutResponses, UpdateBlockContentBlocksContentPutData, UpdateBlockContentBlocksContentPutErrors, UpdateBlockContentBlocksContentPutResponses, UpdateBlockParentBlocksParentPutData, UpdateBlockParentBlocksParentPutErrors, UpdateBlockParentBlocksParentPutResponses } from './types.gen';
+import type { AddBlockBlocksPostData, AddBlockBlocksPostErrors, AddBlockBlocksPostResponses, AddPagePagesPostData, AddPagePagesPostErrors, AddPagePagesPostResponses, AddWorkspaceWorkspacesPostData, AddWorkspaceWorkspacesPostErrors, AddWorkspaceWorkspacesPostResponses, DeleteBlockBlocksDeleteData, DeleteBlockBlocksDeleteErrors, DeleteBlockBlocksDeleteResponses, DeletePagePagesDeleteData, DeletePagePagesDeleteErrors, DeletePagePagesDeleteResponses, DeleteWorkspaceWorkspacesDeleteData, DeleteWorkspaceWorkspacesDeleteErrors, DeleteWorkspaceWorkspacesDeleteResponses, GetBlockBlockBlockIdGetData, GetBlockBlockBlockIdGetErrors, GetBlockBlockBlockIdGetResponses, GetBlocksBlocksPageIdGetData, GetBlocksBlocksPageIdGetErrors, GetBlocksBlocksPageIdGetResponses, GetPagePagesPageIdGetData, GetPagePagesPageIdGetErrors, GetPagePagesPageIdGetResponses, GetPagesPagesGetData, GetPagesPagesGetResponses, GetWorkspacesWorkspacesGetData, GetWorkspacesWorkspacesGetResponses, GetWorkspaceWorkspacesWorkspaceIdGetData, GetWorkspaceWorkspacesWorkspaceIdGetErrors, GetWorkspaceWorkspacesWorkspaceIdGetResponses, RenamePagePagesPutData, RenamePagePagesPutErrors, RenamePagePagesPutResponses, UpdateBlockContentBlocksContentPutData, UpdateBlockContentBlocksContentPutErrors, UpdateBlockContentBlocksContentPutResponses, UpdateBlockParentBlocksParentPutData, UpdateBlockParentBlocksParentPutErrors, UpdateBlockParentBlocksParentPutResponses, UpdateWorkspaceWorkspacesPutData, UpdateWorkspaceWorkspacesPutErrors, UpdateWorkspaceWorkspacesPutResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -153,5 +153,67 @@ export const updateBlockParentBlocksParentPut = <ThrowOnError extends boolean = 
             'Content-Type': 'application/json',
             ...options.headers
         }
+    });
+};
+
+/**
+ * Delete Workspace
+ */
+export const deleteWorkspaceWorkspacesDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteWorkspaceWorkspacesDeleteData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteWorkspaceWorkspacesDeleteResponses, DeleteWorkspaceWorkspacesDeleteErrors, ThrowOnError>({
+        url: '/workspaces',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Get Workspaces
+ */
+export const getWorkspacesWorkspacesGet = <ThrowOnError extends boolean = false>(options?: Options<GetWorkspacesWorkspacesGetData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetWorkspacesWorkspacesGetResponses, unknown, ThrowOnError>({
+        url: '/workspaces',
+        ...options
+    });
+};
+
+/**
+ * Add Workspace
+ */
+export const addWorkspaceWorkspacesPost = <ThrowOnError extends boolean = false>(options: Options<AddWorkspaceWorkspacesPostData, ThrowOnError>) => {
+    return (options.client ?? client).post<AddWorkspaceWorkspacesPostResponses, AddWorkspaceWorkspacesPostErrors, ThrowOnError>({
+        url: '/workspaces',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Update Workspace
+ */
+export const updateWorkspaceWorkspacesPut = <ThrowOnError extends boolean = false>(options: Options<UpdateWorkspaceWorkspacesPutData, ThrowOnError>) => {
+    return (options.client ?? client).put<UpdateWorkspaceWorkspacesPutResponses, UpdateWorkspaceWorkspacesPutErrors, ThrowOnError>({
+        url: '/workspaces',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Get Workspace
+ */
+export const getWorkspaceWorkspacesWorkspaceIdGet = <ThrowOnError extends boolean = false>(options: Options<GetWorkspaceWorkspacesWorkspaceIdGetData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetWorkspaceWorkspacesWorkspaceIdGetResponses, GetWorkspaceWorkspacesWorkspaceIdGetErrors, ThrowOnError>({
+        url: '/workspaces/{workspace_id}',
+        ...options
     });
 };

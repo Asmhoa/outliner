@@ -2,6 +2,17 @@
 
 This document outlines the workflow for managing the API and the auto-generated TypeScript client in this project.
 
+## Makefile
+
+The project includes a `Makefile` with several commands to streamline common development tasks.
+
+-   `make test`: Runs the test suite.
+-   `make run-backend`: Starts the development backend.
+-   `make gen-api`: Regenerate the OpenAPI typespec used by the frontend based on the backend.
+-   `make run-frontend`: Starts the development frontend.
+-   `make clean`: Removes temporary files, such as Python cache files (`.pyc`), test caches, and log files.
+-   `make format`: Format the codebase.
+
 ## Backend (Server)
 
 The backend is a Python [FastAPI](https://fastapi.tiangolo.com/) application located in the `server/` directory.
@@ -14,10 +25,17 @@ FastAPI automatically generates an OpenAPI 3.0 specification for the API.
 -   **ReDoc:** [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 -   **OpenAPI Spec (JSON):** [http://127.0.0.1:8000/openapi.json](http://127.0.0.1:8000/openapi.json)
 
-The server must be running to access these. To run the server:
+The server must be running to access these. Use `make dev` to start the frontend and server, or to run only the server:
 
 ```bash
-python3 server/src/main.py
+cd server && uv run python -m outliner_api_server
+```
+
+### Running tests
+`make test` will test all components. To test only the server:
+
+```bash
+cd server && uv run pytest
 ```
 
 ## Frontend (Web)
@@ -37,10 +55,10 @@ The project uses [`openapi-ts`](https://github.com/hey-api/openapi-ts) to automa
 To update the client after making changes to the FastAPI application:
 
 1.  **Ensure the backend server is running.**
-2.  **Run the generation script** from the `frontend/web/` directory:
+2.  **Run the generation script**
 
     ```bash
-    npm run generate-api-client
+    cd frontend/web/ && npm run generate-api-client
     ```
 
 This script executes the `openapi-ts` command, which fetches the latest `openapi.json` from the running server and regenerates the client code. This ensures the frontend's API client is always in sync with the backend API.

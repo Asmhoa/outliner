@@ -5,6 +5,8 @@
 
 # Projects
 SERVER_DIR := server
+SERVER_PID_FILE = $(SERVER_DIR)/running.pid
+WEB_FRONTEND_DIR := frontend/web
 
 # Help target
 .PHONY: help
@@ -25,12 +27,21 @@ setup: ## Install dependencies using uv
 	fi
 	## TODO: add setup npm
 
-# Start the development server
-.PHONY: dev
-dev: ## Launch the backend API server in development mode
+.PHONY: run-backend
+run-backend:
 	@echo "Starting backend API server..."
 	@cd $(SERVER_DIR) && uv run src/outliner_api_server/__main__.py
-	## TODO: launch frontend
+
+.PHONY: run-frontend
+run-frontend:
+	@echo "Starting backend API server..."
+	@cd $(WEB_FRONTEND_DIR) && npm run dev
+
+# Regenerate the OpenAPI typespec
+.PHONY: gen-api
+gen-api: ## Launch the backend API server in development mode
+	@echo "The backend server should be running for this (make run-backend)..."
+	@cd $(WEB_FRONTEND_DIR) && npm run generate-api-client
 
 # # Format Python code
 # .PHONY: format
@@ -90,3 +101,25 @@ clean: ## Clean temporary files and cache
 	@rm -f $(SERVER_DIR)/server.log
 	@rm -f $(SERVER_DIR)/*.db
 	@rm -f $(SERVER_DIR)/src/**/*.db
+
+
+# # Define variables
+# .PHONY: run stop clean
+# VENV ?= .venv
+#
+
+# # Check if a virtual environment exists. If not, inform the user.
+# $(VENV)/bin/python:
+# 	@echo "Virtual environment not found. Please run 'make venv' first."
+# 	@exit 1
+
+# # Target to create and install dependencies into a virtual environment
+# venv:
+# 	python3 -m venv $(VENV)
+# 	$(VENV)/bin/pip install fastapi uvicorn
+
+# # Target to clean up generated files
+# clean:
+# 	@echo "Cleaning up..."
+# 	@rm -f $(PID_FILE)
+# 	@rm -rf $(VENV)

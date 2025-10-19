@@ -26,13 +26,6 @@ interface Workspace {
   color: string; // For tab color
 }
 
-const mockWorkspaces: Workspace[] = [
-  { id: "0", name: "Personal", color: "#4285F4" },
-  { id: "1", name: "Work", color: "#34A853" },
-  { id: "2", name: "Projects", color: "#FBBC05" },
-  { id: "3", name: "Archive Test Long Name", color: "#EA4335" },
-];
-
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
 function App() {

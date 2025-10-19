@@ -178,6 +178,66 @@ export type ValidationError = {
     type: string;
 };
 
+/**
+ * Workspace
+ */
+export type Workspace = {
+    /**
+     * Workspace Id
+     */
+    workspace_id: number;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Color
+     */
+    color: string;
+};
+
+/**
+ * WorkspaceCreate
+ */
+export type WorkspaceCreate = {
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Color
+     */
+    color: string;
+};
+
+/**
+ * WorkspaceDelete
+ */
+export type WorkspaceDelete = {
+    /**
+     * Workspace Id
+     */
+    workspace_id: number;
+};
+
+/**
+ * WorkspaceUpdate
+ */
+export type WorkspaceUpdate = {
+    /**
+     * Workspace Id
+     */
+    workspace_id: number;
+    /**
+     * New Title
+     */
+    new_title: string;
+    /**
+     * New Color
+     */
+    new_color: string;
+};
+
 export type DeletePagePagesDeleteData = {
     body: PageDelete;
     path?: never;
@@ -448,3 +508,121 @@ export type UpdateBlockParentBlocksParentPutResponses = {
      */
     200: unknown;
 };
+
+export type DeleteWorkspaceWorkspacesDeleteData = {
+    body: WorkspaceDelete;
+    path?: never;
+    query?: never;
+    url: '/workspaces';
+};
+
+export type DeleteWorkspaceWorkspacesDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteWorkspaceWorkspacesDeleteError = DeleteWorkspaceWorkspacesDeleteErrors[keyof DeleteWorkspaceWorkspacesDeleteErrors];
+
+export type DeleteWorkspaceWorkspacesDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetWorkspacesWorkspacesGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/workspaces';
+};
+
+export type GetWorkspacesWorkspacesGetResponses = {
+    /**
+     * Response Get Workspaces Workspaces Get
+     * Successful Response
+     */
+    200: Array<Workspace>;
+};
+
+export type GetWorkspacesWorkspacesGetResponse = GetWorkspacesWorkspacesGetResponses[keyof GetWorkspacesWorkspacesGetResponses];
+
+export type AddWorkspaceWorkspacesPostData = {
+    body: WorkspaceCreate;
+    path?: never;
+    query?: never;
+    url: '/workspaces';
+};
+
+export type AddWorkspaceWorkspacesPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AddWorkspaceWorkspacesPostError = AddWorkspaceWorkspacesPostErrors[keyof AddWorkspaceWorkspacesPostErrors];
+
+export type AddWorkspaceWorkspacesPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: Workspace;
+};
+
+export type AddWorkspaceWorkspacesPostResponse = AddWorkspaceWorkspacesPostResponses[keyof AddWorkspaceWorkspacesPostResponses];
+
+export type UpdateWorkspaceWorkspacesPutData = {
+    body: WorkspaceUpdate;
+    path?: never;
+    query?: never;
+    url: '/workspaces';
+};
+
+export type UpdateWorkspaceWorkspacesPutErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateWorkspaceWorkspacesPutError = UpdateWorkspaceWorkspacesPutErrors[keyof UpdateWorkspaceWorkspacesPutErrors];
+
+export type UpdateWorkspaceWorkspacesPutResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type GetWorkspaceWorkspacesWorkspaceIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Workspace Id
+         */
+        workspace_id: number;
+    };
+    query?: never;
+    url: '/workspaces/{workspace_id}';
+};
+
+export type GetWorkspaceWorkspacesWorkspaceIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetWorkspaceWorkspacesWorkspaceIdGetError = GetWorkspaceWorkspacesWorkspaceIdGetErrors[keyof GetWorkspaceWorkspacesWorkspaceIdGetErrors];
+
+export type GetWorkspaceWorkspacesWorkspaceIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: Workspace;
+};
+
+export type GetWorkspaceWorkspacesWorkspaceIdGetResponse = GetWorkspaceWorkspacesWorkspaceIdGetResponses[keyof GetWorkspaceWorkspacesWorkspaceIdGetResponses];
