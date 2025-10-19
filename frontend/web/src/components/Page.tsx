@@ -3,7 +3,7 @@ import Block from "./Block";
 import {
   renamePagePagesPut,
   addBlockBlocksPost,
-  deleteBlockBlocksDelete,
+  deleteBlockBlocksBlockIdDelete,
 } from "../api-client/sdk.gen";
 import log from "../utils/logger";
 import { Button, Group } from "@mantine/core";
@@ -20,10 +20,6 @@ interface PageProps {
   setIsRenaming: (isRenaming: boolean) => void;
   handleDeletePage: (page_id: number) => void;
   handleRenamePage: () => void;
-  // handleChevronClick: () => void;
-  // handleRightSidebarToggle: () => void;
-  navbarVisibility: string;
-  rightSidebarCollapsed: boolean;
 }
 
 const Page: React.FC<PageProps> = ({
@@ -34,10 +30,6 @@ const Page: React.FC<PageProps> = ({
   setIsRenaming,
   handleDeletePage,
   handleRenamePage,
-  // handleChevronClick,
-  // handleRightSidebarToggle,
-  navbarVisibility,
-  rightSidebarCollapsed,
 }) => {
   const [pageTitle, setPageTitle] = useState(title);
   const [blocks, setBlocks] = useState<BlockType[]>(initialBlocks);
@@ -66,12 +58,12 @@ const Page: React.FC<PageProps> = ({
   }, [nextFocusableBlockId]);
 
   useEffect(() => {
-    log.debug(`Setting page title to: "${title}"`);
+    log.debug(`[Page] Setting page title`, { title });
     setPageTitle(title);
   }, [title]);
 
   useEffect(() => {
-    log.debug(`Setting blocks for page_id: ${page_id}`, initialBlocks);
+    log.debug(`[Page] Setting blocks`, { page_id, count: initialBlocks.length });
     setBlocks(initialBlocks);
   }, [initialBlocks, page_id]);
 
@@ -80,7 +72,7 @@ const Page: React.FC<PageProps> = ({
   ) => {
     const newTitle = event.currentTarget.textContent || "";
     setPageTitle(newTitle);
-    log.debug(`Updating page title for page_id: ${page_id} to "${newTitle}"`);
+    log.debug(`[Page] Updating page title`, { page_id, new_title: newTitle });
     try {
       await renamePagePagesPut({
         body: {
@@ -89,14 +81,14 @@ const Page: React.FC<PageProps> = ({
         },
       });
     } catch (error) {
-      log.error("Failed to rename page:", error);
+      log.error("[Page] Failed to rename page:", error);
       setPageTitle(title);
     }
     setIsRenaming(false);
   };
 
   const handleNewBlock = async (currentBlockId: number) => {
-    log.debug(`Adding new block after block_id: ${currentBlockId}`);
+    log.debug(`[Page] Adding new block`, { page_id, current_block_id: currentBlockId });
     try {
       const newBlock = await addBlockBlocksPost({
         body: { page_id: page_id, content: "", position: 0 },
@@ -109,18 +101,18 @@ const Page: React.FC<PageProps> = ({
       setBlocks(newBlocks);
       setNextFocusableBlockId(newBlock.data.block_id);
     } catch (error) {
-      log.error("Failed to add new block:", error);
+      log.error("[Page] Failed to add new block:", error);
     }
   };
 
   const handleDeleteBlock = async (currentBlockId: number) => {
     if (blocks.length > 1) {
-      log.debug(`Deleting block_id: ${currentBlockId}`);
+      log.debug(`[Page] Deleting block`, { block_id: currentBlockId, page_id });
       try {
         const currentIndex = blocks.findIndex(
           (block) => block.block_id === currentBlockId,
         );
-        await deleteBlockBlocksDelete({ body: { block_id: currentBlockId } });
+        await deleteBlockBlocksBlockIdDelete({ path: { block_id: currentBlockId } });
         const newBlocks = blocks.filter(
           (block) => block.block_id !== currentBlockId,
         );
@@ -129,7 +121,7 @@ const Page: React.FC<PageProps> = ({
           setNextFocusableBlockId(blocks[currentIndex - 1].block_id);
         }
       } catch (error) {
-        log.error("Failed to delete block:", error);
+        log.error("[Page] Failed to delete block:", error);
       }
     }
   };
@@ -162,11 +154,6 @@ const Page: React.FC<PageProps> = ({
             }}
             onRename={handleRenamePage}
           />
-          {/*{rightSidebarCollapsed && (
-            <Button onClick={handleRightSidebarToggle} variant="subtle">
-              <IconChevronLeft />
-            </Button>
-          )}*/}
         </Group>
       </Group>
       {blocks.map((block) => (

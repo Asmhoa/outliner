@@ -20,14 +20,14 @@ const Block = forwardRef<HTMLDivElement, BlockProps>(({ id, content, onNewBlock,
   useImperativeHandle(ref, () => editableDivRef.current as HTMLDivElement);
 
   useEffect(() => {
-    log.debug(`Setting block content for block_id: ${id} to "${content}"`);
+    log.debug(`[Block] Setting content`, { block_id: id, content });
     setBlockContent(content);
   }, [id, content]);
 
   const handleContentBlur = async (event: React.FocusEvent<HTMLDivElement>) => {
     const newContent = event.currentTarget.textContent || "";
     setBlockContent(newContent);
-    log.debug(`Updating block content for block_id: ${id} to "${newContent}"`);
+    log.debug(`[Block] Updating content`, { block_id: id, new_content: newContent });
     try {
       const updatedBlock: BlockUpdateContent = {
         block_id: id,
@@ -35,7 +35,7 @@ const Block = forwardRef<HTMLDivElement, BlockProps>(({ id, content, onNewBlock,
       };
       await updateBlockContentBlocksContentPut({ body: updatedBlock });
     } catch (error) {
-      log.error("Failed to update block content:", error);
+      log.error("[Block] Failed to update block content:", error);
       setBlockContent(content);
     }
   };
@@ -43,7 +43,7 @@ const Block = forwardRef<HTMLDivElement, BlockProps>(({ id, content, onNewBlock,
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      log.debug(`Enter pressed on block_id: ${id}, creating new block.`);
+      log.debug(`[Block] Enter pressed, creating new block`, { block_id: id });
       onNewBlock(id);
     } else if (
       event.key === "Backspace" &&
@@ -51,7 +51,7 @@ const Block = forwardRef<HTMLDivElement, BlockProps>(({ id, content, onNewBlock,
       isDeletable
     ) {
       event.preventDefault();
-      log.debug(`Backspace pressed on empty block_id: ${id}, deleting block.`);
+      log.debug(`[Block] Backspace on empty block, deleting`, { block_id: id });
       onDeleteBlock(id);
     }
   };

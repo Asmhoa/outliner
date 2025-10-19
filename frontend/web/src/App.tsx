@@ -1,4 +1,4 @@
-import { AppShell } from "@mantine/core";
+import { AppShell, Portal } from "@mantine/core";
 
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState, useCallback } from "react";
@@ -12,26 +12,15 @@ import {
   getBlocksBlocksPageIdGet,
   addPagePagesPost,
   getPagesPagesGet,
-  deletePagePagesDelete,
+  deletePagePagesPageIdDelete,
   addBlockBlocksPost,
+  getWorkspacesWorkspacesGet,
   type Block,
   type Page as PageType,
+  type Workspace,
 } from "./api-client";
 import SearchBox from "./components/sidebar/SearchBox";
 import LeftSidebar from "./components/sidebar/LeftSidebar";
-
-interface Workspace {
-  id: string;
-  name: string;
-  color: string; // For tab color
-}
-
-const mockWorkspaces: Workspace[] = [
-  { id: "0", name: "Personal", color: "#4285F4" },
-  { id: "1", name: "Work", color: "#34A853" },
-  { id: "2", name: "Projects", color: "#FBBC05" },
-  { id: "3", name: "Archive Test Long Name", color: "#EA4335" },
-];
 
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
@@ -41,13 +30,45 @@ function App() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [pages, setPages] = useState<PageType[]>([]);
   const [opened, { toggle }] = useDisclosure();
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(
-    mockWorkspaces[0].id,
+
+  const [isRenaming, setIsRenaming] = useState(false);
+
+  // Load things from the DB
+  // Workspaces
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<number | null>(
+    null,
   );
+
+  async function getAllWorkspaces() {
+    const all_workspaces = (await getWorkspacesWorkspacesGet())
+      .data as Workspace[];
+    const sorted_workspaces = [
+      // Structure default first then most recent
+      all_workspaces[0],
+      ...all_workspaces.slice(1).reverse(),
+    ];
+    setWorkspaces(sorted_workspaces);
+    if (activeWorkspaceId === null) {
+      setActiveWorkspaceId(0);
+    }
+  }
+
+  useEffect(() => {
+    getAllWorkspaces();
+  }, []);
+
+  // Other
+  const databases = [
+    { value: "db1", label: "Database 1" },
+    { value: "db2", label: "Database 2" },
+    { value: "db3", label: "Database 3" },
+  ];
+
+  // UI elements visibility
   const [navbarVisibility, setNavbarVisibility] =
     useState<NavbarVisibility>("visible");
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
-  const [isRenaming, setIsRenaming] = useState(false);
 
   const handleRightSidebarToggle = () => {
     setRightSidebarCollapsed(!rightSidebarCollapsed);
@@ -65,28 +86,22 @@ function App() {
     });
   };
 
-  const databases = [
-    { value: "db1", label: "Database 1" },
-    { value: "db2", label: "Database 2" },
-    { value: "db3", label: "Database 3" },
-  ];
-
   const fetchPages = useCallback(async () => {
-    log.debug("Fetching pages...");
+    log.debug("[App] Fetching pages...");
     const response = await getPagesPagesGet();
     if (response.data) {
-      log.debug(`Fetched ${response.data.length} pages.`);
+      log.debug(`[App] Fetched ${response.data.length} pages`);
       setPages(response.data);
       if (response.data.length > 0 && currentPageId === null) {
-        log.debug(`Setting current page to ${response.data[0].page_id}`);
+        log.debug(`[App] Setting current page to ${response.data[0].page_id}`);
         setCurrentPageId(response.data[0].page_id);
       }
     }
   }, [currentPageId]);
 
   const handleDeletePage = async (page_id: number) => {
-    log.debug(`Deleting page with page_id: ${page_id}`);
-    await deletePagePagesDelete({ body: { page_id } });
+    log.debug(`[App] Deleting page`, { page_id });
+    await deletePagePagesPageIdDelete({ path: { page_id } });
     fetchPages();
     setCurrentPageId(null);
     setTitle("");
@@ -98,16 +113,16 @@ function App() {
   };
 
   const handleAddPage = async (title: string) => {
-    log.debug(`Adding new page with title: "${title}"`);
+    log.debug(`[App] Adding new page`, { title });
     await addPagePagesPost({ body: { title } });
     fetchPages();
   };
 
   useEffect(() => {
-    log.debug(`Current page ID changed to: ${currentPageId}`);
+    log.debug(`[App] Current page ID changed`, { currentPageId });
     const fetchTitle = async () => {
       if (!currentPageId) return;
-      log.debug(`Fetching title for page_id: ${currentPageId}`);
+      log.debug(`[App] Fetching title`, { page_id: currentPageId });
       const response = await getPagePagesPageIdGet({
         path: { page_id: currentPageId },
       });
@@ -118,15 +133,13 @@ function App() {
 
     const fetchBlocks = async () => {
       if (!currentPageId) return;
-      log.debug(`Fetching blocks for page_id: ${currentPageId}`);
+      log.debug(`[App] Fetching blocks`, { page_id: currentPageId });
       const response = await getBlocksBlocksPageIdGet({
         path: { page_id: currentPageId },
       });
       if (response.data) {
         if (response.data.length === 0) {
-          log.debug(
-            `No blocks found for page_id: ${currentPageId}, creating a new one.`,
-          );
+          log.debug(`[App] No blocks found, creating new block`, { page_id: currentPageId });
           const newBlock = await addBlockBlocksPost({
             body: { page_id: currentPageId, content: "", position: 0 },
           });
@@ -134,9 +147,7 @@ function App() {
             setBlocks([newBlock.data]);
           }
         } else {
-          log.debug(
-            `Fetched ${response.data.length} blocks for page_id: ${currentPageId}`,
-          );
+          log.debug(`[App] Fetched blocks`, { count: response.data.length, page_id: currentPageId });
           setBlocks(response.data);
         }
       }
@@ -188,12 +199,12 @@ function App() {
         setCurrentPageId={setCurrentPageId}
         toggle={toggle}
         navbarVisibility={navbarVisibility}
-        workspaces={mockWorkspaces}
+        workspaces={workspaces}
+        setWorkspaces={setWorkspaces}
         activeWorkspaceId={activeWorkspaceId}
-        onWorkspaceClick={setActiveWorkspaceId}
+        setActiveWorkspaceId={setActiveWorkspaceId}
         databases={databases}
       />
-
       <AppShell.Main>
         {currentPageId && (
           <Page
@@ -205,10 +216,6 @@ function App() {
             setIsRenaming={setIsRenaming}
             handleDeletePage={handleDeletePage}
             handleRenamePage={handleRenamePage}
-            // handleLeftSidebarToggle={handleLeftSidebarToggle}
-            // handleRightSidebarToggle={handleRightSidebarToggle}
-            navbarVisibility={navbarVisibility}
-            rightSidebarCollapsed={rightSidebarCollapsed}
           />
         )}
       </AppShell.Main>

@@ -9,7 +9,7 @@ import log from "../../utils/logger";
 
 interface SearchBoxProps {
   // onAddPage: (title: string) => void;
-  navbarVisibility: "visible" | "sidebar-collapsed" | "navbar-collapsed";
+  navbarVisibility: "visible" | "workspace-collapsed" | "sidebar-collapsed";
   onLeftSidebarToggle: () => void;
   rightSidebarCollapsed: boolean;
   onRightSidebarToggle: () => void;
@@ -33,7 +33,7 @@ export default function SearchBox({
         </ActionIcon>
         <ActionIcon
           variant="subtle"
-          onClick={() => console.log("Search button clicked")}
+          onClick={() => log.debug("[SearchBox] Search button clicked")}
         >
           <IconSearch style={{ width: rem(16), height: rem(16) }} />
         </ActionIcon>

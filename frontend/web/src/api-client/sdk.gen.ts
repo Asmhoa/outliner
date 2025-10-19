@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddBlockBlocksPostData, AddBlockBlocksPostErrors, AddBlockBlocksPostResponses, AddPagePagesPostData, AddPagePagesPostErrors, AddPagePagesPostResponses, DeleteBlockBlocksDeleteData, DeleteBlockBlocksDeleteErrors, DeleteBlockBlocksDeleteResponses, DeletePagePagesDeleteData, DeletePagePagesDeleteErrors, DeletePagePagesDeleteResponses, GetBlockBlockBlockIdGetData, GetBlockBlockBlockIdGetErrors, GetBlockBlockBlockIdGetResponses, GetBlocksBlocksPageIdGetData, GetBlocksBlocksPageIdGetErrors, GetBlocksBlocksPageIdGetResponses, GetPagePagesPageIdGetData, GetPagePagesPageIdGetErrors, GetPagePagesPageIdGetResponses, GetPagesPagesGetData, GetPagesPagesGetResponses, RenamePagePagesPutData, RenamePagePagesPutErrors, RenamePagePagesPutResponses, UpdateBlockContentBlocksContentPutData, UpdateBlockContentBlocksContentPutErrors, UpdateBlockContentBlocksContentPutResponses, UpdateBlockParentBlocksParentPutData, UpdateBlockParentBlocksParentPutErrors, UpdateBlockParentBlocksParentPutResponses } from './types.gen';
+import type { AddBlockBlocksPostData, AddBlockBlocksPostErrors, AddBlockBlocksPostResponses, AddPagePagesPostData, AddPagePagesPostErrors, AddPagePagesPostResponses, AddWorkspaceWorkspacesPostData, AddWorkspaceWorkspacesPostErrors, AddWorkspaceWorkspacesPostResponses, DeleteBlockBlocksBlockIdDeleteData, DeleteBlockBlocksBlockIdDeleteErrors, DeleteBlockBlocksBlockIdDeleteResponses, DeletePagePagesPageIdDeleteData, DeletePagePagesPageIdDeleteErrors, DeletePagePagesPageIdDeleteResponses, DeleteWorkspaceWorkspacesWorkspaceIdDeleteData, DeleteWorkspaceWorkspacesWorkspaceIdDeleteErrors, DeleteWorkspaceWorkspacesWorkspaceIdDeleteResponses, GetBlockBlockBlockIdGetData, GetBlockBlockBlockIdGetErrors, GetBlockBlockBlockIdGetResponses, GetBlocksBlocksPageIdGetData, GetBlocksBlocksPageIdGetErrors, GetBlocksBlocksPageIdGetResponses, GetPagePagesPageIdGetData, GetPagePagesPageIdGetErrors, GetPagePagesPageIdGetResponses, GetPagesPagesGetData, GetPagesPagesGetResponses, GetWorkspacesWorkspacesGetData, GetWorkspacesWorkspacesGetResponses, GetWorkspaceWorkspacesWorkspaceIdGetData, GetWorkspaceWorkspacesWorkspaceIdGetErrors, GetWorkspaceWorkspacesWorkspaceIdGetResponses, RenamePagePagesPutData, RenamePagePagesPutErrors, RenamePagePagesPutResponses, UpdateBlockContentBlocksContentPutData, UpdateBlockContentBlocksContentPutErrors, UpdateBlockContentBlocksContentPutResponses, UpdateBlockParentBlocksParentPutData, UpdateBlockParentBlocksParentPutErrors, UpdateBlockParentBlocksParentPutResponses, UpdateWorkspaceWorkspacesPutData, UpdateWorkspaceWorkspacesPutErrors, UpdateWorkspaceWorkspacesPutResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -16,20 +16,6 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      * used to access values that aren't defined as part of the SDK function.
      */
     meta?: Record<string, unknown>;
-};
-
-/**
- * Delete Page
- */
-export const deletePagePagesDelete = <ThrowOnError extends boolean = false>(options: Options<DeletePagePagesDeleteData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeletePagePagesDeleteResponses, DeletePagePagesDeleteErrors, ThrowOnError>({
-        url: '/pages',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
 };
 
 /**
@@ -71,26 +57,22 @@ export const renamePagePagesPut = <ThrowOnError extends boolean = false>(options
 };
 
 /**
- * Get Page
+ * Delete Page
  */
-export const getPagePagesPageIdGet = <ThrowOnError extends boolean = false>(options: Options<GetPagePagesPageIdGetData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetPagePagesPageIdGetResponses, GetPagePagesPageIdGetErrors, ThrowOnError>({
+export const deletePagePagesPageIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeletePagePagesPageIdDeleteData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeletePagePagesPageIdDeleteResponses, DeletePagePagesPageIdDeleteErrors, ThrowOnError>({
         url: '/pages/{page_id}',
         ...options
     });
 };
 
 /**
- * Delete Block
+ * Get Page
  */
-export const deleteBlockBlocksDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteBlockBlocksDeleteData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteBlockBlocksDeleteResponses, DeleteBlockBlocksDeleteErrors, ThrowOnError>({
-        url: '/blocks',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
+export const getPagePagesPageIdGet = <ThrowOnError extends boolean = false>(options: Options<GetPagePagesPageIdGetData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetPagePagesPageIdGetResponses, GetPagePagesPageIdGetErrors, ThrowOnError>({
+        url: '/pages/{page_id}',
+        ...options
     });
 };
 
@@ -153,5 +135,73 @@ export const updateBlockParentBlocksParentPut = <ThrowOnError extends boolean = 
             'Content-Type': 'application/json',
             ...options.headers
         }
+    });
+};
+
+/**
+ * Delete Block
+ */
+export const deleteBlockBlocksBlockIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteBlockBlocksBlockIdDeleteData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteBlockBlocksBlockIdDeleteResponses, DeleteBlockBlocksBlockIdDeleteErrors, ThrowOnError>({
+        url: '/blocks/{block_id}',
+        ...options
+    });
+};
+
+/**
+ * Get Workspaces
+ */
+export const getWorkspacesWorkspacesGet = <ThrowOnError extends boolean = false>(options?: Options<GetWorkspacesWorkspacesGetData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetWorkspacesWorkspacesGetResponses, unknown, ThrowOnError>({
+        url: '/workspaces',
+        ...options
+    });
+};
+
+/**
+ * Add Workspace
+ */
+export const addWorkspaceWorkspacesPost = <ThrowOnError extends boolean = false>(options: Options<AddWorkspaceWorkspacesPostData, ThrowOnError>) => {
+    return (options.client ?? client).post<AddWorkspaceWorkspacesPostResponses, AddWorkspaceWorkspacesPostErrors, ThrowOnError>({
+        url: '/workspaces',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Update Workspace
+ */
+export const updateWorkspaceWorkspacesPut = <ThrowOnError extends boolean = false>(options: Options<UpdateWorkspaceWorkspacesPutData, ThrowOnError>) => {
+    return (options.client ?? client).put<UpdateWorkspaceWorkspacesPutResponses, UpdateWorkspaceWorkspacesPutErrors, ThrowOnError>({
+        url: '/workspaces',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Delete Workspace
+ */
+export const deleteWorkspaceWorkspacesWorkspaceIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteWorkspaceWorkspacesWorkspaceIdDeleteData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteWorkspaceWorkspacesWorkspaceIdDeleteResponses, DeleteWorkspaceWorkspacesWorkspaceIdDeleteErrors, ThrowOnError>({
+        url: '/workspaces/{workspace_id}',
+        ...options
+    });
+};
+
+/**
+ * Get Workspace
+ */
+export const getWorkspaceWorkspacesWorkspaceIdGet = <ThrowOnError extends boolean = false>(options: Options<GetWorkspaceWorkspacesWorkspaceIdGetData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetWorkspaceWorkspacesWorkspaceIdGetResponses, GetWorkspaceWorkspacesWorkspaceIdGetErrors, ThrowOnError>({
+        url: '/workspaces/{workspace_id}',
+        ...options
     });
 };

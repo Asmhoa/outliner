@@ -1,7 +1,8 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from data import Database
+from outliner_api_server.data import Database
 import os
 from datetime import datetime
 
@@ -9,7 +10,18 @@ from datetime import datetime
 current_dir = os.path.dirname(os.path.realpath(__file__))
 DATABASE_PATH = os.path.join(current_dir, "data.db")
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    db = Database(DATABASE_PATH)
+    db.create_new_database()  # no-op if already exists
+    db.close_conn()
+    yield
+    # Shutdown (if needed)
+
+
+app = FastAPI(lifespan=lifespan)
 
 origins = [
     "http://localhost:5173",
@@ -23,6 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 def get_db():
     db = Database(DATABASE_PATH)
     try:
@@ -30,31 +43,31 @@ def get_db():
     finally:
         db.close_conn()
 
-@app.on_event("startup")
-def startup_event():
-    db = Database(DATABASE_PATH)
-    db.create_new_database() # no-op if already exists
-    db.close_conn()
+
 
 class Page(BaseModel):
     page_id: int
     title: str
     created_at: datetime
 
+
 class PageCreate(BaseModel):
     title: str
+
 
 class PageRename(BaseModel):
     page_id: int
     new_title: str
 
-class PageDelete(BaseModel):
-    page_id: int
+
+
+
 
 @app.post("/pages")
 def add_page(page: PageCreate, db: Database = Depends(get_db)):
     page_id = db.add_page(page.title)
     return {"page_id": page_id}
+
 
 @app.get("/pages/{page_id}", response_model=Page)
 def get_page(page_id: int, db: Database = Depends(get_db)):
@@ -63,10 +76,12 @@ def get_page(page_id: int, db: Database = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Page not found")
     return Page(page_id=page_data[0], title=page_data[1], created_at=page_data[2])
 
+
 @app.get("/pages", response_model=list[Page])
 def get_pages(db: Database = Depends(get_db)):
     pages_data = db.get_pages()
     return [Page(page_id=p[0], title=p[1], created_at=p[2]) for p in pages_data]
+
 
 @app.put("/pages")
 def rename_page(page: PageRename, db: Database = Depends(get_db)):
@@ -74,9 +89,10 @@ def rename_page(page: PageRename, db: Database = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Page not found")
     return {"status": "success"}
 
-@app.delete("/pages")
-def delete_page(page: PageDelete, db: Database = Depends(get_db)):
-    if not db.delete_page(page.page_id):
+
+@app.delete("/pages/{page_id}")
+def delete_page(page_id: int, db: Database = Depends(get_db)):
+    if not db.delete_page(page_id):
         raise HTTPException(status_code=404, detail="Page not found")
     return {"status": "success"}
 
@@ -97,6 +113,7 @@ class BlockCreate(BaseModel):
     page_id: int | None = None
     parent_block_id: int | None = None
 
+
 class BlockUpdateContent(BaseModel):
     block_id: int
     new_content: str
@@ -107,8 +124,9 @@ class BlockUpdateParent(BaseModel):
     new_page_id: int | None = None
     new_parent_block_id: int | None = None
 
-class BlockDelete(BaseModel):
-    block_id: int
+
+
+
 
 @app.post("/blocks", response_model=Block)
 def add_block(block: BlockCreate, db: Database = Depends(get_db)):
@@ -127,6 +145,7 @@ def add_block(block: BlockCreate, db: Database = Depends(get_db)):
         created_at=block_data[5],
     )
 
+
 @app.get("/block/{block_id}", response_model=Block)
 def get_block(block_id: int, db: Database = Depends(get_db)):
     block_data = db.get_block_content_by_id(block_id)
@@ -140,6 +159,7 @@ def get_block(block_id: int, db: Database = Depends(get_db)):
         position=block_data[4],
         created_at=block_data[5],
     )
+
 
 @app.get("/blocks/{page_id}", response_model=list[Block])
 def get_blocks(page_id: int, db: Database = Depends(get_db)):
@@ -169,12 +189,84 @@ def update_block_parent(block: BlockUpdateParent, db: Database = Depends(get_db)
     if not db.update_block_parent(
         block.block_id, block.new_page_id, block.new_parent_block_id
     ):
-        raise HTTPException(status_code=404, detail="Block not found or invalid parent update")
+        raise HTTPException(
+            status_code=404, detail="Block not found or invalid parent update"
+        )
     return {"status": "success"}
 
 
-@app.delete("/blocks")
-def delete_block(block: BlockDelete, db: Database = Depends(get_db)):
-    if not db.delete_block(block.block_id):
+@app.delete("/blocks/{block_id}")
+def delete_block(block_id: int, db: Database = Depends(get_db)):
+    if not db.delete_block(block_id):
         raise HTTPException(status_code=404, detail="Block not found")
+    return {"status": "success"}
+
+
+# Route for workspaces
+class Workspace(BaseModel):
+    workspace_id: int
+    name: str
+    color: str
+
+
+class WorkspaceCreate(BaseModel):
+    name: str
+    color: str
+
+
+class WorkspaceUpdate(BaseModel):
+    workspace_id: int
+    new_name: str
+    new_color: str
+
+
+
+
+
+@app.post("/workspaces", response_model=Workspace)
+def add_workspace(workspace: WorkspaceCreate, db: Database = Depends(get_db)):
+    workspace_id = db.add_workspace(workspace.name, workspace.color)
+    workspace_data = db.get_workspace_by_id(workspace_id)
+    if not workspace_data:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return Workspace(
+        workspace_id=workspace_data[0],
+        name=workspace_data[1],
+        color=workspace_data[2],
+    )
+
+
+@app.get("/workspaces/{workspace_id}", response_model=Workspace)
+def get_workspace(workspace_id: int, db: Database = Depends(get_db)):
+    workspace_data = db.get_workspace_by_id(workspace_id)
+    if not workspace_data:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return Workspace(
+        workspace_id=workspace_data[0],
+        name=workspace_data[1],
+        color=workspace_data[2],
+    )
+
+
+@app.get("/workspaces", response_model=list[Workspace])
+def get_workspaces(db: Database = Depends(get_db)):
+    workspaces_data = db.get_workspaces()
+    return [
+        Workspace(workspace_id=w[0], name=w[1], color=w[2]) for w in workspaces_data
+    ]
+
+
+@app.put("/workspaces")
+def update_workspace(workspace: WorkspaceUpdate, db: Database = Depends(get_db)):
+    if not db.update_workspace(
+        workspace.workspace_id, workspace.new_name, workspace.new_color
+    ):
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return {"status": "success"}
+
+
+@app.delete("/workspaces/{workspace_id}")
+def delete_workspace(workspace_id: int, db: Database = Depends(get_db)):
+    if not db.delete_workspace(workspace_id):
+        raise HTTPException(status_code=404, detail="Workspace not found")
     return {"status": "success"}

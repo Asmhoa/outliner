@@ -1,8 +1,11 @@
 # Underlying DB
-server/src/data.db
+*.db
 
 # Python env
 __pycache__/
+env/
+venv/
+.python_version
 
 # MacOS
 .DS_Store
