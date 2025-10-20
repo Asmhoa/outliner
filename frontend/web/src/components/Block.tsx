@@ -6,10 +6,10 @@ import {
 import log from "../utils/logger";
 
 interface BlockProps {
-  id: number;
+  id: string;
   content: string;
-  onNewBlock: (currentBlockId: number) => void;
-  onDeleteBlock: (currentBlockId: number) => void;
+  onNewBlock: (currentBlockId: string) => void;
+  onDeleteBlock: (currentBlockId: string) => void;
   isDeletable: boolean;
 }
 

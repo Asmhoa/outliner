@@ -13,12 +13,12 @@ import PageMenu from "./PageMenu";
 import { type Block as BlockType } from "../api-client";
 
 interface PageProps {
-  page_id: number;
+  page_id: string;
   title: string;
   blocks: BlockType[];
   isRenaming: boolean;
   setIsRenaming: (isRenaming: boolean) => void;
-  handleDeletePage: (page_id: number) => void;
+  handleDeletePage: (page_id: string) => void;
   handleRenamePage: () => void;
 }
 
@@ -34,11 +34,11 @@ const Page: React.FC<PageProps> = ({
   const [pageTitle, setPageTitle] = useState(title);
   const [blocks, setBlocks] = useState<BlockType[]>(initialBlocks);
   const blockRefs = useRef<{
-    [key: number]: HTMLDivElement | null;
+    [key: string]: HTMLDivElement | null;
   }>({});
   const titleRef = useRef<HTMLHeadingElement>(null);
   const [nextFocusableBlockId, setNextFocusableBlockId] = useState<
-    number | null
+    string | null
   >(null);
 
   useEffect(() => {
@@ -87,7 +87,7 @@ const Page: React.FC<PageProps> = ({
     setIsRenaming(false);
   };
 
-  const handleNewBlock = async (currentBlockId: number) => {
+  const handleNewBlock = async (currentBlockId: string) => {
     log.debug(`[Page] Adding new block`, { page_id, current_block_id: currentBlockId });
     try {
       const newBlock = await addBlockBlocksPost({
@@ -105,7 +105,7 @@ const Page: React.FC<PageProps> = ({
     }
   };
 
-  const handleDeleteBlock = async (currentBlockId: number) => {
+  const handleDeleteBlock = async (currentBlockId: string) => {
     if (blocks.length > 1) {
       log.debug(`[Page] Deleting block`, { block_id: currentBlockId, page_id });
       try {

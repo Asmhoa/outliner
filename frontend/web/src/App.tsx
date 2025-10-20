@@ -25,7 +25,7 @@ import LeftSidebar from "./components/sidebar/LeftSidebar";
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
 function App() {
-  const [currentPageId, setCurrentPageId] = useState<number | null>(null);
+  const [currentPageId, setCurrentPageId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [pages, setPages] = useState<PageType[]>([]);
@@ -99,7 +99,7 @@ function App() {
     }
   }, [currentPageId]);
 
-  const handleDeletePage = async (page_id: number) => {
+  const handleDeletePage = async (page_id: string) => {
     log.debug(`[App] Deleting page`, { page_id });
     await deletePagePagesPageIdDelete({ path: { page_id } });
     fetchPages();
