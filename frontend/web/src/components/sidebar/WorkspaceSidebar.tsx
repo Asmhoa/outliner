@@ -90,9 +90,11 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
       },
     }).then((newWs) => {
       const newWorkspace = newWs.data as Workspace;
-      log.debug("[WorkspaceSidebar] New workspace added", { workspace: newWorkspace });
+      log.debug("[WorkspaceSidebar] New workspace added", {
+        workspace: newWorkspace,
+      });
       setWorkspaces([workspaces[0], newWorkspace, ...workspaces.splice(1)]);
-      close();
+      closeCreateModal();
       setNewWorkspaceName("");
       // setNewWorkspaceColor("");
     });
@@ -108,7 +110,9 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         },
       })
         .then(() => {
-          log.debug("[WorkspaceSidebar] Workspace updated", { workspace_id: editingWorkspace.workspace_id });
+          log.debug("[WorkspaceSidebar] Workspace updated", {
+            workspace_id: editingWorkspace.workspace_id,
+          });
           const ws = workspaces.find(
             (ws) => ws.workspace_id === editingWorkspace.workspace_id,
           ) as Workspace;
@@ -133,7 +137,9 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         },
       })
         .then(() => {
-          log.debug("[WorkspaceSidebar] Workspace deleted", { workspace_id: editingWorkspace.workspace_id });
+          log.debug("[WorkspaceSidebar] Workspace deleted", {
+            workspace_id: editingWorkspace.workspace_id,
+          });
           // Remove the deleted workspace from the list
           const updatedWorkspaces = workspaces.filter(
             (ws) => ws.workspace_id !== editingWorkspace.workspace_id,

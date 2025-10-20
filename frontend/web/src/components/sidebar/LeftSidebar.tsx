@@ -34,7 +34,6 @@ interface LeftSidebarProps {
   pages: PageType[];
   currentPageId: number | null;
   setCurrentPageId: (id: number) => void;
-  toggle: () => void;
   navbarVisibility: "visible" | "workspace-collapsed" | "sidebar-collapsed";
   workspaces: Workspace[];
   setWorkspaces: (ws: Workspace[]) => void;
@@ -47,7 +46,6 @@ const LeftSidebar = ({
   pages,
   currentPageId,
   setCurrentPageId,
-  toggle,
   navbarVisibility,
   workspaces,
   setWorkspaces,
@@ -108,7 +106,7 @@ const LeftSidebar = ({
             />
           </AppShell.Section>
           <Divider />
-          <AppShell.Section>
+          {/*<AppShell.Section>
             <NavLink
               label="Favorites"
               leftSection={<IconStar />}
@@ -127,7 +125,7 @@ const LeftSidebar = ({
                 onClick={() => log.debug("[LeftSidebar] Favorite Page 3 clicked")}
               />
             </NavLink>
-          </AppShell.Section>
+          </AppShell.Section>*/}
           {/*<AppShell.Section>
             <NavLink
               label="Views"

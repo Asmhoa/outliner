@@ -114,8 +114,13 @@ function App() {
 
   const handleAddPage = async (title: string) => {
     log.debug(`[App] Adding new page`, { title });
-    await addPagePagesPost({ body: { title } });
+    const response = await addPagePagesPost({ body: { title } });
     fetchPages();
+    // Switch to the newly created page
+    if (response.data && response.data.page_id) {
+      setCurrentPageId(response.data.page_id);
+    }
+    return response;
   };
 
   useEffect(() => {
@@ -186,7 +191,7 @@ function App() {
     >
       <AppShell.Header style={{ border: "none" }}>
         <SearchBox
-          // onAddPage={handleAddPage}
+          onAddPage={handleAddPage}
           navbarVisibility={navbarVisibility}
           onLeftSidebarToggle={handleLeftSidebarToggle}
           rightSidebarCollapsed={rightSidebarCollapsed}
