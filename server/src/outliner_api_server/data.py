@@ -1,6 +1,7 @@
 import atexit
 import signal
 import logging
+import uuid
 from sqlite3 import connect, Cursor, Connection
 
 logger = logging.getLogger(__name__)
@@ -62,7 +63,7 @@ class Database:
         """
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS pages (
-                page_id INTEGER PRIMARY KEY,
+                page_id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
                 title VARCHAR(255) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -76,10 +77,10 @@ class Database:
         """
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS blocks (
-                block_id INTEGER PRIMARY KEY,
+                block_id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
                 content TEXT NOT NULL,
-                page_id INTEGER NULL,
-                parent_block_id INTEGER NULL,
+                page_id TEXT NULL,
+                parent_block_id TEXT NULL,
                 position INTEGER NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (page_id) REFERENCES pages(page_id) ON DELETE CASCADE,
@@ -179,18 +180,18 @@ class Database:
 
     # CRUD:- pages
 
-    def add_page(self, title: str) -> int:
+    def add_page(self, title: str) -> str:
         """
         Adds a new page to the database.
         Returns the ID of the newly created page.
         """
-        self.cursor.execute("INSERT INTO pages (title) VALUES (?)", (title,))
+        self.cursor.execute("INSERT INTO pages (title) VALUES (?) RETURNING page_id", (title,))
+        new_page_id = self.cursor.fetchone()[0]
         self.conn.commit()
-        new_page_id = self.cursor.lastrowid
         logger.debug(f"Page '{title}' added successfully with ID: {new_page_id}")
         return new_page_id
 
-    def get_page_by_id(self, page_id: int):
+    def get_page_by_id(self, page_id: str):
         """
         Retrieves a page by its ID.
         """
@@ -204,7 +205,7 @@ class Database:
         self.cursor.execute("SELECT * FROM pages")
         return self.cursor.fetchall()
 
-    def rename_page(self, page_id: int, new_title: str) -> bool:
+    def rename_page(self, page_id: str, new_title: str) -> bool:
         """
         Renames an existing page.
         Returns True if successful, False otherwise.
@@ -220,7 +221,7 @@ class Database:
             logger.debug(f"Page ID {page_id} not found or no change in title.")
             return False
 
-    def delete_page(self, page_id: int) -> bool:
+    def delete_page(self, page_id: str) -> bool:
         """
         Deletes a page and all its associated blocks.
         Returns True if successful, False otherwise.
@@ -240,24 +241,26 @@ class Database:
         self,
         content: str,
         position: int,
-        page_id: int = None,
-        parent_block_id: int = None,
-    ) -> int:
+        page_id: str = None,
+        parent_block_id: str = None,
+    ) -> str:
         """
         Adds a new block to a page or as a child of another block.
         Returns the ID of the newly created block.
         """
         if page_id is not None and parent_block_id is None:
             self.cursor.execute(
-                "INSERT INTO blocks (content, page_id, position) VALUES (?, ?, ?)",
+                "INSERT INTO blocks (content, page_id, position) VALUES (?, ?, ?) RETURNING block_id",
                 (content, page_id, position),
             )
+            new_block_id = self.cursor.fetchone()[0]
             logger.debug(f"Block added to page ID {page_id}: '{content[:50]}...'")
         elif parent_block_id is not None and page_id is None:
             self.cursor.execute(
-                "INSERT INTO blocks (content, parent_block_id, position) VALUES (?, ?, ?)",
+                "INSERT INTO blocks (content, parent_block_id, position) VALUES (?, ?, ?) RETURNING block_id",
                 (content, parent_block_id, position),
             )
+            new_block_id = self.cursor.fetchone()[0]
             logger.debug(
                 f"Block added under parent block ID {parent_block_id}: '{content[:50]}...'"
             )
@@ -268,27 +271,26 @@ class Database:
             return None  # Or raise an exception
 
         self.conn.commit()
-        new_block_id = self.cursor.lastrowid
         logger.debug(
             f"Block with content '{content[:50]}...' added successfully with ID: {new_block_id}"
         )
         return new_block_id
 
-    def get_blocks_by_page(self, page_id: int):
+    def get_blocks_by_page(self, page_id: str):
         """
         Retrieves all blocks for a given page ID.
         """
         self.cursor.execute("SELECT * FROM blocks WHERE page_id = ?", (page_id,))
         return self.cursor.fetchall()
 
-    def get_block_content_by_id(self, block_id: int):
+    def get_block_content_by_id(self, block_id: str):
         """
         Retrieves a block by its ID.
         """
         self.cursor.execute("SELECT * FROM blocks WHERE block_id = ?", (block_id,))
         return self.cursor.fetchone()
 
-    def update_block_content(self, block_id: int, new_content: str) -> bool:
+    def update_block_content(self, block_id: str, new_content: str) -> bool:
         """
         Updates the content of an existing block.
         Returns True if successful, False otherwise.
@@ -305,7 +307,7 @@ class Database:
             return False
 
     def update_block_parent(
-        self, block_id: int, new_page_id: int = None, new_parent_block_id: int = None
+        self, block_id: str, new_page_id: str = None, new_parent_block_id: str = None
     ) -> bool:
         """
         Updates the parent of an existing block. A block can either have a page_id or a parent_block_id, but not both.
@@ -340,7 +342,7 @@ class Database:
             logger.debug(f"Block ID {block_id} not found or no change in parent.")
             return False
 
-    def delete_block(self, block_id: int) -> bool:
+    def delete_block(self, block_id: str) -> bool:
         """
         Deletes a block and all its nested child blocks.
         Returns True if successful, False otherwise.

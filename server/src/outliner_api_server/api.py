@@ -46,7 +46,7 @@ def get_db():
 
 
 class Page(BaseModel):
-    page_id: int
+    page_id: str
     title: str
     created_at: datetime
 
@@ -56,7 +56,7 @@ class PageCreate(BaseModel):
 
 
 class PageRename(BaseModel):
-    page_id: int
+    page_id: str
     new_title: str
 
 
@@ -70,7 +70,7 @@ def add_page(page: PageCreate, db: Database = Depends(get_db)):
 
 
 @app.get("/pages/{page_id}", response_model=Page)
-def get_page(page_id: int, db: Database = Depends(get_db)):
+def get_page(page_id: str, db: Database = Depends(get_db)):
     page_data = db.get_page_by_id(page_id)
     if not page_data:
         raise HTTPException(status_code=404, detail="Page not found")
@@ -91,7 +91,7 @@ def rename_page(page: PageRename, db: Database = Depends(get_db)):
 
 
 @app.delete("/pages/{page_id}")
-def delete_page(page_id: int, db: Database = Depends(get_db)):
+def delete_page(page_id: str, db: Database = Depends(get_db)):
     if not db.delete_page(page_id):
         raise HTTPException(status_code=404, detail="Page not found")
     return {"status": "success"}
@@ -99,10 +99,10 @@ def delete_page(page_id: int, db: Database = Depends(get_db)):
 
 # Route for blocks
 class Block(BaseModel):
-    block_id: int
+    block_id: str
     content: str
-    page_id: int | None = None
-    parent_block_id: int | None = None
+    page_id: str | None = None
+    parent_block_id: str | None = None
     position: int
     created_at: datetime
 
@@ -110,19 +110,19 @@ class Block(BaseModel):
 class BlockCreate(BaseModel):
     content: str
     position: int
-    page_id: int | None = None
-    parent_block_id: int | None = None
+    page_id: str | None = None
+    parent_block_id: str | None = None
 
 
 class BlockUpdateContent(BaseModel):
-    block_id: int
+    block_id: str
     new_content: str
 
 
 class BlockUpdateParent(BaseModel):
-    block_id: int
-    new_page_id: int | None = None
-    new_parent_block_id: int | None = None
+    block_id: str
+    new_page_id: str | None = None
+    new_parent_block_id: str | None = None
 
 
 
@@ -147,7 +147,7 @@ def add_block(block: BlockCreate, db: Database = Depends(get_db)):
 
 
 @app.get("/block/{block_id}", response_model=Block)
-def get_block(block_id: int, db: Database = Depends(get_db)):
+def get_block(block_id: str, db: Database = Depends(get_db)):
     block_data = db.get_block_content_by_id(block_id)
     if not block_data:
         raise HTTPException(status_code=404, detail="Block not found")
@@ -162,7 +162,7 @@ def get_block(block_id: int, db: Database = Depends(get_db)):
 
 
 @app.get("/blocks/{page_id}", response_model=list[Block])
-def get_blocks(page_id: int, db: Database = Depends(get_db)):
+def get_blocks(page_id: str, db: Database = Depends(get_db)):
     blocks_data = db.get_blocks_by_page(page_id)
     return [
         Block(
@@ -196,7 +196,7 @@ def update_block_parent(block: BlockUpdateParent, db: Database = Depends(get_db)
 
 
 @app.delete("/blocks/{block_id}")
-def delete_block(block_id: int, db: Database = Depends(get_db)):
+def delete_block(block_id: str, db: Database = Depends(get_db)):
     if not db.delete_block(block_id):
         raise HTTPException(status_code=404, detail="Block not found")
     return {"status": "success"}
