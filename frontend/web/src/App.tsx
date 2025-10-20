@@ -1,7 +1,8 @@
-import { AppShell, Portal } from "@mantine/core";
+import { AppShell } from "@mantine/core";
 
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import log from "./utils/logger";
 
 import "./App.css";
@@ -25,6 +26,8 @@ import LeftSidebar from "./components/sidebar/LeftSidebar";
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
 function App() {
+  const { pageId } = useParams<{ pageId: string }>(); // get page_id from URL
+
   const [currentPageId, setCurrentPageId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -169,7 +172,22 @@ function App() {
 
   useEffect(() => {
     fetchPages();
-  }, [fetchPages]); // Added fetchPages to dependency array
+  }, []);
+
+  // Update current page ID based on URL parameter
+  useEffect(() => {
+    if (pageId) {
+      // Check if the page exists in our pages list before setting it as current
+      const pageExists = pages.some((page) => page.page_id === pageId);
+      if (pageExists) {
+        setCurrentPageId(pageId);
+      } else {
+        setCurrentPageId(null);
+        log.error(`Page with ID ${pageId} does not exist`);
+        // Leave currentPageId as null, so nothing is displayed
+      }
+    }
+  }, [pageId, pages]);
 
   return (
     <AppShell
@@ -207,7 +225,6 @@ function App() {
         pages={pages}
         currentPageId={currentPageId}
         setCurrentPageId={setCurrentPageId}
-        toggle={toggle}
         navbarVisibility={navbarVisibility}
         workspaces={workspaces}
         setWorkspaces={setWorkspaces}

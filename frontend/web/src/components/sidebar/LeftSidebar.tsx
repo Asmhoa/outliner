@@ -23,17 +23,18 @@ import {
 import WorkspaceSidebar from "./WorkspaceSidebar";
 import type { Page as PageType } from "../../api-client";
 import log from "../../utils/logger";
+import { useNavigate } from "react-router-dom";
 
 interface Workspace {
-  id: string;
+  workspace_id: number;
   name: string;
   color: string; // For tab color
 }
 
 interface LeftSidebarProps {
   pages: PageType[];
-  currentPageId: number | null;
-  setCurrentPageId: (id: number) => void;
+  currentPageId: string | null;
+  setCurrentPageId: (id: string) => void;
   navbarVisibility: "visible" | "workspace-collapsed" | "sidebar-collapsed";
   workspaces: Workspace[];
   setWorkspaces: (ws: Workspace[]) => void;
@@ -55,6 +56,8 @@ const LeftSidebar = ({
 }: LeftSidebarProps) => {
   // const activeWorkspace = workspaces.find((ws) => ws.id === activeWorkspaceId);
   // const backgroundColor = activeWorkspace ? activeWorkspace.color : "white";
+  //
+  const navigate = useNavigate();
 
   return (
     // <AppShell.Navbar pt="sm" pb="sm" style={{ backgroundColor }}>
@@ -166,19 +169,20 @@ const LeftSidebar = ({
               />
             </NavLink>
           </AppShell.Section>
-          {/*<AppShell.Section>
+          <AppShell.Section>
             {pages.map((page) => (
-              <NavLink
+              <Text
                 key={page.page_id}
-                label={page.title}
-                active={page.page_id === currentPageId}
+                // active={page.page_id === currentPageId}
                 onClick={() => {
-                  setCurrentPageId(page.page_id);
-                  toggle();
+                  navigate("/" + page.page_id);
+                  // setCurrentPageId(page.page_id);
                 }}
-              />
+              >
+                {page.title}
+              </Text>
             ))}
-          </AppShell.Section>*/}
+          </AppShell.Section>
         </Stack>
       </Group>
     </AppShell.Navbar>
