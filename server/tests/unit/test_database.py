@@ -25,7 +25,7 @@ def test_create_new_database(db):
 def test_add_page(db):
     """Test adding a new page."""
     page_id = db.add_page("Test Page")
-    assert isinstance(page_id, int)
+    assert isinstance(page_id, str)
     cursor = db.conn.cursor()
     cursor.execute("SELECT title FROM pages WHERE page_id = ?", (page_id,))
     assert cursor.fetchone()[0] == "Test Page"
@@ -67,7 +67,7 @@ def test_add_block_to_page(db):
     """Test adding a block to a page."""
     page_id = db.add_page("Test Page")
     block_id = db.add_block("Test Block", 1, page_id=page_id)
-    assert isinstance(block_id, int)
+    assert isinstance(block_id, str)
     cursor = db.conn.cursor()
     cursor.execute("SELECT content FROM blocks WHERE block_id = ?", (block_id,))
     assert cursor.fetchone()[0] == "Test Block"
@@ -78,7 +78,7 @@ def test_add_block_to_block(db):
     page_id = db.add_page("Test Page")
     parent_block_id = db.add_block("Parent Block", 1, page_id=page_id)
     child_block_id = db.add_block("Child Block", 1, parent_block_id=parent_block_id)
-    assert isinstance(child_block_id, int)
+    assert isinstance(child_block_id, str)
     cursor = db.conn.cursor()
     cursor.execute("SELECT content FROM blocks WHERE block_id = ?", (child_block_id,))
     assert cursor.fetchone()[0] == "Child Block"

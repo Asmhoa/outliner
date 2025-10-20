@@ -33,35 +33,35 @@ def mock_db():
 # Page endpoint tests
 def test_add_page_success(mock_db):
     """Test adding a new page via API."""
-    mock_db.add_page.return_value = 123
+    mock_db.add_page.return_value = "abc123"
 
     response = client.post("/pages", json={"title": "Test Page"})
 
     assert response.status_code == 200
-    assert response.json() == {"page_id": 123}
+    assert response.json() == {"page_id": "abc123"}
     mock_db.add_page.assert_called_once_with("Test Page")
 
 
 def test_get_page_success(mock_db):
     """Test getting a page by ID via API."""
-    mock_db.get_page_by_id.return_value = (123, "Test Page", "2023-01-01 00:00:00")
+    mock_db.get_page_by_id.return_value = ("abc123", "Test Page", "2023-01-01 00:00:00")
 
-    response = client.get("/pages/123")
+    response = client.get("/pages/abc123")
 
     assert response.status_code == 200
     assert response.json() == {
-        "page_id": 123,
+        "page_id": "abc123",
         "title": "Test Page",
         "created_at": "2023-01-01T00:00:00",
     }
-    mock_db.get_page_by_id.assert_called_once_with(123)
+    mock_db.get_page_by_id.assert_called_once_with("abc123")
 
 
 def test_get_page_not_found(mock_db):
     """Test getting a non-existent page via API."""
     mock_db.get_page_by_id.return_value = None
 
-    response = client.get("/pages/999")
+    response = client.get("/pages/xyz999")
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Page not found"}
@@ -70,8 +70,8 @@ def test_get_page_not_found(mock_db):
 def test_get_pages_success(mock_db):
     """Test getting all pages via API."""
     mock_db.get_pages.return_value = [
-        (123, "Page 1", "2023-01-01 00:00:00"),
-        (456, "Page 2", "2023-01-02 00:00:00"),
+        ("abc123", "Page 1", "2023-01-01 00:00:00"),
+        ("def456", "Page 2", "2023-01-02 00:00:00"),
     ]
 
     response = client.get("/pages")
@@ -79,12 +79,12 @@ def test_get_pages_success(mock_db):
     assert response.status_code == 200
     assert response.json() == [
         {
-            "page_id": 123,
+            "page_id": "abc123",
             "title": "Page 1",
             "created_at": "2023-01-01T00:00:00",
         },
         {
-            "page_id": 456,
+            "page_id": "def456",
             "title": "Page 2",
             "created_at": "2023-01-02T00:00:00",
         },
@@ -96,18 +96,18 @@ def test_rename_page_success(mock_db):
     """Test renaming a page via API."""
     mock_db.rename_page.return_value = True
 
-    response = client.put("/pages", json={"page_id": 123, "new_title": "New Title"})
+    response = client.put("/pages", json={"page_id": "abc123", "new_title": "New Title"})
 
     assert response.status_code == 200
     assert response.json() == {"status": "success"}
-    mock_db.rename_page.assert_called_once_with(123, "New Title")
+    mock_db.rename_page.assert_called_once_with("abc123", "New Title")
 
 
 def test_rename_page_not_found(mock_db):
     """Test renaming a non-existent page via API."""
     mock_db.rename_page.return_value = False
 
-    response = client.put("/pages", json={"page_id": 999, "new_title": "New Title"})
+    response = client.put("/pages", json={"page_id": "xyz999", "new_title": "New Title"})
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Page not found"}
@@ -117,18 +117,18 @@ def test_delete_page_success(mock_db):
     """Test deleting a page via API."""
     mock_db.delete_page.return_value = True
 
-    response = client.delete("/pages/123")
+    response = client.delete("/pages/abc123")
 
     assert response.status_code == 200
     assert response.json() == {"status": "success"}
-    mock_db.delete_page.assert_called_once_with(123)
+    mock_db.delete_page.assert_called_once_with("abc123")
 
 
 def test_delete_page_not_found(mock_db):
     """Test deleting a non-existent page via API."""
     mock_db.delete_page.return_value = False
 
-    response = client.delete("/pages/999")
+    response = client.delete("/pages/xyz999")
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Page not found"}
@@ -137,62 +137,62 @@ def test_delete_page_not_found(mock_db):
 # Block endpoint tests
 def test_add_block_success(mock_db):
     """Test adding a block via API."""
-    mock_db.add_block.return_value = 456
+    mock_db.add_block.return_value = "def456"
     mock_db.get_block_content_by_id.return_value = (
-        456,
+        "def456",
         "Test Block",
-        123,
+        "abc123",
         None,
         1,
         "2023-01-01 00:00:00",
     )
 
     response = client.post(
-        "/blocks", json={"content": "Test Block", "position": 1, "page_id": 123}
+        "/blocks", json={"content": "Test Block", "position": 1, "page_id": "abc123"}
     )
 
     assert response.status_code == 200
     assert response.json() == {
-        "block_id": 456,
+        "block_id": "def456",
         "content": "Test Block",
-        "page_id": 123,
+        "page_id": "abc123",
         "parent_block_id": None,
         "position": 1,
         "created_at": "2023-01-01T00:00:00",
     }
-    mock_db.add_block.assert_called_once_with("Test Block", 1, 123, None)
+    mock_db.add_block.assert_called_once_with("Test Block", 1, "abc123", None)
 
 
 def test_get_block_success(mock_db):
     """Test getting a block by ID via API."""
     mock_db.get_block_content_by_id.return_value = (
-        456,
+        "def456",
         "Test Block",
-        123,
+        "abc123",
         None,
         1,
         "2023-01-01 00:00:00",
     )
 
-    response = client.get("/block/456")
+    response = client.get("/block/def456")
 
     assert response.status_code == 200
     assert response.json() == {
-        "block_id": 456,
+        "block_id": "def456",
         "content": "Test Block",
-        "page_id": 123,
+        "page_id": "abc123",
         "parent_block_id": None,
         "position": 1,
         "created_at": "2023-01-01T00:00:00",
     }
-    mock_db.get_block_content_by_id.assert_called_once_with(456)
+    mock_db.get_block_content_by_id.assert_called_once_with("def456")
 
 
 def test_get_block_not_found(mock_db):
     """Test getting a non-existent block via API."""
     mock_db.get_block_content_by_id.return_value = None
 
-    response = client.get("/block/999")
+    response = client.get("/block/xyz999")
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Block not found"}
@@ -201,32 +201,32 @@ def test_get_block_not_found(mock_db):
 def test_get_blocks_by_page_success(mock_db):
     """Test getting all blocks for a page via API."""
     mock_db.get_blocks_by_page.return_value = [
-        (456, "Block 1", 123, None, 1, "2023-01-01 00:00:00"),
-        (789, "Block 2", 123, 456, 2, "2023-01-02 00:00:00"),
+        ("def456", "Block 1", "abc123", None, 1, "2023-01-01 00:00:00"),
+        ("ghi789", "Block 2", "abc123", "def456", 2, "2023-01-02 00:00:00"),
     ]
 
-    response = client.get("/blocks/123")
+    response = client.get("/blocks/abc123")
 
     assert response.status_code == 200
     assert response.json() == [
         {
-            "block_id": 456,
+            "block_id": "def456",
             "content": "Block 1",
-            "page_id": 123,
+            "page_id": "abc123",
             "parent_block_id": None,
             "position": 1,
             "created_at": "2023-01-01T00:00:00",
         },
         {
-            "block_id": 789,
+            "block_id": "ghi789",
             "content": "Block 2",
-            "page_id": 123,
-            "parent_block_id": 456,
+            "page_id": "abc123",
+            "parent_block_id": "def456",
             "position": 2,
             "created_at": "2023-01-02T00:00:00",
         },
     ]
-    mock_db.get_blocks_by_page.assert_called_once_with(123)
+    mock_db.get_blocks_by_page.assert_called_once_with("abc123")
 
 
 def test_update_block_content_success(mock_db):
@@ -234,12 +234,12 @@ def test_update_block_content_success(mock_db):
     mock_db.update_block_content.return_value = True
 
     response = client.put(
-        "/blocks/content", json={"block_id": 456, "new_content": "Updated Content"}
+        "/blocks/content", json={"block_id": "def456", "new_content": "Updated Content"}
     )
 
     assert response.status_code == 200
     assert response.json() == {"status": "success"}
-    mock_db.update_block_content.assert_called_once_with(456, "Updated Content")
+    mock_db.update_block_content.assert_called_once_with("def456", "Updated Content")
 
 
 def test_update_block_content_not_found(mock_db):
@@ -247,7 +247,7 @@ def test_update_block_content_not_found(mock_db):
     mock_db.update_block_content.return_value = False
 
     response = client.put(
-        "/blocks/content", json={"block_id": 999, "new_content": "Updated Content"}
+        "/blocks/content", json={"block_id": "xyz999", "new_content": "Updated Content"}
     )
 
     assert response.status_code == 404
@@ -258,11 +258,11 @@ def test_update_block_parent_success(mock_db):
     """Test updating block parent via API."""
     mock_db.update_block_parent.return_value = True
 
-    response = client.put("/blocks/parent", json={"block_id": 456, "new_page_id": 123})
+    response = client.put("/blocks/parent", json={"block_id": "def456", "new_page_id": "abc123"})
 
     assert response.status_code == 200
     assert response.json() == {"status": "success"}
-    mock_db.update_block_parent.assert_called_once_with(456, 123, None)
+    mock_db.update_block_parent.assert_called_once_with("def456", "abc123", None)
 
 
 def test_update_block_parent_invalid(mock_db):
@@ -271,7 +271,7 @@ def test_update_block_parent_invalid(mock_db):
 
     response = client.put(
         "/blocks/parent",
-        json={"block_id": 999, "new_page_id": 123, "new_parent_block_id": 456},
+        json={"block_id": "xyz999", "new_page_id": "abc123", "new_parent_block_id": "def456"},
     )
 
     assert response.status_code == 404
@@ -282,18 +282,18 @@ def test_delete_block_success(mock_db):
     """Test deleting a block via API."""
     mock_db.delete_block.return_value = True
 
-    response = client.delete("/blocks/456")
+    response = client.delete("/blocks/def456")
 
     assert response.status_code == 200
     assert response.json() == {"status": "success"}
-    mock_db.delete_block.assert_called_once_with(456)
+    mock_db.delete_block.assert_called_once_with("def456")
 
 
 def test_delete_block_not_found(mock_db):
     """Test deleting a non-existent block via API."""
     mock_db.delete_block.return_value = False
 
-    response = client.delete("/blocks/999")
+    response = client.delete("/blocks/xyz999")
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Block not found"}
@@ -462,24 +462,24 @@ def test_delete_workspace_not_found(mock_db):
 # Additional edge case tests for existing functionality
 def test_add_page_empty_title(mock_db):
     """Test adding a page with an empty title."""
-    mock_db.add_page.return_value = 456
+    mock_db.add_page.return_value = "ghi456"
 
     response = client.post("/pages", json={"title": ""})
 
     assert response.status_code == 200
-    assert response.json() == {"page_id": 456}
+    assert response.json() == {"page_id": "ghi456"}
     mock_db.add_page.assert_called_once_with("")
 
 
 def test_add_page_long_title(mock_db):
     """Test adding a page with a very long title."""
     long_title = "A" * 1000
-    mock_db.add_page.return_value = 456
+    mock_db.add_page.return_value = "ghi456"
 
     response = client.post("/pages", json={"title": long_title})
 
     assert response.status_code == 200
-    assert response.json() == {"page_id": 456}
+    assert response.json() == {"page_id": "ghi456"}
     mock_db.add_page.assert_called_once_with(long_title)
 
 
@@ -496,12 +496,12 @@ def test_get_pages_empty(mock_db):
 
 def test_add_block_with_parent(mock_db):
     """Test adding a block with a parent block."""
-    mock_db.add_block.return_value = 555
+    mock_db.add_block.return_value = "ghi555"
     mock_db.get_block_content_by_id.return_value = (
-        555,
+        "ghi555",
         "Child Block",
-        123,
-        456,
+        "abc123",
+        "def456",
         2,
         "2023-01-01 00:00:00",
     )
@@ -511,32 +511,32 @@ def test_add_block_with_parent(mock_db):
         json={
             "content": "Child Block", 
             "position": 2, 
-            "page_id": 123,
-            "parent_block_id": 456
+            "page_id": "abc123",
+            "parent_block_id": "def456"
         }
     )
 
     assert response.status_code == 200
     assert response.json() == {
-        "block_id": 555,
+        "block_id": "ghi555",
         "content": "Child Block",
-        "page_id": 123,
-        "parent_block_id": 456,
+        "page_id": "abc123",
+        "parent_block_id": "def456",
         "position": 2,
         "created_at": "2023-01-01T00:00:00",
     }
-    mock_db.add_block.assert_called_once_with("Child Block", 2, 123, 456)
+    mock_db.add_block.assert_called_once_with("Child Block", 2, "abc123", "def456")
 
 
 def test_get_blocks_by_page_empty(mock_db):
     """Test getting all blocks for a page when there are no blocks."""
     mock_db.get_blocks_by_page.return_value = []
 
-    response = client.get("/blocks/123")
+    response = client.get("/blocks/abc123")
 
     assert response.status_code == 200
     assert response.json() == []
-    mock_db.get_blocks_by_page.assert_called_once_with(123)
+    mock_db.get_blocks_by_page.assert_called_once_with("abc123")
 
 
 def test_update_block_content_special_chars(mock_db):
@@ -546,12 +546,12 @@ def test_update_block_content_special_chars(mock_db):
     special_content = "Special chars: !@#$%^&*()_+-={}[]|\\:;\"'<>?,./"
     response = client.put(
         "/blocks/content", 
-        json={"block_id": 456, "new_content": special_content}
+        json={"block_id": "def456", "new_content": special_content}
     )
 
     assert response.status_code == 200
     assert response.json() == {"status": "success"}
-    mock_db.update_block_content.assert_called_once_with(456, special_content)
+    mock_db.update_block_content.assert_called_once_with("def456", special_content)
 
 
 def test_add_workspace_long_name(mock_db):
@@ -579,13 +579,13 @@ def test_rename_page_special_chars(mock_db):
     mock_db.rename_page.return_value = True
 
     response = client.put("/pages", json={
-        "page_id": 123, 
+        "page_id": "abc123", 
         "new_title": "Page with & Special # Chars!"
     })
 
     assert response.status_code == 200
     assert response.json() == {"status": "success"}
-    mock_db.rename_page.assert_called_once_with(123, "Page with & Special # Chars!")
+    mock_db.rename_page.assert_called_once_with("abc123", "Page with & Special # Chars!")
 
 
 def test_get_workspaces_empty(mock_db):
