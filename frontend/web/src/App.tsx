@@ -68,7 +68,7 @@ function App() {
   // UI elements visibility
   const [navbarVisibility, setNavbarVisibility] =
     useState<NavbarVisibility>("visible");
-  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(true);
 
   const handleRightSidebarToggle = () => {
     setRightSidebarCollapsed(!rightSidebarCollapsed);
@@ -144,7 +144,9 @@ function App() {
       });
       if (response.data) {
         if (response.data.length === 0) {
-          log.debug(`[App] No blocks found, creating new block`, { page_id: currentPageId });
+          log.debug(`[App] No blocks found, creating new block`, {
+            page_id: currentPageId,
+          });
           const newBlock = await addBlockBlocksPost({
             body: { page_id: currentPageId, content: "", position: 0 },
           });
@@ -152,7 +154,10 @@ function App() {
             setBlocks([newBlock.data]);
           }
         } else {
-          log.debug(`[App] Fetched blocks`, { count: response.data.length, page_id: currentPageId });
+          log.debug(`[App] Fetched blocks`, {
+            count: response.data.length,
+            page_id: currentPageId,
+          });
           setBlocks(response.data);
         }
       }

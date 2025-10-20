@@ -11,7 +11,7 @@ export type Block = {
     /**
      * Block Id
      */
-    block_id: number;
+    block_id: string;
     /**
      * Content
      */
@@ -19,11 +19,11 @@ export type Block = {
     /**
      * Page Id
      */
-    page_id?: number | null;
+    page_id?: string | null;
     /**
      * Parent Block Id
      */
-    parent_block_id?: number | null;
+    parent_block_id?: string | null;
     /**
      * Position
      */
@@ -49,11 +49,11 @@ export type BlockCreate = {
     /**
      * Page Id
      */
-    page_id?: number | null;
+    page_id?: string | null;
     /**
      * Parent Block Id
      */
-    parent_block_id?: number | null;
+    parent_block_id?: string | null;
 };
 
 /**
@@ -63,7 +63,7 @@ export type BlockUpdateContent = {
     /**
      * Block Id
      */
-    block_id: number;
+    block_id: string;
     /**
      * New Content
      */
@@ -77,15 +77,15 @@ export type BlockUpdateParent = {
     /**
      * Block Id
      */
-    block_id: number;
+    block_id: string;
     /**
      * New Page Id
      */
-    new_page_id?: number | null;
+    new_page_id?: string | null;
     /**
      * New Parent Block Id
      */
-    new_parent_block_id?: number | null;
+    new_parent_block_id?: string | null;
 };
 
 /**
@@ -105,7 +105,7 @@ export type Page = {
     /**
      * Page Id
      */
-    page_id: number;
+    page_id: string;
     /**
      * Title
      */
@@ -133,7 +133,7 @@ export type PageRename = {
     /**
      * Page Id
      */
-    page_id: number;
+    page_id: string;
     /**
      * New Title
      */
@@ -277,7 +277,7 @@ export type DeletePagePagesPageIdDeleteData = {
         /**
          * Page Id
          */
-        page_id: number;
+        page_id: string;
     };
     query?: never;
     url: '/pages/{page_id}';
@@ -305,7 +305,7 @@ export type GetPagePagesPageIdGetData = {
         /**
          * Page Id
          */
-        page_id: number;
+        page_id: string;
     };
     query?: never;
     url: '/pages/{page_id}';
@@ -360,7 +360,7 @@ export type GetBlockBlockBlockIdGetData = {
         /**
          * Block Id
          */
-        block_id: number;
+        block_id: string;
     };
     query?: never;
     url: '/block/{block_id}';
@@ -390,7 +390,7 @@ export type GetBlocksBlocksPageIdGetData = {
         /**
          * Page Id
          */
-        page_id: number;
+        page_id: string;
     };
     query?: never;
     url: '/blocks/{page_id}';
@@ -467,7 +467,7 @@ export type DeleteBlockBlocksBlockIdDeleteData = {
         /**
          * Block Id
          */
-        block_id: number;
+        block_id: string;
     };
     query?: never;
     url: '/blocks/{block_id}';
