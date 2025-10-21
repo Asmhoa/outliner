@@ -1,4 +1,11 @@
-import { ActionIcon, Group, rem, Modal, TextInput, Button } from "@mantine/core";
+import {
+  ActionIcon,
+  Group,
+  rem,
+  Modal,
+  TextInput,
+  Button,
+} from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useState } from "react";
 import {
@@ -25,14 +32,15 @@ export default function SearchBox({
   onRightSidebarToggle,
 }: SearchBoxProps) {
   const [newPageTitle, setNewPageTitle] = useState("");
-  const [modalOpened, { open: openModal, close: closeModal }] = useDisclosure(false);
+  const [modalOpened, { open: openModal, close: closeModal }] =
+    useDisclosure(false);
 
-  const handleCreatePage = async () => {
+  const handleCreatePage = () => {
     if (!newPageTitle.trim()) {
       return; // Don't create a page with empty title
     }
     log.debug(`Adding new page with title: "${newPageTitle}"`);
-    await onAddPage(newPageTitle);
+    onAddPage(newPageTitle);
     setNewPageTitle("");
     closeModal();
   };
@@ -56,13 +64,17 @@ export default function SearchBox({
           value={newPageTitle}
           onChange={(event) => setNewPageTitle(event.currentTarget.value)}
           onKeyDown={(event) => {
-            if (event.key === 'Enter') {
+            if (event.key === "Enter") {
               handleCreatePage();
             }
           }}
           autoFocus
         />
-        <Button onClick={handleCreatePage} mt="md" disabled={!newPageTitle.trim()}>
+        <Button
+          onClick={handleCreatePage}
+          mt="md"
+          disabled={!newPageTitle.trim()}
+        >
           Create Page
         </Button>
       </Modal>
@@ -81,10 +93,7 @@ export default function SearchBox({
           >
             <IconSearch style={{ width: rem(16), height: rem(16) }} />
           </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            onClick={openModal}
-          >
+          <ActionIcon variant="subtle" onClick={openModal}>
             <IconPencilPlus style={{ width: rem(16), height: rem(16) }} />
           </ActionIcon>
         </Group>

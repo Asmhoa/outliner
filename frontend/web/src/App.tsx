@@ -118,7 +118,10 @@ function App() {
   const handleAddPage = async (title: string) => {
     log.debug(`[App] Adding new page`, { title });
     try {
-      const response = await addPagePagesPost({ body: { title } });
+            console.log("HERE");
+            const response = await addPagePagesPost({ body: { title }, throwOnError: true });
+            console.log(response);
+      console.log("DONE");
       fetchPages();
       // Switch to the newly created page
       if (response.data && response.data.page_id) {
@@ -126,6 +129,7 @@ function App() {
       }
       return response;
     } catch (error) {
+      console.log("CAUGHT");
       if (error.status === 409) {
         log.error("A page with this title already exists.");
       } else {
