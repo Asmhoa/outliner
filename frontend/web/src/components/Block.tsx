@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
+import { showNotification } from "@mantine/notifications";
 import {
   updateBlockContentBlocksContentPut,
   type BlockUpdateContent,
@@ -28,15 +29,14 @@ const Block = forwardRef<HTMLDivElement, BlockProps>(({ id, content, onNewBlock,
     const newContent = event.currentTarget.textContent || "";
     setBlockContent(newContent);
     log.debug(`[Block] Updating content`, { block_id: id, new_content: newContent });
-    try {
-      const updatedBlock: BlockUpdateContent = {
-        block_id: id,
-        new_content: newContent,
-      };
-      await updateBlockContentBlocksContentPut({ body: updatedBlock });
-    } catch (error) {
+    const updatedBlock: BlockUpdateContent = {
+      block_id: id,
+      new_content: newContent,
+    };
+    const { error } = await updateBlockContentBlocksContentPut({ body: updatedBlock });
+    if (error) {
       log.error("[Block] Failed to update block content:", error);
-      setBlockContent(content);
+      setBlockContent(content); // Revert on error
     }
   };
 

@@ -2,7 +2,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from outliner_api_server.data import Database, PageAlreadyExistsError, PageNotFoundError, WorkspaceNotFoundError, BlockNotFoundError
+from outliner_api_server.data import (
+    Database,
+    PageAlreadyExistsError,
+    PageNotFoundError,
+    WorkspaceNotFoundError,
+    BlockNotFoundError,
+)
 import os
 from datetime import datetime
 
@@ -44,7 +50,6 @@ def get_db():
         db.close_conn()
 
 
-
 class Page(BaseModel):
     page_id: str
     title: str
@@ -60,13 +65,23 @@ class PageRename(BaseModel):
     new_title: str
 
 
-
-
-
-@app.post("/pages", responses={
-    200: {"description": "Page created successfully", "content": {"application/json": {"example": {"page_id": "abc123"}}}},
-    409: {"description": "Conflict - Page with this title already exists", "content": {"application/json": {"example": {"detail": "Page with title 'Example' already exists"}}}}
-})
+@app.post(
+    "/pages",
+    responses={
+        200: {
+            "description": "Page created successfully",
+            "content": {"application/json": {"example": {"page_id": "abc123"}}},
+        },
+        409: {
+            "description": "Conflict - Page with this title already exists",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Page with title 'Example' already exists"}
+                }
+            },
+        },
+    },
+)
 def add_page(page: PageCreate, db: Database = Depends(get_db)):
     try:
         page_id = db.add_page(page.title)
@@ -75,10 +90,28 @@ def add_page(page: PageCreate, db: Database = Depends(get_db)):
         raise HTTPException(status_code=409, detail=str(e))
 
 
-@app.get("/pages/{page_id}", response_model=Page, responses={
-    200: {"description": "Page retrieved successfully", "content": {"application/json": {"example": {"page_id": "abc123", "title": "Example Page", "created_at": "2023-01-01T00:00:00"}}}},
-    404: {"description": "Page not found", "content": {"application/json": {"example": {"detail": "Page not found"}}}}
-})
+@app.get(
+    "/pages/{page_id}",
+    response_model=Page,
+    responses={
+        200: {
+            "description": "Page retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "page_id": "abc123",
+                        "title": "Example Page",
+                        "created_at": "2023-01-01T00:00:00",
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Page not found",
+            "content": {"application/json": {"example": {"detail": "Page not found"}}},
+        },
+    },
+)
 def get_page(page_id: str, db: Database = Depends(get_db)):
     page_data = db.get_page_by_id(page_id)
     if not page_data:
@@ -86,19 +119,52 @@ def get_page(page_id: str, db: Database = Depends(get_db)):
     return Page(page_id=page_data[0], title=page_data[1], created_at=page_data[2])
 
 
-@app.get("/pages", response_model=list[Page], responses={
-    200: {"description": "List of pages retrieved successfully", "content": {"application/json": {"example": [{"page_id": "abc123", "title": "Example Page", "created_at": "2023-01-01T00:00:00"}]}}}
-})
+@app.get(
+    "/pages",
+    response_model=list[Page],
+    responses={
+        200: {
+            "description": "List of pages retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "page_id": "abc123",
+                            "title": "Example Page",
+                            "created_at": "2023-01-01T00:00:00",
+                        }
+                    ]
+                }
+            },
+        }
+    },
+)
 def get_pages(db: Database = Depends(get_db)):
     pages_data = db.get_pages()
     return [Page(page_id=p[0], title=p[1], created_at=p[2]) for p in pages_data]
 
 
-@app.put("/pages", responses={
-    200: {"description": "Page renamed successfully", "content": {"application/json": {"example": {"status": "success"}}}},
-    404: {"description": "Page not found", "content": {"application/json": {"example": {"detail": "Page not found"}}}},
-    409: {"description": "Conflict - Page with this title already exists", "content": {"application/json": {"example": {"detail": "Page with title 'Example' already exists"}}}}
-})
+@app.put(
+    "/pages",
+    responses={
+        200: {
+            "description": "Page renamed successfully",
+            "content": {"application/json": {"example": {"status": "success"}}},
+        },
+        404: {
+            "description": "Page not found",
+            "content": {"application/json": {"example": {"detail": "Page not found"}}},
+        },
+        409: {
+            "description": "Conflict - Page with this title already exists",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Page with title 'Example' already exists"}
+                }
+            },
+        },
+    },
+)
 def rename_page(page: PageRename, db: Database = Depends(get_db)):
     try:
         db.rename_page(page.page_id, page.new_title)
@@ -109,10 +175,19 @@ def rename_page(page: PageRename, db: Database = Depends(get_db)):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@app.delete("/pages/{page_id}", responses={
-    200: {"description": "Page deleted successfully", "content": {"application/json": {"example": {"status": "success"}}}},
-    404: {"description": "Page not found", "content": {"application/json": {"example": {"detail": "Page not found"}}}}
-})
+@app.delete(
+    "/pages/{page_id}",
+    responses={
+        200: {
+            "description": "Page deleted successfully",
+            "content": {"application/json": {"example": {"status": "success"}}},
+        },
+        404: {
+            "description": "Page not found",
+            "content": {"application/json": {"example": {"detail": "Page not found"}}},
+        },
+    },
+)
 def delete_page(page_id: str, db: Database = Depends(get_db)):
     try:
         db.delete_page(page_id)
@@ -149,13 +224,31 @@ class BlockUpdateParent(BaseModel):
     new_parent_block_id: str | None = None
 
 
-
-
-
-@app.post("/blocks", response_model=Block, responses={
-    200: {"description": "Block created successfully", "content": {"application/json": {"example": {"block_id": "def456", "content": "Example block content", "page_id": "abc123", "parent_block_id": None, "position": 0, "created_at": "2023-01-01T00:00:00"}}}},
-    404: {"description": "Block not found", "content": {"application/json": {"example": {"detail": "Block not found"}}}}
-})
+@app.post(
+    "/blocks",
+    response_model=Block,
+    responses={
+        200: {
+            "description": "Block created successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "block_id": "def456",
+                        "content": "Example block content",
+                        "page_id": "abc123",
+                        "parent_block_id": None,
+                        "position": 0,
+                        "created_at": "2023-01-01T00:00:00",
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Block not found",
+            "content": {"application/json": {"example": {"detail": "Block not found"}}},
+        },
+    },
+)
 def add_block(block: BlockCreate, db: Database = Depends(get_db)):
     block_id = db.add_block(
         block.content, block.position, block.page_id, block.parent_block_id
@@ -173,10 +266,31 @@ def add_block(block: BlockCreate, db: Database = Depends(get_db)):
     )
 
 
-@app.get("/block/{block_id}", response_model=Block, responses={
-    200: {"description": "Block retrieved successfully", "content": {"application/json": {"example": {"block_id": "def456", "content": "Example block content", "page_id": "abc123", "parent_block_id": None, "position": 0, "created_at": "2023-01-01T00:00:00"}}}},
-    404: {"description": "Block not found", "content": {"application/json": {"example": {"detail": "Block not found"}}}}
-})
+@app.get(
+    "/block/{block_id}",
+    response_model=Block,
+    responses={
+        200: {
+            "description": "Block retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "block_id": "def456",
+                        "content": "Example block content",
+                        "page_id": "abc123",
+                        "parent_block_id": None,
+                        "position": 0,
+                        "created_at": "2023-01-01T00:00:00",
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Block not found",
+            "content": {"application/json": {"example": {"detail": "Block not found"}}},
+        },
+    },
+)
 def get_block(block_id: str, db: Database = Depends(get_db)):
     block_data = db.get_block_content_by_id(block_id)
     if not block_data:
@@ -191,10 +305,33 @@ def get_block(block_id: str, db: Database = Depends(get_db)):
     )
 
 
-@app.get("/blocks/{page_id}", response_model=list[Block], responses={
-    200: {"description": "List of blocks retrieved successfully", "content": {"application/json": {"example": [{"block_id": "def456", "content": "Example block content", "page_id": "abc123", "parent_block_id": None, "position": 0, "created_at": "2023-01-01T00:00:00"}]}}},
-    404: {"description": "Page not found", "content": {"application/json": {"example": {"detail": "Page not found"}}}}
-})
+@app.get(
+    "/blocks/{page_id}",
+    response_model=list[Block],
+    responses={
+        200: {
+            "description": "List of blocks retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "block_id": "def456",
+                            "content": "Example block content",
+                            "page_id": "abc123",
+                            "parent_block_id": None,
+                            "position": 0,
+                            "created_at": "2023-01-01T00:00:00",
+                        }
+                    ]
+                }
+            },
+        },
+        404: {
+            "description": "Page not found",
+            "content": {"application/json": {"example": {"detail": "Page not found"}}},
+        },
+    },
+)
 def get_blocks(page_id: str, db: Database = Depends(get_db)):
     blocks_data = db.get_blocks_by_page(page_id)
     return [
@@ -210,10 +347,19 @@ def get_blocks(page_id: str, db: Database = Depends(get_db)):
     ]
 
 
-@app.put("/blocks/content", responses={
-    200: {"description": "Block content updated successfully", "content": {"application/json": {"example": {"status": "success"}}}},
-    404: {"description": "Block not found", "content": {"application/json": {"example": {"detail": "Block not found"}}}}
-})
+@app.put(
+    "/blocks/content",
+    responses={
+        200: {
+            "description": "Block content updated successfully",
+            "content": {"application/json": {"example": {"status": "success"}}},
+        },
+        404: {
+            "description": "Block not found",
+            "content": {"application/json": {"example": {"detail": "Block not found"}}},
+        },
+    },
+)
 def update_block_content(block: BlockUpdateContent, db: Database = Depends(get_db)):
     try:
         db.update_block_content(block.block_id, block.new_content)
@@ -222,11 +368,27 @@ def update_block_content(block: BlockUpdateContent, db: Database = Depends(get_d
         raise HTTPException(status_code=404, detail="Block not found")
 
 
-@app.put("/blocks/parent", responses={
-    200: {"description": "Block parent updated successfully", "content": {"application/json": {"example": {"status": "success"}}}},
-    400: {"description": "Bad request - Invalid parent relationship", "content": {"application/json": {"example": {"detail": "Invalid parent relationship"}}}},
-    404: {"description": "Block not found", "content": {"application/json": {"example": {"detail": "Block not found"}}}}
-})
+@app.put(
+    "/blocks/parent",
+    responses={
+        200: {
+            "description": "Block parent updated successfully",
+            "content": {"application/json": {"example": {"status": "success"}}},
+        },
+        400: {
+            "description": "Bad request - Invalid parent relationship",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Invalid parent relationship"}
+                }
+            },
+        },
+        404: {
+            "description": "Block not found",
+            "content": {"application/json": {"example": {"detail": "Block not found"}}},
+        },
+    },
+)
 def update_block_parent(block: BlockUpdateParent, db: Database = Depends(get_db)):
     try:
         db.update_block_parent(
@@ -239,10 +401,19 @@ def update_block_parent(block: BlockUpdateParent, db: Database = Depends(get_db)
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.delete("/blocks/{block_id}", responses={
-    200: {"description": "Block deleted successfully", "content": {"application/json": {"example": {"status": "success"}}}},
-    404: {"description": "Block not found", "content": {"application/json": {"example": {"detail": "Block not found"}}}}
-})
+@app.delete(
+    "/blocks/{block_id}",
+    responses={
+        200: {
+            "description": "Block deleted successfully",
+            "content": {"application/json": {"example": {"status": "success"}}},
+        },
+        404: {
+            "description": "Block not found",
+            "content": {"application/json": {"example": {"detail": "Block not found"}}},
+        },
+    },
+)
 def delete_block(block_id: str, db: Database = Depends(get_db)):
     try:
         db.delete_block(block_id)
@@ -269,13 +440,30 @@ class WorkspaceUpdate(BaseModel):
     new_color: str
 
 
-
-
-
-@app.post("/workspaces", response_model=Workspace, responses={
-    200: {"description": "Workspace created successfully", "content": {"application/json": {"example": {"workspace_id": 1, "name": "Example Workspace", "color": "#FF0000"}}}},
-    404: {"description": "Workspace not found", "content": {"application/json": {"example": {"detail": "Workspace not found"}}}}
-})
+@app.post(
+    "/workspaces",
+    response_model=Workspace,
+    responses={
+        200: {
+            "description": "Workspace created successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "workspace_id": 1,
+                        "name": "Example Workspace",
+                        "color": "#FF0000",
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Workspace not found",
+            "content": {
+                "application/json": {"example": {"detail": "Workspace not found"}}
+            },
+        },
+    },
+)
 def add_workspace(workspace: WorkspaceCreate, db: Database = Depends(get_db)):
     workspace_id = db.add_workspace(workspace.name, workspace.color)
     workspace_data = db.get_workspace_by_id(workspace_id)
@@ -288,10 +476,30 @@ def add_workspace(workspace: WorkspaceCreate, db: Database = Depends(get_db)):
     )
 
 
-@app.get("/workspaces/{workspace_id}", response_model=Workspace, responses={
-    200: {"description": "Workspace retrieved successfully", "content": {"application/json": {"example": {"workspace_id": 1, "name": "Example Workspace", "color": "#FF0000"}}}},
-    404: {"description": "Workspace not found", "content": {"application/json": {"example": {"detail": "Workspace not found"}}}}
-})
+@app.get(
+    "/workspaces/{workspace_id}",
+    response_model=Workspace,
+    responses={
+        200: {
+            "description": "Workspace retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "workspace_id": 1,
+                        "name": "Example Workspace",
+                        "color": "#FF0000",
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Workspace not found",
+            "content": {
+                "application/json": {"example": {"detail": "Workspace not found"}}
+            },
+        },
+    },
+)
 def get_workspace(workspace_id: int, db: Database = Depends(get_db)):
     workspace_data = db.get_workspace_by_id(workspace_id)
     if not workspace_data:
@@ -303,9 +511,26 @@ def get_workspace(workspace_id: int, db: Database = Depends(get_db)):
     )
 
 
-@app.get("/workspaces", response_model=list[Workspace], responses={
-    200: {"description": "List of workspaces retrieved successfully", "content": {"application/json": {"example": [{"workspace_id": 1, "name": "Example Workspace", "color": "#FF0000"}]}}}
-})
+@app.get(
+    "/workspaces",
+    response_model=list[Workspace],
+    responses={
+        200: {
+            "description": "List of workspaces retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "workspace_id": 1,
+                            "name": "Example Workspace",
+                            "color": "#FF0000",
+                        }
+                    ]
+                }
+            },
+        }
+    },
+)
 def get_workspaces(db: Database = Depends(get_db)):
     workspaces_data = db.get_workspaces()
     return [
@@ -313,10 +538,21 @@ def get_workspaces(db: Database = Depends(get_db)):
     ]
 
 
-@app.put("/workspaces", responses={
-    200: {"description": "Workspace updated successfully", "content": {"application/json": {"example": {"status": "success"}}}},
-    404: {"description": "Workspace not found", "content": {"application/json": {"example": {"detail": "Workspace not found"}}}}
-})
+@app.put(
+    "/workspaces",
+    responses={
+        200: {
+            "description": "Workspace updated successfully",
+            "content": {"application/json": {"example": {"status": "success"}}},
+        },
+        404: {
+            "description": "Workspace not found",
+            "content": {
+                "application/json": {"example": {"detail": "Workspace not found"}}
+            },
+        },
+    },
+)
 def update_workspace(workspace: WorkspaceUpdate, db: Database = Depends(get_db)):
     try:
         db.update_workspace(
@@ -327,10 +563,21 @@ def update_workspace(workspace: WorkspaceUpdate, db: Database = Depends(get_db))
         raise HTTPException(status_code=404, detail="Workspace not found")
 
 
-@app.delete("/workspaces/{workspace_id}", responses={
-    200: {"description": "Workspace deleted successfully", "content": {"application/json": {"example": {"status": "success"}}}},
-    404: {"description": "Workspace not found", "content": {"application/json": {"example": {"detail": "Workspace not found"}}}}
-})
+@app.delete(
+    "/workspaces/{workspace_id}",
+    responses={
+        200: {
+            "description": "Workspace deleted successfully",
+            "content": {"application/json": {"example": {"status": "success"}}},
+        },
+        404: {
+            "description": "Workspace not found",
+            "content": {
+                "application/json": {"example": {"detail": "Workspace not found"}}
+            },
+        },
+    },
+)
 def delete_workspace(workspace_id: int, db: Database = Depends(get_db)):
     try:
         db.delete_workspace(workspace_id)

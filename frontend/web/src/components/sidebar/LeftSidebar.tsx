@@ -62,7 +62,7 @@ const LeftSidebar = ({
   return (
     // <AppShell.Navbar pt="sm" pb="sm" style={{ backgroundColor }}>
     <AppShell.Navbar pt="sm" pb="sm">
-      <Group align="flex-start">
+      <Group align="flex-start" gap={0}>
         {navbarVisibility === "visible" && (
           <WorkspaceSidebar
             workspaces={workspaces}
@@ -71,7 +71,7 @@ const LeftSidebar = ({
             setActiveWorkspaceId={setActiveWorkspaceId}
           />
         )}
-        <Stack>
+        <Stack pl={"md"}>
           <AppShell.Section>
             <Menu shadow="md">
               <Menu.Target>
