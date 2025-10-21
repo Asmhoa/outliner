@@ -123,7 +123,7 @@ def test_rename_page_not_found(override_get_db):
     response = client.put("/pages", json={"page_id": "xyz999", "new_title": "New Title"})
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Page not found"}
+    assert response.json()["detail"] == "Page with ID xyz999 not found"
 
 
 def test_delete_page_success(override_get_db):
@@ -701,3 +701,45 @@ def test_get_workspaces_empty(override_get_db):
     workspaces = response.json()
     # At least the default workspace should exist
     assert len(workspaces) >= 1
+
+
+def test_add_page_duplicate_title(override_get_db):
+    """Test that adding a page with a duplicate title returns a 409 Conflict status."""
+    db = override_get_db
+
+    # Add the first page
+    response1 = client.post("/pages", json={"title": "Test Page"})
+    assert response1.status_code == 200
+    page_id_1 = response1.json()["page_id"]
+    assert isinstance(page_id_1, str)
+
+    # Try to add a second page with the same title - should return 409
+    response2 = client.post("/pages", json={"title": "Test Page"})
+    assert response2.status_code == 409
+    assert "Test Page" in response2.json()["detail"]
+
+
+def test_rename_page_duplicate_title(override_get_db):
+    """Test that renaming a page to an existing title returns a 409 Conflict status."""
+    db = override_get_db
+
+    # Add two pages with different titles
+    response1 = client.post("/pages", json={"title": "Page One"})
+    assert response1.status_code == 200
+    page_id_1 = response1.json()["page_id"]
+    assert isinstance(page_id_1, str)
+
+    response2 = client.post("/pages", json={"title": "Page Two"})
+    assert response2.status_code == 200
+    page_id_2 = response2.json()["page_id"]
+    assert isinstance(page_id_2, str)
+
+    # Try to rename page 2 to page 1's title - should return 409
+    response3 = client.put("/pages", json={"page_id": page_id_2, "new_title": "Page One"})
+    assert response3.status_code == 409
+    assert "Page One" in response3.json()["detail"]
+
+    # Verify page 2 still has its original title
+    page_data = db.get_page_by_id(page_id_2)
+    assert page_data is not None
+    assert page_data[1] == "Page Two"

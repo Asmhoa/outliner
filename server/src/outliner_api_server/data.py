@@ -1,10 +1,21 @@
 import atexit
+from multiprocessing import Value
 import signal
 import logging
 import uuid
 from sqlite3 import connect, Cursor, Connection
 
 logger = logging.getLogger(__name__)
+
+
+class PageAlreadyExistsError(Exception):
+    """Raised when trying to create a page with a title that already exists."""
+    pass
+
+
+class PageNotFoundError(Exception):
+    """Raised when a page is not found."""
+    pass
 
 
 class Database:
@@ -64,7 +75,7 @@ class Database:
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS pages (
                 page_id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-                title VARCHAR(255) NOT NULL,
+                title VARCHAR(255) NOT NULL UNIQUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
@@ -185,7 +196,15 @@ class Database:
         Adds a new page to the database.
         Returns the ID of the newly created page.
         """
-        self.cursor.execute("INSERT INTO pages (title) VALUES (?) RETURNING page_id", (title,))
+        # Check if a page with this title already exists
+        self.cursor.execute("SELECT page_id FROM pages WHERE title = ?", (title,))
+        existing_page = self.cursor.fetchone()
+        if existing_page:
+            raise PageAlreadyExistsError(f"Page with title '{title}' already exists")
+
+        self.cursor.execute(
+            "INSERT INTO pages (title) VALUES (?) RETURNING page_id", (title,)
+        )
         new_page_id = self.cursor.fetchone()[0]
         self.conn.commit()
         logger.debug(f"Page '{title}' added successfully with ID: {new_page_id}")
@@ -210,6 +229,17 @@ class Database:
         Renames an existing page.
         Returns True if successful, False otherwise.
         """
+        # Check if a different page with this title already exists
+        self.cursor.execute(
+            "SELECT page_id FROM pages WHERE title = ? AND page_id != ?",
+            (new_title, page_id),
+        )
+        existing_page = self.cursor.fetchone()
+        if existing_page:
+            raise PageAlreadyExistsError(
+                f"Page with title '{new_title}' already exists"
+            )
+
         self.cursor.execute(
             "UPDATE pages SET title = ? WHERE page_id = ?", (new_title, page_id)
         )
@@ -219,7 +249,7 @@ class Database:
             return True
         else:
             logger.debug(f"Page ID {page_id} not found or no change in title.")
-            return False
+            raise PageNotFoundError(f"Page with ID {page_id} not found")
 
     def delete_page(self, page_id: str) -> bool:
         """

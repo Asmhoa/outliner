@@ -1,5 +1,5 @@
 import pytest
-from outliner_api_server.data import Database
+from outliner_api_server.data import Database, PageNotFoundError, PageAlreadyExistsError
 
 
 @pytest.fixture
@@ -43,8 +43,45 @@ def test_rename_page(db):
 
 def test_rename_nonexistent_page(db):
     """Test renaming a non-existent page."""
-    result = db.rename_page(999, "New Title")
-    assert result is False
+    with pytest.raises(PageNotFoundError):
+        db.rename_page(999, "New Title")
+
+
+def test_add_page_duplicate_title(db):
+    """Test that adding a page with a duplicate title raises an error."""
+    # Add the first page
+    page_id_1 = db.add_page("Test Page")
+    assert isinstance(page_id_1, str)
+    
+    # Try to add a second page with the same title - should raise PageAlreadyExistsError
+    with pytest.raises(PageAlreadyExistsError, match="Page with title 'Test Page' already exists"):
+        db.add_page("Test Page")
+    
+    # Verify only one page exists in the database
+    cursor = db.conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM pages")
+    count = cursor.fetchone()[0]
+    assert count == 1
+
+
+def test_rename_page_duplicate_title(db):
+    """Test that renaming a page to an existing title raises an error."""
+    # Add two pages with different titles
+    page_id_1 = db.add_page("Page One")
+    page_id_2 = db.add_page("Page Two")
+    
+    # Try to rename page 2 to page 1's title - should raise PageAlreadyExistsError
+    with pytest.raises(PageAlreadyExistsError, match="Page with title 'Page One' already exists"):
+        db.rename_page(page_id_2, "Page One")
+    
+    # Verify page 2 still has its original title
+    cursor = db.conn.cursor()
+    cursor.execute("SELECT title FROM pages WHERE page_id = ?", (page_id_2,))
+    assert cursor.fetchone()[0] == "Page Two"
+    
+    # Verify page 1 still has its original title
+    cursor.execute("SELECT title FROM pages WHERE page_id = ?", (page_id_1,))
+    assert cursor.fetchone()[0] == "Page One"
 
 
 def test_delete_page(db):

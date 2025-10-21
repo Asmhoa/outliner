@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from outliner_api_server.data import Database
+from outliner_api_server.data import Database, PageAlreadyExistsError, PageNotFoundError
 import os
 from datetime import datetime
 
@@ -63,10 +63,16 @@ class PageRename(BaseModel):
 
 
 
-@app.post("/pages")
+@app.post("/pages", responses={
+    200: {"description": "Page created successfully", "content": {"application/json": {"example": {"page_id": "abc123"}}}},
+    409: {"description": "Conflict - Page with this title already exists", "content": {"application/json": {"example": {"detail": "Page with title 'Example' already exists"}}}}
+})
 def add_page(page: PageCreate, db: Database = Depends(get_db)):
-    page_id = db.add_page(page.title)
-    return {"page_id": page_id}
+    try:
+        page_id = db.add_page(page.title)
+        return {"page_id": page_id}
+    except PageAlreadyExistsError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 
 @app.get("/pages/{page_id}", response_model=Page)
@@ -83,11 +89,22 @@ def get_pages(db: Database = Depends(get_db)):
     return [Page(page_id=p[0], title=p[1], created_at=p[2]) for p in pages_data]
 
 
-@app.put("/pages")
+@app.put("/pages", responses={
+    200: {"description": "Page renamed successfully", "content": {"application/json": {"example": {"status": "success"}}}},
+    404: {"description": "Page not found", "content": {"application/json": {"example": {"detail": "Page not found"}}}},
+    409: {"description": "Conflict - Page with this title already exists", "content": {"application/json": {"example": {"detail": "Page with title 'Example' already exists"}}}}
+})
 def rename_page(page: PageRename, db: Database = Depends(get_db)):
-    if not db.rename_page(page.page_id, page.new_title):
+    try:
+        success = db.rename_page(page.page_id, page.new_title)
+        if success:
+            return {"status": "success"}
+        # If success is False, it means the page does not exist
         raise HTTPException(status_code=404, detail="Page not found")
-    return {"status": "success"}
+    except PageAlreadyExistsError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except PageNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @app.delete("/pages/{page_id}")
