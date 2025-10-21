@@ -218,7 +218,7 @@ export type GetPagesPagesGetData = {
 export type GetPagesPagesGetResponses = {
     /**
      * Response Get Pages Pages Get
-     * Successful Response
+     * List of pages retrieved successfully
      */
     200: Array<Page>;
 };
@@ -234,6 +234,10 @@ export type AddPagePagesPostData = {
 
 export type AddPagePagesPostErrors = {
     /**
+     * Conflict - Page with this title already exists
+     */
+    409: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -243,7 +247,7 @@ export type AddPagePagesPostError = AddPagePagesPostErrors[keyof AddPagePagesPos
 
 export type AddPagePagesPostResponses = {
     /**
-     * Successful Response
+     * Page created successfully
      */
     200: unknown;
 };
@@ -257,6 +261,14 @@ export type RenamePagePagesPutData = {
 
 export type RenamePagePagesPutErrors = {
     /**
+     * Page not found
+     */
+    404: unknown;
+    /**
+     * Conflict - Page with this title already exists
+     */
+    409: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -266,7 +278,7 @@ export type RenamePagePagesPutError = RenamePagePagesPutErrors[keyof RenamePageP
 
 export type RenamePagePagesPutResponses = {
     /**
-     * Successful Response
+     * Page renamed successfully
      */
     200: unknown;
 };
@@ -285,6 +297,10 @@ export type DeletePagePagesPageIdDeleteData = {
 
 export type DeletePagePagesPageIdDeleteErrors = {
     /**
+     * Page not found
+     */
+    404: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -294,7 +310,7 @@ export type DeletePagePagesPageIdDeleteError = DeletePagePagesPageIdDeleteErrors
 
 export type DeletePagePagesPageIdDeleteResponses = {
     /**
-     * Successful Response
+     * Page deleted successfully
      */
     200: unknown;
 };
@@ -313,6 +329,10 @@ export type GetPagePagesPageIdGetData = {
 
 export type GetPagePagesPageIdGetErrors = {
     /**
+     * Page not found
+     */
+    404: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -322,7 +342,7 @@ export type GetPagePagesPageIdGetError = GetPagePagesPageIdGetErrors[keyof GetPa
 
 export type GetPagePagesPageIdGetResponses = {
     /**
-     * Successful Response
+     * Page retrieved successfully
      */
     200: Page;
 };
@@ -338,6 +358,10 @@ export type AddBlockBlocksPostData = {
 
 export type AddBlockBlocksPostErrors = {
     /**
+     * Block not found
+     */
+    404: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -347,7 +371,7 @@ export type AddBlockBlocksPostError = AddBlockBlocksPostErrors[keyof AddBlockBlo
 
 export type AddBlockBlocksPostResponses = {
     /**
-     * Successful Response
+     * Block created successfully
      */
     200: Block;
 };
@@ -368,6 +392,10 @@ export type GetBlockBlockBlockIdGetData = {
 
 export type GetBlockBlockBlockIdGetErrors = {
     /**
+     * Block not found
+     */
+    404: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -377,7 +405,7 @@ export type GetBlockBlockBlockIdGetError = GetBlockBlockBlockIdGetErrors[keyof G
 
 export type GetBlockBlockBlockIdGetResponses = {
     /**
-     * Successful Response
+     * Block retrieved successfully
      */
     200: Block;
 };
@@ -398,6 +426,10 @@ export type GetBlocksBlocksPageIdGetData = {
 
 export type GetBlocksBlocksPageIdGetErrors = {
     /**
+     * Page not found
+     */
+    404: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -408,7 +440,7 @@ export type GetBlocksBlocksPageIdGetError = GetBlocksBlocksPageIdGetErrors[keyof
 export type GetBlocksBlocksPageIdGetResponses = {
     /**
      * Response Get Blocks Blocks  Page Id  Get
-     * Successful Response
+     * List of blocks retrieved successfully
      */
     200: Array<Block>;
 };
@@ -424,6 +456,10 @@ export type UpdateBlockContentBlocksContentPutData = {
 
 export type UpdateBlockContentBlocksContentPutErrors = {
     /**
+     * Block not found
+     */
+    404: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -433,7 +469,7 @@ export type UpdateBlockContentBlocksContentPutError = UpdateBlockContentBlocksCo
 
 export type UpdateBlockContentBlocksContentPutResponses = {
     /**
-     * Successful Response
+     * Block content updated successfully
      */
     200: unknown;
 };
@@ -447,6 +483,14 @@ export type UpdateBlockParentBlocksParentPutData = {
 
 export type UpdateBlockParentBlocksParentPutErrors = {
     /**
+     * Bad request - Invalid parent relationship
+     */
+    400: unknown;
+    /**
+     * Block not found
+     */
+    404: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -456,7 +500,7 @@ export type UpdateBlockParentBlocksParentPutError = UpdateBlockParentBlocksParen
 
 export type UpdateBlockParentBlocksParentPutResponses = {
     /**
-     * Successful Response
+     * Block parent updated successfully
      */
     200: unknown;
 };
@@ -475,6 +519,10 @@ export type DeleteBlockBlocksBlockIdDeleteData = {
 
 export type DeleteBlockBlocksBlockIdDeleteErrors = {
     /**
+     * Block not found
+     */
+    404: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -484,7 +532,7 @@ export type DeleteBlockBlocksBlockIdDeleteError = DeleteBlockBlocksBlockIdDelete
 
 export type DeleteBlockBlocksBlockIdDeleteResponses = {
     /**
-     * Successful Response
+     * Block deleted successfully
      */
     200: unknown;
 };
@@ -499,7 +547,7 @@ export type GetWorkspacesWorkspacesGetData = {
 export type GetWorkspacesWorkspacesGetResponses = {
     /**
      * Response Get Workspaces Workspaces Get
-     * Successful Response
+     * List of workspaces retrieved successfully
      */
     200: Array<Workspace>;
 };
@@ -515,6 +563,10 @@ export type AddWorkspaceWorkspacesPostData = {
 
 export type AddWorkspaceWorkspacesPostErrors = {
     /**
+     * Workspace not found
+     */
+    404: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -524,7 +576,7 @@ export type AddWorkspaceWorkspacesPostError = AddWorkspaceWorkspacesPostErrors[k
 
 export type AddWorkspaceWorkspacesPostResponses = {
     /**
-     * Successful Response
+     * Workspace created successfully
      */
     200: Workspace;
 };
@@ -540,6 +592,10 @@ export type UpdateWorkspaceWorkspacesPutData = {
 
 export type UpdateWorkspaceWorkspacesPutErrors = {
     /**
+     * Workspace not found
+     */
+    404: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -549,7 +605,7 @@ export type UpdateWorkspaceWorkspacesPutError = UpdateWorkspaceWorkspacesPutErro
 
 export type UpdateWorkspaceWorkspacesPutResponses = {
     /**
-     * Successful Response
+     * Workspace updated successfully
      */
     200: unknown;
 };
@@ -568,6 +624,10 @@ export type DeleteWorkspaceWorkspacesWorkspaceIdDeleteData = {
 
 export type DeleteWorkspaceWorkspacesWorkspaceIdDeleteErrors = {
     /**
+     * Workspace not found
+     */
+    404: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -577,7 +637,7 @@ export type DeleteWorkspaceWorkspacesWorkspaceIdDeleteError = DeleteWorkspaceWor
 
 export type DeleteWorkspaceWorkspacesWorkspaceIdDeleteResponses = {
     /**
-     * Successful Response
+     * Workspace deleted successfully
      */
     200: unknown;
 };
@@ -596,6 +656,10 @@ export type GetWorkspaceWorkspacesWorkspaceIdGetData = {
 
 export type GetWorkspaceWorkspacesWorkspaceIdGetErrors = {
     /**
+     * Workspace not found
+     */
+    404: unknown;
+    /**
      * Validation Error
      */
     422: HttpValidationError;
@@ -605,7 +669,7 @@ export type GetWorkspaceWorkspacesWorkspaceIdGetError = GetWorkspaceWorkspacesWo
 
 export type GetWorkspaceWorkspacesWorkspaceIdGetResponses = {
     /**
-     * Successful Response
+     * Workspace retrieved successfully
      */
     200: Workspace;
 };
