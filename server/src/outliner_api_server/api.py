@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from outliner_api_server.data import Database, PageAlreadyExistsError, PageNotFoundError
+from outliner_api_server.data import Database, PageAlreadyExistsError, PageNotFoundError, WorkspaceNotFoundError, BlockNotFoundError
 import os
 from datetime import datetime
 
@@ -96,11 +96,8 @@ def get_pages(db: Database = Depends(get_db)):
 })
 def rename_page(page: PageRename, db: Database = Depends(get_db)):
     try:
-        success = db.rename_page(page.page_id, page.new_title)
-        if success:
-            return {"status": "success"}
-        # If success is False, it means the page does not exist
-        raise HTTPException(status_code=404, detail="Page not found")
+        db.rename_page(page.page_id, page.new_title)
+        return {"status": "success"}
     except PageAlreadyExistsError as e:
         raise HTTPException(status_code=409, detail=str(e))
     except PageNotFoundError as e:
@@ -109,9 +106,11 @@ def rename_page(page: PageRename, db: Database = Depends(get_db)):
 
 @app.delete("/pages/{page_id}")
 def delete_page(page_id: str, db: Database = Depends(get_db)):
-    if not db.delete_page(page_id):
+    try:
+        db.delete_page(page_id)
+        return {"status": "success"}
+    except PageNotFoundError:
         raise HTTPException(status_code=404, detail="Page not found")
-    return {"status": "success"}
 
 
 # Route for blocks
@@ -196,27 +195,33 @@ def get_blocks(page_id: str, db: Database = Depends(get_db)):
 
 @app.put("/blocks/content")
 def update_block_content(block: BlockUpdateContent, db: Database = Depends(get_db)):
-    if not db.update_block_content(block.block_id, block.new_content):
+    try:
+        db.update_block_content(block.block_id, block.new_content)
+        return {"status": "success"}
+    except BlockNotFoundError:
         raise HTTPException(status_code=404, detail="Block not found")
-    return {"status": "success"}
 
 
 @app.put("/blocks/parent")
 def update_block_parent(block: BlockUpdateParent, db: Database = Depends(get_db)):
-    if not db.update_block_parent(
-        block.block_id, block.new_page_id, block.new_parent_block_id
-    ):
-        raise HTTPException(
-            status_code=404, detail="Block not found or invalid parent update"
+    try:
+        db.update_block_parent(
+            block.block_id, block.new_page_id, block.new_parent_block_id
         )
-    return {"status": "success"}
+        return {"status": "success"}
+    except BlockNotFoundError:
+        raise HTTPException(status_code=404, detail="Block not found")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.delete("/blocks/{block_id}")
 def delete_block(block_id: str, db: Database = Depends(get_db)):
-    if not db.delete_block(block_id):
+    try:
+        db.delete_block(block_id)
+        return {"status": "success"}
+    except BlockNotFoundError:
         raise HTTPException(status_code=404, detail="Block not found")
-    return {"status": "success"}
 
 
 # Route for workspaces
@@ -275,15 +280,19 @@ def get_workspaces(db: Database = Depends(get_db)):
 
 @app.put("/workspaces")
 def update_workspace(workspace: WorkspaceUpdate, db: Database = Depends(get_db)):
-    if not db.update_workspace(
-        workspace.workspace_id, workspace.new_name, workspace.new_color
-    ):
+    try:
+        db.update_workspace(
+            workspace.workspace_id, workspace.new_name, workspace.new_color
+        )
+        return {"status": "success"}
+    except WorkspaceNotFoundError:
         raise HTTPException(status_code=404, detail="Workspace not found")
-    return {"status": "success"}
 
 
 @app.delete("/workspaces/{workspace_id}")
 def delete_workspace(workspace_id: int, db: Database = Depends(get_db)):
-    if not db.delete_workspace(workspace_id):
+    try:
+        db.delete_workspace(workspace_id)
+        return {"status": "success"}
+    except WorkspaceNotFoundError:
         raise HTTPException(status_code=404, detail="Workspace not found")
-    return {"status": "success"}

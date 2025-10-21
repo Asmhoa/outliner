@@ -18,6 +18,16 @@ class PageNotFoundError(Exception):
     pass
 
 
+class WorkspaceNotFoundError(Exception):
+    """Raised when a workspace is not found."""
+    pass
+
+
+class BlockNotFoundError(Exception):
+    """Raised when a block is not found."""
+    pass
+
+
 class Database:
     def __init__(self, db_name: str) -> None:
         self.db_name: str = db_name
@@ -155,10 +165,10 @@ class Database:
 
     def update_workspace(
         self, workspace_id: int, new_name: str, new_color: str
-    ) -> bool:
+    ):
         """
         Updates an existing workspace.
-        Returns True if successful, False otherwise.
+        Raises WorkspaceNotFoundError if workspace is not found.
         """
         color_bytes = bytes.fromhex(new_color.lstrip("#"))
         self.cursor.execute(
@@ -166,28 +176,24 @@ class Database:
             (new_name, color_bytes, workspace_id),
         )
         self.conn.commit()
-        if self.cursor.rowcount > 0:
-            logger.debug(f"Workspace ID {workspace_id} updated.")
-            return True
-        else:
+        if self.cursor.rowcount == 0:
             logger.debug(f"Workspace ID {workspace_id} not found or no change.")
-            return False
+            raise WorkspaceNotFoundError(f"Workspace with ID {workspace_id} not found")
+        logger.debug(f"Workspace ID {workspace_id} updated.")
 
-    def delete_workspace(self, workspace_id: int) -> bool:
+    def delete_workspace(self, workspace_id: int):
         """
         Deletes a workspace.
-        Returns True if successful, False otherwise.
+        Raises WorkspaceNotFoundError if workspace is not found.
         """
         self.cursor.execute(
             "DELETE FROM workspaces WHERE workspace_id = ?", (workspace_id,)
         )
         self.conn.commit()
-        if self.cursor.rowcount > 0:
-            logger.debug(f"Workspace ID {workspace_id} deleted successfully.")
-            return True
-        else:
+        if self.cursor.rowcount == 0:
             logger.debug(f"Workspace ID {workspace_id} not found.")
-            return False
+            raise WorkspaceNotFoundError(f"Workspace with ID {workspace_id} not found")
+        logger.debug(f"Workspace ID {workspace_id} deleted successfully.")
 
     # CRUD:- pages
 
@@ -224,10 +230,11 @@ class Database:
         self.cursor.execute("SELECT * FROM pages")
         return self.cursor.fetchall()
 
-    def rename_page(self, page_id: str, new_title: str) -> bool:
+    def rename_page(self, page_id: str, new_title: str):
         """
         Renames an existing page.
-        Returns True if successful, False otherwise.
+        Raises PageNotFoundError if page is not found.
+        Raises PageAlreadyExistsError if a page with the new title already exists.
         """
         # Check if a different page with this title already exists
         self.cursor.execute(
@@ -244,26 +251,22 @@ class Database:
             "UPDATE pages SET title = ? WHERE page_id = ?", (new_title, page_id)
         )
         self.conn.commit()
-        if self.cursor.rowcount > 0:
-            logger.debug(f"Page ID {page_id} renamed to '{new_title}'.")
-            return True
-        else:
+        if self.cursor.rowcount == 0:
             logger.debug(f"Page ID {page_id} not found or no change in title.")
             raise PageNotFoundError(f"Page with ID {page_id} not found")
+        logger.debug(f"Page ID {page_id} renamed to '{new_title}'.")
 
-    def delete_page(self, page_id: str) -> bool:
+    def delete_page(self, page_id: str):
         """
         Deletes a page and all its associated blocks.
-        Returns True if successful, False otherwise.
+        Raises PageNotFoundError if page is not found.
         """
         self.cursor.execute("DELETE FROM pages WHERE page_id = ?", (page_id,))
         self.conn.commit()
-        if self.cursor.rowcount > 0:
-            logger.debug(f"Page ID {page_id} and its blocks deleted successfully.")
-            return True
-        else:
+        if self.cursor.rowcount == 0:
             logger.debug(f"Page ID {page_id} not found.")
-            return False
+            raise PageNotFoundError(f"Page with ID {page_id} not found")
+        logger.debug(f"Page ID {page_id} and its blocks deleted successfully.")
 
     # CRUD:- blocks
 
@@ -320,28 +323,26 @@ class Database:
         self.cursor.execute("SELECT * FROM blocks WHERE block_id = ?", (block_id,))
         return self.cursor.fetchone()
 
-    def update_block_content(self, block_id: str, new_content: str) -> bool:
+    def update_block_content(self, block_id: str, new_content: str):
         """
         Updates the content of an existing block.
-        Returns True if successful, False otherwise.
+        Raises BlockNotFoundError if block is not found.
         """
         self.cursor.execute(
             "UPDATE blocks SET content = ? WHERE block_id = ?", (new_content, block_id)
         )
         self.conn.commit()
-        if self.cursor.rowcount > 0:
-            logger.debug(f"Block ID {block_id} content updated.")
-            return True
-        else:
+        if self.cursor.rowcount == 0:
             logger.debug(f"Block ID {block_id} not found or no change in content.")
-            return False
+            raise BlockNotFoundError(f"Block with ID {block_id} not found")
+        logger.debug(f"Block ID {block_id} content updated.")
 
     def update_block_parent(
         self, block_id: str, new_page_id: str = None, new_parent_block_id: str = None
-    ) -> bool:
+    ):
         """
         Updates the parent of an existing block. A block can either have a page_id or a parent_block_id, but not both.
-        Returns True if successful, False otherwise.
+        Raises BlockNotFoundError if block is not found.
         """
         if new_page_id is not None and new_parent_block_id is None:
             self.cursor.execute(
@@ -363,25 +364,23 @@ class Database:
             logger.error(
                 "A block must be associated with either a page_id or a parent_block_id, but not both. No update performed for block ID {block_id}."
             )
-            return False
+            raise ValueError(
+                "A block must be associated with either a page_id or a parent_block_id, but not both."
+            )
 
         self.conn.commit()
-        if self.cursor.rowcount > 0:
-            return True
-        else:
+        if self.cursor.rowcount == 0:
             logger.debug(f"Block ID {block_id} not found or no change in parent.")
-            return False
+            raise BlockNotFoundError(f"Block with ID {block_id} not found")
 
-    def delete_block(self, block_id: str) -> bool:
+    def delete_block(self, block_id: str):
         """
         Deletes a block and all its nested child blocks.
-        Returns True if successful, False otherwise.
+        Raises BlockNotFoundError if block is not found.
         """
         self.cursor.execute("DELETE FROM blocks WHERE block_id = ?", (block_id,))
         self.conn.commit()
-        if self.cursor.rowcount > 0:
-            logger.debug(f"Block ID {block_id} and its children deleted successfully.")
-            return True
-        else:
+        if self.cursor.rowcount == 0:
             logger.debug(f"Block ID {block_id} not found.")
-            return False
+            raise BlockNotFoundError(f"Block with ID {block_id} not found")
+        logger.debug(f"Block ID {block_id} and its children deleted successfully.")

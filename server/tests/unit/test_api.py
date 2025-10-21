@@ -305,8 +305,8 @@ def test_update_block_parent_invalid(override_get_db):
         json={"block_id": "xyz999", "new_page_id": "abc123", "new_parent_block_id": "def456"},
     )
 
-    assert response.status_code == 404
-    assert response.json() == {"detail": "Block not found or invalid parent update"}
+    assert response.status_code == 400
+    assert "A block must be associated with either a page_id or a parent_block_id, but not both." in response.json()["detail"]
 
 
 def test_delete_block_success(override_get_db):

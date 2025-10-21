@@ -1,5 +1,5 @@
 import pytest
-from outliner_api_server.data import Database, PageNotFoundError, PageAlreadyExistsError
+from outliner_api_server.data import Database, PageNotFoundError, PageAlreadyExistsError, WorkspaceNotFoundError, BlockNotFoundError
 
 
 @pytest.fixture
@@ -34,8 +34,7 @@ def test_add_page(db):
 def test_rename_page(db):
     """Test renaming a page."""
     page_id = db.add_page("Old Title")
-    result = db.rename_page(page_id, "New Title")
-    assert result is True
+    db.rename_page(page_id, "New Title")  # Should not raise an exception
     cursor = db.conn.cursor()
     cursor.execute("SELECT title FROM pages WHERE page_id = ?", (page_id,))
     assert cursor.fetchone()[0] == "New Title"
@@ -87,8 +86,7 @@ def test_rename_page_duplicate_title(db):
 def test_delete_page(db):
     """Test deleting a page."""
     page_id = db.add_page("Test Page")
-    result = db.delete_page(page_id)
-    assert result is True
+    db.delete_page(page_id)  # Should not raise an exception
     cursor = db.conn.cursor()
     cursor.execute("SELECT * FROM pages WHERE page_id = ?", (page_id,))
     assert cursor.fetchone() is None
@@ -96,8 +94,8 @@ def test_delete_page(db):
 
 def test_delete_nonexistent_page(db):
     """Test deleting a non-existent page."""
-    result = db.delete_page(999)
-    assert result is False
+    with pytest.raises(PageNotFoundError):
+        db.delete_page(999)
 
 
 def test_add_block_to_page(db):
@@ -139,8 +137,7 @@ def test_delete_block(db):
     """Test deleting a block."""
     page_id = db.add_page("Test Page")
     block_id = db.add_block("Test Block", 1, page_id=page_id)
-    result = db.delete_block(block_id)
-    assert result is True
+    db.delete_block(block_id)  # Should not raise an exception
     cursor = db.conn.cursor()
     cursor.execute("SELECT * FROM blocks WHERE block_id = ?", (block_id,))
     assert cursor.fetchone() is None
@@ -148,8 +145,8 @@ def test_delete_block(db):
 
 def test_delete_nonexistent_block(db):
     """Test deleting a non-existent block."""
-    result = db.delete_block(999)
-    assert result is False
+    with pytest.raises(BlockNotFoundError):
+        db.delete_block(999)
 
 
 def test_delete_page_cascades_to_blocks(db):
@@ -177,8 +174,7 @@ def test_update_block_content(db):
     """Test updating the content of a block."""
     page_id = db.add_page("Test Page")
     block_id = db.add_block("Original Content", 1, page_id=page_id)
-    result = db.update_block_content(block_id, "New Content")
-    assert result is True
+    db.update_block_content(block_id, "New Content")  # Should not raise an exception
     cursor = db.conn.cursor()
     cursor.execute("SELECT content FROM blocks WHERE block_id = ?", (block_id,))
     assert cursor.fetchone()[0] == "New Content"
@@ -186,8 +182,8 @@ def test_update_block_content(db):
 
 def test_update_block_content_nonexistent_block(db):
     """Test updating content of a non-existent block."""
-    result = db.update_block_content(999, "New Content")
-    assert result is False
+    with pytest.raises(BlockNotFoundError):
+        db.update_block_content(999, "New Content")
 
 
 def test_update_block_parent_to_new_page(db):
@@ -195,8 +191,7 @@ def test_update_block_parent_to_new_page(db):
     page_id_1 = db.add_page("Page One")
     page_id_2 = db.add_page("Page Two")
     block_id = db.add_block("Block on Page One", 1, page_id=page_id_1)
-    result = db.update_block_parent(block_id, new_page_id=page_id_2)
-    assert result is True
+    db.update_block_parent(block_id, new_page_id=page_id_2)  # Should not raise an exception
     cursor = db.conn.cursor()
     cursor.execute(
         "SELECT page_id, parent_block_id FROM blocks WHERE block_id = ?", (block_id,)
@@ -212,8 +207,7 @@ def test_update_block_parent_to_new_parent_block(db):
     parent_block_id_1 = db.add_block("Parent Block One", 1, page_id=page_id)
     parent_block_id_2 = db.add_block("Parent Block Two", 2, page_id=page_id)
     block_id = db.add_block("Child Block", 1, parent_block_id=parent_block_id_1)
-    result = db.update_block_parent(block_id, new_parent_block_id=parent_block_id_2)
-    assert result is True
+    db.update_block_parent(block_id, new_parent_block_id=parent_block_id_2)  # Should not raise an exception
     cursor = db.conn.cursor()
     cursor.execute(
         "SELECT page_id, parent_block_id FROM blocks WHERE block_id = ?", (block_id,)
@@ -228,8 +222,7 @@ def test_update_block_parent_from_page_to_block(db):
     page_id = db.add_page("Test Page")
     parent_block_id = db.add_block("Parent Block", 1, page_id=page_id)
     block_id = db.add_block("Block on Page", 1, page_id=page_id)
-    result = db.update_block_parent(block_id, new_parent_block_id=parent_block_id)
-    assert result is True
+    db.update_block_parent(block_id, new_parent_block_id=parent_block_id)  # Should not raise an exception
     cursor = db.conn.cursor()
     cursor.execute(
         "SELECT page_id, parent_block_id FROM blocks WHERE block_id = ?", (block_id,)
@@ -245,8 +238,7 @@ def test_update_block_parent_from_block_to_page(db):
     page_id_2 = db.add_page("Page Two")
     parent_block_id = db.add_block("Parent Block", 1, page_id=page_id_1)
     block_id = db.add_block("Child Block", 1, parent_block_id=parent_block_id)
-    result = db.update_block_parent(block_id, new_page_id=page_id_2)
-    assert result is True
+    db.update_block_parent(block_id, new_page_id=page_id_2)  # Should not raise an exception
     cursor = db.conn.cursor()
     cursor.execute(
         "SELECT page_id, parent_block_id FROM blocks WHERE block_id = ?", (block_id,)
@@ -257,28 +249,28 @@ def test_update_block_parent_from_block_to_page(db):
 
 
 def test_update_block_parent_with_both_params(db):
-    """Test that updating a block's parent with both page_id and parent_block_id returns False."""
+    """Test that updating a block's parent with both page_id and parent_block_id raises ValueError."""
     page_id = db.add_page("Test Page")
     block_id = db.add_block("Test Block", 1, page_id=page_id)
-    result = db.update_block_parent(
-        block_id, new_page_id=page_id, new_parent_block_id=block_id
-    )
-    assert result is False
+    with pytest.raises(ValueError, match="A block must be associated with either a page_id or a parent_block_id, but not both."):
+        db.update_block_parent(
+            block_id, new_page_id=page_id, new_parent_block_id=block_id
+        )
 
 
 def test_update_block_parent_with_neither_params(db):
-    """Test that updating a block's parent with neither page_id nor parent_block_id returns False."""
+    """Test that updating a block's parent with neither page_id nor parent_block_id raises ValueError."""
     page_id = db.add_page("Test Page")
     block_id = db.add_block("Test Block", 1, page_id=page_id)
-    result = db.update_block_parent(block_id)
-    assert result is False
+    with pytest.raises(ValueError, match="A block must be associated with either a page_id or a parent_block_id, but not both."):
+        db.update_block_parent(block_id)
 
 
 def test_update_block_parent_nonexistent_block(db):
     """Test updating parent of a non-existent block."""
     page_id = db.add_page("Test Page")
-    result = db.update_block_parent(999, new_page_id=page_id)
-    assert result is False
+    with pytest.raises(BlockNotFoundError):
+        db.update_block_parent(999, new_page_id=page_id)
 
 
 def test_add_workspace(db):
@@ -318,8 +310,7 @@ def test_get_workspaces(db):
 def test_update_workspace(db):
     """Test updating an existing workspace."""
     workspace_id = db.add_workspace("Old Title", "#FF0000")
-    result = db.update_workspace(workspace_id, "New Title", "#0000FF")
-    assert result is True
+    db.update_workspace(workspace_id, "New Title", "#0000FF")  # Should not raise an exception
     workspace = db.get_workspace_by_id(workspace_id)
     assert workspace[1] == "New Title"
     assert workspace[2] == "#0000FF"
@@ -327,20 +318,19 @@ def test_update_workspace(db):
 
 def test_update_nonexistent_workspace(db):
     """Test updating a non-existent workspace."""
-    result = db.update_workspace(999, "New Title", "#0000FF")
-    assert result is False
+    with pytest.raises(WorkspaceNotFoundError):
+        db.update_workspace(999, "New Title", "#0000FF")
 
 
 def test_delete_workspace(db):
     """Test deleting a workspace."""
     workspace_id = db.add_workspace("Test Workspace", "#FF0000")
-    result = db.delete_workspace(workspace_id)
-    assert result is True
+    db.delete_workspace(workspace_id)  # Should not raise an exception
     workspace = db.get_workspace_by_id(workspace_id)
     assert workspace is None
 
 
 def test_delete_nonexistent_workspace(db):
     """Test deleting a non-existent workspace."""
-    result = db.delete_workspace(999)
-    assert result is False
+    with pytest.raises(WorkspaceNotFoundError):
+        db.delete_workspace(999)
