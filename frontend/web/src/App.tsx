@@ -117,13 +117,21 @@ function App() {
 
   const handleAddPage = async (title: string) => {
     log.debug(`[App] Adding new page`, { title });
-    const response = await addPagePagesPost({ body: { title } });
-    fetchPages();
-    // Switch to the newly created page
-    if (response.data && response.data.page_id) {
-      setCurrentPageId(response.data.page_id);
+    try {
+      const response = await addPagePagesPost({ body: { title } });
+      fetchPages();
+      // Switch to the newly created page
+      if (response.data && response.data.page_id) {
+        setCurrentPageId(response.data.page_id);
+      }
+      return response;
+    } catch (error) {
+      if (error.status === 409) {
+        log.error("A page with this title already exists.");
+      } else {
+        log.error("[App] Failed to add page:", error);
+      }
     }
-    return response;
   };
 
   useEffect(() => {

@@ -81,7 +81,11 @@ const Page: React.FC<PageProps> = ({
         },
       });
     } catch (error) {
-      log.error("[Page] Failed to rename page:", error);
+      if (error.status === 409) {
+        log.error("A page with this title already exists.");
+      } else {
+        log.error("[Page] Failed to rename page:", error);
+      }
       setPageTitle(title);
     }
     setIsRenaming(false);
