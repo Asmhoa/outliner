@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { showNotification } from "@mantine/notifications";
 import Block from "./Block";
 import {
   renamePagePagesPut,
@@ -13,12 +14,12 @@ import PageMenu from "./PageMenu";
 import { type Block as BlockType } from "../api-client";
 
 interface PageProps {
-  page_id: number;
+  page_id: string;
   title: string;
   blocks: BlockType[];
   isRenaming: boolean;
   setIsRenaming: (isRenaming: boolean) => void;
-  handleDeletePage: (page_id: number) => void;
+  handleDeletePage: (page_id: string) => void;
   handleRenamePage: () => void;
 }
 
@@ -34,11 +35,11 @@ const Page: React.FC<PageProps> = ({
   const [pageTitle, setPageTitle] = useState(title);
   const [blocks, setBlocks] = useState<BlockType[]>(initialBlocks);
   const blockRefs = useRef<{
-    [key: number]: HTMLDivElement | null;
+    [key: string]: HTMLDivElement | null;
   }>({});
   const titleRef = useRef<HTMLHeadingElement>(null);
   const [nextFocusableBlockId, setNextFocusableBlockId] = useState<
-    number | null
+    string | null
   >(null);
 
   useEffect(() => {
@@ -73,56 +74,79 @@ const Page: React.FC<PageProps> = ({
     const newTitle = event.currentTarget.textContent || "";
     setPageTitle(newTitle);
     log.debug(`[Page] Updating page title`, { page_id, new_title: newTitle });
-    try {
-      await renamePagePagesPut({
-        body: {
-          page_id: page_id,
-          new_title: newTitle,
-        },
-      });
-    } catch (error) {
-      log.error("[Page] Failed to rename page:", error);
-      setPageTitle(title);
+
+    const { error, response } = await renamePagePagesPut({
+      body: {
+        page_id: page_id,
+        new_title: newTitle,
+      },
+    });
+
+    if (error) {
+      if (response.status === 409) {
+        const errorMessage =
+          (error as any).detail || "A page with this title already exists.";
+        log.error(errorMessage);
+        showNotification({
+          title: "Failed to rename page",
+          message: errorMessage,
+          color: "red",
+        });
+      } else {
+        log.error("[Page] Failed to rename page:", error);
+      }
+      setPageTitle(title); // Revert to the original title on error
     }
     setIsRenaming(false);
   };
 
-  const handleNewBlock = async (currentBlockId: number) => {
-    log.debug(`[Page] Adding new block`, { page_id, current_block_id: currentBlockId });
-    try {
-      const newBlock = await addBlockBlocksPost({
-        body: { page_id: page_id, content: "", position: 0 },
-      });
+  const handleNewBlock = async (currentBlockId: string) => {
+    log.debug(`[Page] Adding new block`, {
+      page_id,
+      current_block_id: currentBlockId,
+    });
+    const { data: newBlock, error } = await addBlockBlocksPost({
+      body: { page_id: page_id, content: "", position: 0 },
+    });
+
+    if (error) {
+      log.error("[Page] Failed to add new block:", error);
+      return;
+    }
+
+    if (newBlock) {
       const currentIndex = blocks.findIndex(
         (block) => block.block_id === currentBlockId,
       );
       const newBlocks = [...blocks];
-      newBlocks.splice(currentIndex + 1, 0, newBlock.data);
+      newBlocks.splice(currentIndex + 1, 0, newBlock);
       setBlocks(newBlocks);
-      setNextFocusableBlockId(newBlock.data.block_id);
-    } catch (error) {
-      log.error("[Page] Failed to add new block:", error);
+      setNextFocusableBlockId(newBlock.block_id);
     }
   };
 
-  const handleDeleteBlock = async (currentBlockId: number) => {
-    if (blocks.length > 1) {
-      log.debug(`[Page] Deleting block`, { block_id: currentBlockId, page_id });
-      try {
-        const currentIndex = blocks.findIndex(
-          (block) => block.block_id === currentBlockId,
-        );
-        await deleteBlockBlocksBlockIdDelete({ path: { block_id: currentBlockId } });
-        const newBlocks = blocks.filter(
-          (block) => block.block_id !== currentBlockId,
-        );
-        setBlocks(newBlocks);
-        if (currentIndex > 0) {
-          setNextFocusableBlockId(blocks[currentIndex - 1].block_id);
-        }
-      } catch (error) {
-        log.error("[Page] Failed to delete block:", error);
-      }
+  const handleDeleteBlock = async (currentBlockId: string) => {
+    if (blocks.length <= 1) return;
+
+    log.debug(`[Page] Deleting block`, { block_id: currentBlockId, page_id });
+    const { error } = await deleteBlockBlocksBlockIdDelete({
+      path: { block_id: currentBlockId },
+    });
+
+    if (error) {
+      log.error("[Page] Failed to delete block:", error);
+      return;
+    }
+
+    const currentIndex = blocks.findIndex(
+      (block) => block.block_id === currentBlockId,
+    );
+    const newBlocks = blocks.filter(
+      (block) => block.block_id !== currentBlockId,
+    );
+    setBlocks(newBlocks);
+    if (currentIndex > 0) {
+      setNextFocusableBlockId(blocks[currentIndex - 1].block_id);
     }
   };
 

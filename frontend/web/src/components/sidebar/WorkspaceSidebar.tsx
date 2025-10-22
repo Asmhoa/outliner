@@ -15,6 +15,7 @@ import {
   Portal,
   Alert,
 } from "@mantine/core";
+import { showNotification } from "@mantine/notifications";
 import { useDisclosure } from "@mantine/hooks";
 import {
   addWorkspaceWorkspacesPost,
@@ -82,81 +83,107 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
     }
   };
 
-  const handleCreateWorkspace = () => {
-    addWorkspaceWorkspacesPost({
+  const handleCreateWorkspace = async () => {
+    const { data: newWs, error } = await addWorkspaceWorkspacesPost({
       body: {
         name: newWorkspaceName,
         color: newWorkspaceColor,
       },
-    }).then((newWs) => {
-      const newWorkspace = newWs.data as Workspace;
-      log.debug("[WorkspaceSidebar] New workspace added", { workspace: newWorkspace });
-      setWorkspaces([workspaces[0], newWorkspace, ...workspaces.splice(1)]);
-      close();
-      setNewWorkspaceName("");
-      // setNewWorkspaceColor("");
     });
-  };
 
-  const handleUpdateWorkspaceSubmit = () => {
-    if (editingWorkspace) {
-      updateWorkspaceWorkspacesPut({
-        body: {
-          workspace_id: editingWorkspace.workspace_id,
-          new_name: editWorkspaceName,
-          new_color: editWorkspaceColor,
-        },
-      })
-        .then(() => {
-          log.debug("[WorkspaceSidebar] Workspace updated", { workspace_id: editingWorkspace.workspace_id });
-          const ws = workspaces.find(
-            (ws) => ws.workspace_id === editingWorkspace.workspace_id,
-          ) as Workspace;
-          ws.name = editWorkspaceName;
-          ws.color = editWorkspaceColor;
-          closeEditModal();
-          setEditingWorkspace(null);
-          setEditWorkspaceName("");
-          setEditWorkspaceColor("#FBBC05");
-        })
-        .catch((error) => {
-          log.error("Error updating workspace:", error);
-        });
+    if (error) {
+      log.error("[WorkspaceSidebar] Failed to create workspace:", error);
+      // Optionally, show a notification to the user
+      showNotification({
+        title: "Error",
+        message: "Failed to create workspace. Please try again.",
+        color: "red",
+      });
+      return;
+    }
+
+    if (newWs) {
+      const newWorkspace = newWs as Workspace;
+      log.debug("[WorkspaceSidebar] New workspace added", {
+        workspace: newWorkspace,
+      });
+      setWorkspaces([workspaces[0], newWorkspace, ...workspaces.slice(1)]);
+      closeCreateModal();
+      setNewWorkspaceName("");
+      // setNewWorkspaceColor(""); // Consider resetting color or not
     }
   };
 
-  const handleDeleteWorkspace = () => {
-    if (editingWorkspace) {
-      deleteWorkspaceWorkspacesWorkspaceIdDelete({
-        path: {
-          workspace_id: editingWorkspace.workspace_id,
-        },
-      })
-        .then(() => {
-          log.debug("[WorkspaceSidebar] Workspace deleted", { workspace_id: editingWorkspace.workspace_id });
-          // Remove the deleted workspace from the list
-          const updatedWorkspaces = workspaces.filter(
-            (ws) => ws.workspace_id !== editingWorkspace.workspace_id,
-          );
-          setWorkspaces(updatedWorkspaces);
+  const handleUpdateWorkspaceSubmit = async () => {
+    if (!editingWorkspace) return;
 
-          // If the deleted workspace was the active one, switch to the first workspace
-          if (editingWorkspace.workspace_id === activeWorkspaceId) {
-            if (updatedWorkspaces.length > 0) {
-              setActiveWorkspaceId(updatedWorkspaces[0].workspace_id);
-            }
-          }
+    const { error } = await updateWorkspaceWorkspacesPut({
+      body: {
+        workspace_id: editingWorkspace.workspace_id,
+        new_name: editWorkspaceName,
+        new_color: editWorkspaceColor,
+      },
+    });
 
-          closeEditModal();
-          setEditingWorkspace(null);
-          setDeleteConfirmation(false);
-          setDeleteError(null);
-        })
-        .catch((error) => {
-          log.error("Error deleting workspace:", error);
-          setDeleteError("Failed to delete workspace. Please try again.");
-        });
+    if (error) {
+      log.error("Error updating workspace:", error);
+      showNotification({
+        title: "Error",
+        message: "Failed to update workspace. Please try again.",
+        color: "red",
+      });
+      return;
     }
+
+    log.debug("[WorkspaceSidebar] Workspace updated", {
+      workspace_id: editingWorkspace.workspace_id,
+    });
+    const ws = workspaces.find(
+      (ws) => ws.workspace_id === editingWorkspace.workspace_id,
+    ) as Workspace;
+    ws.name = editWorkspaceName;
+    ws.color = editWorkspaceColor;
+    closeEditModal();
+    setEditingWorkspace(null);
+    setEditWorkspaceName("");
+    setEditWorkspaceColor("#FBBC05");
+  };
+
+  const handleDeleteWorkspace = async () => {
+    if (!editingWorkspace) return;
+
+    const { error } = await deleteWorkspaceWorkspacesWorkspaceIdDelete({
+      path: {
+        workspace_id: editingWorkspace.workspace_id,
+      },
+    });
+
+    if (error) {
+      log.error("Error deleting workspace:", error);
+      setDeleteError("Failed to delete workspace. Please try again.");
+      return;
+    }
+
+    log.debug("[WorkspaceSidebar] Workspace deleted", {
+      workspace_id: editingWorkspace.workspace_id,
+    });
+    // Remove the deleted workspace from the list
+    const updatedWorkspaces = workspaces.filter(
+      (ws) => ws.workspace_id !== editingWorkspace.workspace_id,
+    );
+    setWorkspaces(updatedWorkspaces);
+
+    // If the deleted workspace was the active one, switch to the first workspace
+    if (editingWorkspace.workspace_id === activeWorkspaceId) {
+      if (updatedWorkspaces.length > 0) {
+        setActiveWorkspaceId(updatedWorkspaces[0].workspace_id);
+      }
+    }
+
+    closeEditModal();
+    setEditingWorkspace(null);
+    setDeleteConfirmation(false);
+    setDeleteError(null);
   };
 
   return (

@@ -1,7 +1,9 @@
-import { AppShell, Portal } from "@mantine/core";
+import { AppShell } from "@mantine/core";
+import { showNotification } from "@mantine/notifications";
 
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import log from "./utils/logger";
 
 import "./App.css";
@@ -25,7 +27,9 @@ import LeftSidebar from "./components/sidebar/LeftSidebar";
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
 function App() {
-  const [currentPageId, setCurrentPageId] = useState<number | null>(null);
+  const { pageId } = useParams<{ pageId: string }>(); // get page_id from URL
+
+  const [currentPageId, setCurrentPageId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [pages, setPages] = useState<PageType[]>([]);
@@ -41,16 +45,24 @@ function App() {
   );
 
   async function getAllWorkspaces() {
-    const all_workspaces = (await getWorkspacesWorkspacesGet())
-      .data as Workspace[];
-    const sorted_workspaces = [
-      // Structure default first then most recent
-      all_workspaces[0],
-      ...all_workspaces.slice(1).reverse(),
-    ];
-    setWorkspaces(sorted_workspaces);
-    if (activeWorkspaceId === null) {
-      setActiveWorkspaceId(0);
+    const { data: all_workspaces, error } = await getWorkspacesWorkspacesGet(
+      {},
+    );
+    if (error) {
+      log.error("[App] Failed to fetch workspaces:", error);
+      return;
+    }
+
+    if (all_workspaces) {
+      const sorted_workspaces = [
+        // Structure default first then most recent
+        all_workspaces[0],
+        ...all_workspaces.slice(1).reverse(),
+      ];
+      setWorkspaces(sorted_workspaces as Workspace[]);
+      if (activeWorkspaceId === null) {
+        setActiveWorkspaceId(0);
+      }
     }
   }
 
@@ -68,7 +80,7 @@ function App() {
   // UI elements visibility
   const [navbarVisibility, setNavbarVisibility] =
     useState<NavbarVisibility>("visible");
-  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(true);
 
   const handleRightSidebarToggle = () => {
     setRightSidebarCollapsed(!rightSidebarCollapsed);
@@ -88,20 +100,32 @@ function App() {
 
   const fetchPages = useCallback(async () => {
     log.debug("[App] Fetching pages...");
-    const response = await getPagesPagesGet();
-    if (response.data) {
-      log.debug(`[App] Fetched ${response.data.length} pages`);
-      setPages(response.data);
-      if (response.data.length > 0 && currentPageId === null) {
-        log.debug(`[App] Setting current page to ${response.data[0].page_id}`);
-        setCurrentPageId(response.data[0].page_id);
+    const { data, error } = await getPagesPagesGet({});
+    if (error) {
+      log.error("[App] Failed to fetch pages:", error);
+      return;
+    }
+    if (data) {
+      log.debug(`[App] Fetched ${data.length} pages`);
+      setPages(data);
+      if (data.length > 0 && currentPageId === null) {
+        log.debug(`[App] Setting current page to ${data[0].page_id}`);
+        setCurrentPageId(data[0].page_id);
       }
     }
   }, [currentPageId]);
 
-  const handleDeletePage = async (page_id: number) => {
+  const handleDeletePage = async (page_id: string) => {
     log.debug(`[App] Deleting page`, { page_id });
-    await deletePagePagesPageIdDelete({ path: { page_id } });
+    const { error } = await deletePagePagesPageIdDelete({
+      path: { page_id },
+    });
+
+    if (error) {
+      log.error("[App] Failed to delete page:", error);
+      return;
+    }
+
     fetchPages();
     setCurrentPageId(null);
     setTitle("");
@@ -114,8 +138,33 @@ function App() {
 
   const handleAddPage = async (title: string) => {
     log.debug(`[App] Adding new page`, { title });
-    await addPagePagesPost({ body: { title } });
+    const { data, error, response } = await addPagePagesPost({
+      body: { title },
+    });
+
+    if (error) {
+      if (response.status === 409) {
+        const errorMessage =
+          (error as any).detail || "A page with this title already exists.";
+        log.error(errorMessage);
+        showNotification({
+          title: "Failed to add page",
+          message: errorMessage,
+          color: "red",
+          autoClose: false,
+        });
+      } else {
+        log.error("[App] Failed to add page:", error);
+      }
+      return;
+    }
+
     fetchPages();
+    // Switch to the newly created page
+    if (data && data.page_id) {
+      setCurrentPageId(data.page_id);
+    }
+    return { data, error, response };
   };
 
   useEffect(() => {
@@ -123,32 +172,56 @@ function App() {
     const fetchTitle = async () => {
       if (!currentPageId) return;
       log.debug(`[App] Fetching title`, { page_id: currentPageId });
-      const response = await getPagePagesPageIdGet({
+      const { data, error } = await getPagePagesPageIdGet({
         path: { page_id: currentPageId },
       });
-      if (response.data?.title) {
-        setTitle(response.data.title);
+
+      if (error) {
+        log.error("[App] Failed to fetch page title:", error);
+        return;
+      }
+
+      if (data?.title) {
+        setTitle(data.title);
       }
     };
 
     const fetchBlocks = async () => {
       if (!currentPageId) return;
       log.debug(`[App] Fetching blocks`, { page_id: currentPageId });
-      const response = await getBlocksBlocksPageIdGet({
+      const { data, error } = await getBlocksBlocksPageIdGet({
         path: { page_id: currentPageId },
       });
-      if (response.data) {
-        if (response.data.length === 0) {
-          log.debug(`[App] No blocks found, creating new block`, { page_id: currentPageId });
-          const newBlock = await addBlockBlocksPost({
-            body: { page_id: currentPageId, content: "", position: 0 },
+
+      if (error) {
+        log.error("[App] Failed to fetch blocks:", error);
+        return;
+      }
+
+      if (data) {
+        if (data.length === 0) {
+          log.debug(`[App] No blocks found, creating new block`, {
+            page_id: currentPageId,
           });
-          if (newBlock.data) {
-            setBlocks([newBlock.data]);
+          const { data: newBlock, error: newBlockError } =
+            await addBlockBlocksPost({
+              body: { page_id: currentPageId, content: "", position: 0 },
+            });
+
+          if (newBlockError) {
+            log.error("[App] Failed to create new block:", newBlockError);
+            return;
+          }
+
+          if (newBlock) {
+            setBlocks([newBlock]);
           }
         } else {
-          log.debug(`[App] Fetched blocks`, { count: response.data.length, page_id: currentPageId });
-          setBlocks(response.data);
+          log.debug(`[App] Fetched blocks`, {
+            count: data.length,
+            page_id: currentPageId,
+          });
+          setBlocks(data);
         }
       }
     };
@@ -159,7 +232,22 @@ function App() {
 
   useEffect(() => {
     fetchPages();
-  }, [fetchPages]); // Added fetchPages to dependency array
+  }, []);
+
+  // Update current page ID based on URL parameter
+  useEffect(() => {
+    if (pageId) {
+      // Check if the page exists in our pages list before setting it as current
+      const pageExists = pages.some((page) => page.page_id === pageId);
+      if (pageExists) {
+        setCurrentPageId(pageId);
+      } else {
+        setCurrentPageId(null);
+        log.error(`Page with ID ${pageId} does not exist`);
+        // Leave currentPageId as null, so nothing is displayed
+      }
+    }
+  }, [pageId, pages]);
 
   return (
     <AppShell
@@ -186,7 +274,7 @@ function App() {
     >
       <AppShell.Header style={{ border: "none" }}>
         <SearchBox
-          // onAddPage={handleAddPage}
+          onAddPage={handleAddPage}
           navbarVisibility={navbarVisibility}
           onLeftSidebarToggle={handleLeftSidebarToggle}
           rightSidebarCollapsed={rightSidebarCollapsed}
@@ -197,7 +285,6 @@ function App() {
         pages={pages}
         currentPageId={currentPageId}
         setCurrentPageId={setCurrentPageId}
-        toggle={toggle}
         navbarVisibility={navbarVisibility}
         workspaces={workspaces}
         setWorkspaces={setWorkspaces}

@@ -23,18 +23,18 @@ import {
 import WorkspaceSidebar from "./WorkspaceSidebar";
 import type { Page as PageType } from "../../api-client";
 import log from "../../utils/logger";
+import { useNavigate } from "react-router-dom";
 
 interface Workspace {
-  id: string;
+  workspace_id: number;
   name: string;
   color: string; // For tab color
 }
 
 interface LeftSidebarProps {
   pages: PageType[];
-  currentPageId: number | null;
-  setCurrentPageId: (id: number) => void;
-  toggle: () => void;
+  currentPageId: string | null;
+  setCurrentPageId: (id: string) => void;
   navbarVisibility: "visible" | "workspace-collapsed" | "sidebar-collapsed";
   workspaces: Workspace[];
   setWorkspaces: (ws: Workspace[]) => void;
@@ -47,7 +47,6 @@ const LeftSidebar = ({
   pages,
   currentPageId,
   setCurrentPageId,
-  toggle,
   navbarVisibility,
   workspaces,
   setWorkspaces,
@@ -57,11 +56,13 @@ const LeftSidebar = ({
 }: LeftSidebarProps) => {
   // const activeWorkspace = workspaces.find((ws) => ws.id === activeWorkspaceId);
   // const backgroundColor = activeWorkspace ? activeWorkspace.color : "white";
+  //
+  const navigate = useNavigate();
 
   return (
     // <AppShell.Navbar pt="sm" pb="sm" style={{ backgroundColor }}>
     <AppShell.Navbar pt="sm" pb="sm">
-      <Group align="flex-start">
+      <Group align="flex-start" gap={0}>
         {navbarVisibility === "visible" && (
           <WorkspaceSidebar
             workspaces={workspaces}
@@ -70,7 +71,7 @@ const LeftSidebar = ({
             setActiveWorkspaceId={setActiveWorkspaceId}
           />
         )}
-        <Stack>
+        <Stack pl={"md"}>
           <AppShell.Section>
             <Menu shadow="md">
               <Menu.Target>
@@ -108,7 +109,7 @@ const LeftSidebar = ({
             />
           </AppShell.Section>
           <Divider />
-          <AppShell.Section>
+          {/*<AppShell.Section>
             <NavLink
               label="Favorites"
               leftSection={<IconStar />}
@@ -127,7 +128,7 @@ const LeftSidebar = ({
                 onClick={() => log.debug("[LeftSidebar] Favorite Page 3 clicked")}
               />
             </NavLink>
-          </AppShell.Section>
+          </AppShell.Section>*/}
           {/*<AppShell.Section>
             <NavLink
               label="Views"
@@ -168,19 +169,20 @@ const LeftSidebar = ({
               />
             </NavLink>
           </AppShell.Section>
-          {/*<AppShell.Section>
+          <AppShell.Section>
             {pages.map((page) => (
-              <NavLink
+              <Text
                 key={page.page_id}
-                label={page.title}
-                active={page.page_id === currentPageId}
+                // active={page.page_id === currentPageId}
                 onClick={() => {
-                  setCurrentPageId(page.page_id);
-                  toggle();
+                  navigate("/" + page.page_id);
+                  // setCurrentPageId(page.page_id);
                 }}
-              />
+              >
+                {page.title}
+              </Text>
             ))}
-          </AppShell.Section>*/}
+          </AppShell.Section>
         </Stack>
       </Group>
     </AppShell.Navbar>
