@@ -187,7 +187,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   };
 
   return (
-    <Stack gap={0}>
+    <Stack gap={0} data-testid="workspace-sidebar">
       <Modal
         opened={createModalOpened}
         onClose={closeCreateModal}
