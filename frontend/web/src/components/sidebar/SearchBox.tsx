@@ -80,7 +80,11 @@ export default function SearchBox({
       </Modal>
       <Group p="xs" pl="md" pr="md" pt="4px" gap="xs" w="100%">
         <Group>
-          <ActionIcon onClick={onLeftSidebarToggle} variant="subtle">
+          <ActionIcon
+            onClick={onLeftSidebarToggle}
+            variant="subtle"
+            data-testid="left-sidebar-toggle"
+          >
             {navbarVisibility === "sidebar-collapsed" ? (
               <IconLayoutSidebarLeftExpand />
             ) : (

@@ -63,6 +63,54 @@ To update the client after making changes to the FastAPI application:
 
 This script executes the `openapi-ts` command, which fetches the latest `openapi.json` from the running server and regenerates the client code. This ensures the frontend's API client is always in sync with the backend API.
 
+### Running Playwright Tests
+
+The frontend includes Playwright tests for end-to-end testing. To run these tests:
+
+1. Navigate to the frontend web directory:
+   ```bash
+   cd frontend/web
+   ```
+
+2. Install Playwright browsers (needed for first run):
+   ```bash
+   npm install playwright/tests --with-deps
+   ```
+
+3. Run all Playwright tests:
+   ```bash
+   npx playwright test
+   ```
+
+4. To run tests in headed mode (to see the browser):
+   ```bash
+   npx playwright test --headed
+   ```
+
+5. To run tests for a specific browser:
+   ```bash
+   npx playwright test --project=chromium
+   npx playwright test --project=firefox
+   npx playwright test --project=webkit
+   ```
+
+6. To run a specific test file:
+   ```bash
+   npx playwright test tests/basic.spec.ts
+   ```
+
+7. To view the HTML test report after running tests:
+   ```bash
+   npx playwright show-report
+   ```
+
+The Playwright configuration is set up to:
+- Run tests in parallel
+- Use http://localhost:5173 as the base URL
+- Automatically start the dev server with `npm run dev` before running tests
+- Generate an HTML reporter
+- Retry failed tests on CI environments
+
 ### Frontend Component Structure
 
 -   `frontend/ui`: This directory is intended for shared UI components (e.g., React components) that can be used across different frontend applications.

@@ -187,7 +187,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   };
 
   return (
-    <Stack gap={0}>
+    <Stack gap={0} data-testid="workspace-sidebar">
       <Modal
         opened={createModalOpened}
         onClose={closeCreateModal}
@@ -321,6 +321,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         variant="default"
         radius="0"
         onClick={openCreateModal}
+        data-testid="add-workspace-button"
         style={{
           boxShadow: "inset -2px 1px 4px rgba(0,0,0,0.3)",
         }}

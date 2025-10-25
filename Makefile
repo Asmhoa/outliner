@@ -88,7 +88,8 @@ gen-api: ## Launch the backend API server in development mode
 test: ## Run tests
 	@echo "Running tests..."
 	@cd $(SERVER_DIR) && uv run pytest tests/
-	## TODO: run frontend tests
+	@cd ../
+	@cd $(WEB_FRONTEND_DIR) && npx playwright test
 
 # Clean temporary files
 .PHONY: clean
