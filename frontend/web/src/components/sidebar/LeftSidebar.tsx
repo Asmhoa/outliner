@@ -61,7 +61,7 @@ const LeftSidebar = ({
 
   return (
     // <AppShell.Navbar pt="sm" pb="sm" style={{ backgroundColor }}>
-    <AppShell.Navbar pt="sm" pb="sm" data-testid="left-sidebar">
+    <AppShell.Navbar data-testid="left-sidebar">
       <Group align="flex-start" gap={0}>
         {navbarVisibility === "visible" && (
           <WorkspaceSidebar

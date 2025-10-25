@@ -252,7 +252,7 @@ function App() {
   return (
     <AppShell
       header={{
-        height: 35,
+        height: 30 + 2 * 10, // div + top and bottom padding
       }}
       navbar={{
         width: navbarVisibility === "workspace-collapsed" ? 240 : 290, // each tab has width 40 + 10 padding. TODO: move to a constant
@@ -272,7 +272,7 @@ function App() {
       }}
       padding="md"
     >
-      <AppShell.Header style={{ border: "none" }}>
+      <AppShell.Header bd={"none"}>
         <SearchBox
           onAddPage={handleAddPage}
           navbarVisibility={navbarVisibility}
@@ -306,7 +306,7 @@ function App() {
           />
         )}
       </AppShell.Main>
-      <AppShell.Aside p="md">
+      <AppShell.Aside p="md" pt={0}>
         <RightSidebar onClose={handleRightSidebarToggle} />
       </AppShell.Aside>
     </AppShell>

@@ -78,7 +78,7 @@ export default function SearchBox({
           Create Page
         </Button>
       </Modal>
-      <Group p="xs" pl="md" pr="md" pt="4px" gap="xs" w="100%">
+      <Group pt="10px" pb="10px" pl="md" pr="md" gap="xs" w="100%">
         <Group>
           <ActionIcon
             onClick={onLeftSidebarToggle}
