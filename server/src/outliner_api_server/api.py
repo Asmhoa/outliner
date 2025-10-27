@@ -12,32 +12,22 @@ from outliner_api_server.data import (
 import os
 from datetime import datetime
 
-
-import json
-
-# Construct the absolute path to the settings file
+# Construct the absolute path to the database file
 current_dir = os.path.dirname(os.path.realpath(__file__))
-SETTINGS_FILE = os.path.join(current_dir, "settings.json")
+DATABASE_PATH = os.path.join(current_dir, "data.db")
 
 
-class Settings:
-    def __init__(self):
-        self.active_db = None
-        try:
-            with open(SETTINGS_FILE, "r") as f:
-                settings = json.load(f)
-                self.active_db = settings.get("active_db")
-        except (FileNotFoundError, json.JSONDecodeError):
-            pass
-
-    def set_active_db(self, path: str):
-        self.active_db = path
-        with open(SETTINGS_FILE, "w") as f:
-            json.dump({"active_db": path}, f)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    db = Database(DATABASE_PATH)
+    db.create_new_database()  # no-op if already exists
+    db.close_conn()
+    yield
+    # Shutdown (if needed)
 
 
-app = FastAPI()
-app.state.user_settings = Settings()
+app = FastAPI(lifespan=lifespan)
 
 origins = [
     "http://localhost:5173",
@@ -52,32 +42,8 @@ app.add_middleware(
 )
 
 
-class SelectedDB(BaseModel):
-    path: str
-
-
-# This endpoint should work even when no active database is set, so it's exempted from the global dependency.
-@app.get("/database/get_active_db")
-def get_active_db():
-    return {"active_db": app.state.user_settings.active_db}
-
-
-# This endpoint should work even when no active database is set, so it's exempted from the global dependency.
-@app.post("/database/set_active_db")
-def set_active_db(active_db: SelectedDB):
-    app.state.user_settings.set_active_db(active_db.path)
-    # Create the database if it doesn't exist
-    db = Database(active_db.path)
-    db.create_new_database()
-    db.close_conn()
-    return {"status": "success"}
-
-
 def get_db():
-    user_settings = getattr(app.state, "user_settings", None)
-    if not (user_settings and user_settings.active_db):
-        raise HTTPException(status_code=400, detail="No active database set.")
-    db = Database(user_settings.active_db)
+    db = Database(DATABASE_PATH)
     try:
         yield db
     finally:
