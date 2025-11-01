@@ -1,5 +1,5 @@
 import pytest
-from outliner_api_server.data import (
+from outliner_api_server.userdb import (
     UserDatabase,
     PageNotFoundError,
     PageAlreadyExistsError,

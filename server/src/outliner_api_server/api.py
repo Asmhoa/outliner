@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from outliner_api_server.data import (
+from outliner_api_server.userdb import (
     UserDatabase,
     PageAlreadyExistsError,
     PageNotFoundError,

@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from outliner_api_server.api import app
-from outliner_api_server.data import UserDatabase
+from outliner_api_server.userdb import UserDatabase
 
 client = TestClient(app)
 
