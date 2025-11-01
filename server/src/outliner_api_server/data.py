@@ -1,8 +1,4 @@
-import atexit
-from multiprocessing import Value
-import signal
 import logging
-import uuid
 from sqlite3 import connect, Cursor, Connection
 
 logger = logging.getLogger(__name__)

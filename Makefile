@@ -43,26 +43,12 @@ gen-api: ## Launch the backend API server in development mode
 	@echo "The backend server should be running for this (make run-backend)..."
 	@cd $(WEB_FRONTEND_DIR) && npm run generate-api-client
 
-# # Format Python code
-# .PHONY: format
-# format: ## Format Python code using black and ruff
-# 	@echo "Formatting Python code..."
-# 	@if [ -f "$(VENV_PATH)/bin/black" ]; then \
-# 		$(VENV_PATH)/bin/black $(SERVER_DIR)/src $(SERVER_DIR)/tests; \
-# 	else \
-# 		echo "black not found, installing with pip..."; \
-# 		$(PIP) install black; \
-# 		$(VENV_PATH)/bin/black $(SERVER_DIR)/src $(SERVER_DIR)/tests; \
-# 	fi
-# 	@if [ -f "$(VENV_PATH)/bin/ruff" ]; then \
-# 		$(VENV_PATH)/bin/ruff check --fix $(SERVER_DIR)/src $(SERVER_DIR)/tests; \
-# 		$(VENV_PATH)/bin/ruff format $(SERVER_DIR)/src $(SERVER_DIR)/tests; \
-# 	else \
-# 		echo "ruff not found, installing with pip..."; \
-# 		$(PIP) install ruff; \
-# 		$(VENV_PATH)/bin/ruff check --fix $(SERVER_DIR)/src $(SERVER_DIR)/tests; \
-# 		$(VENV_PATH)/bin/ruff format $(SERVER_DIR)/src $(SERVER_DIR)/tests; \
-# 	fi
+# Format Python code
+.PHONY: format
+format:
+	@echo "Formatting Python code..."
+	@cd $(SERVER_DIR) && uv run --with ruff ruff check --fix src tests
+	@cd $(SERVER_DIR) && uv run --with ruff ruff format src tests
 
 # # Check code formatting
 # .PHONY: check-format
@@ -102,25 +88,3 @@ clean: ## Clean temporary files and cache
 	@rm -f $(SERVER_DIR)/server.log
 	@rm -f $(SERVER_DIR)/*.db
 	@rm -f $(SERVER_DIR)/src/**/*.db
-
-
-# # Define variables
-# .PHONY: run stop clean
-# VENV ?= .venv
-#
-
-# # Check if a virtual environment exists. If not, inform the user.
-# $(VENV)/bin/python:
-# 	@echo "Virtual environment not found. Please run 'make venv' first."
-# 	@exit 1
-
-# # Target to create and install dependencies into a virtual environment
-# venv:
-# 	python3 -m venv $(VENV)
-# 	$(VENV)/bin/pip install fastapi uvicorn
-
-# # Target to clean up generated files
-# clean:
-# 	@echo "Cleaning up..."
-# 	@rm -f $(PID_FILE)
-# 	@rm -rf $(VENV)
