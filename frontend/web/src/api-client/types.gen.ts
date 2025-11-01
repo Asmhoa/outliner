@@ -99,7 +99,7 @@ export type DatabaseCreate = {
     /**
      * Path
      */
-    path: string;
+    path?: string | null;
 };
 
 /**

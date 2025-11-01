@@ -65,7 +65,7 @@ This script executes the `openapi-ts` command, which fetches the latest `openapi
 
 ## Database Management
 
-The application now supports multiple databases through a SystemDatabase. Each request can specify which database to use via a path parameter:
+The application supports tracking multiple user databases through a SystemDatabase. Each request can specify which UserDatabase to use via a path parameter:
 
 - `GET /db/{db_name}/pages` - Get all pages from a specific database
 - `GET /db/{db_name}/pages/{page_id}` - Get a specific page from a specific database

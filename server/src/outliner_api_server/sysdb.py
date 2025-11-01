@@ -19,15 +19,13 @@ class SystemDatabase:
         1. OUTLINER_SYS_DB_PATH environment variable
         2. A 'system.db' file in the same directory as this module.
         """
+        current_dir = os.path.dirname(os.path.realpath(__file__))
         self.db_path = os.environ.get("OUTLINER_SYS_DB_PATH")
         if self.db_path is None:
-            current_dir = os.path.dirname(os.path.realpath(__file__))
             self.db_path = os.path.join(current_dir, "system.db")
 
         # Define the directory for user databases
-        self.databases_dir = os.path.join(
-            os.path.dirname(os.path.dirname(current_dir)), "databases"
-        )
+        self.databases_dir = os.path.join(current_dir, "databases")
         os.makedirs(self.databases_dir, exist_ok=True)
 
         # Use check_same_thread=False since we'll have different threads accessing
@@ -66,13 +64,21 @@ class SystemDatabase:
 
         Args:
             name: The name of the user database
-            path: The file path to the user database
+            path: The file path to the user database (will be sanitized and made relative to databases dir if not absolute)
 
         Returns:
             True if successfully added, False if name already exists
         """
         try:
-            full_path = os.path.join(self.databases_dir, path)
+            # Sanitize the path to ensure it's safe
+            sanitized_path = path.replace("/", "_").replace("\\", "_").replace("..", "_")
+            
+            # Check if path is already an absolute path
+            if os.path.isabs(sanitized_path):
+                full_path = sanitized_path
+            else:
+                # If it's a relative path, prepend with databases directory
+                full_path = os.path.join(self.databases_dir, sanitized_path)
             self.cursor.execute(
                 "INSERT INTO user_databases (name, path) VALUES (?, ?)",
                 (name, full_path),

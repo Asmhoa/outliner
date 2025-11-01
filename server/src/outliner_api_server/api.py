@@ -610,7 +610,7 @@ def delete_workspace(
 # Database management endpoints
 class DatabaseCreate(BaseModel):
     name: str
-    path: str
+    path: str | None = None
 
 
 @app.get(
@@ -659,7 +659,14 @@ def get_databases(request: Request):
 )
 def create_database(request: Request, db_create: DatabaseCreate):
     sys_db = request.app.state.sys_db
-    success = sys_db.add_user_database(db_create.name, db_create.path)
+    
+    # Generate path from name if not provided
+    if db_create.path is None:
+        generated_path = db_create.name.lower().replace(" ", "_") + ".db"
+    else:
+        generated_path = db_create.path
+    
+    success = sys_db.add_user_database(db_create.name, generated_path)
     if not success:
         raise HTTPException(
             status_code=409,
