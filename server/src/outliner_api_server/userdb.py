@@ -1,8 +1,4 @@
-import atexit
-from multiprocessing import Value
-import signal
 import logging
-import uuid
 from sqlite3 import connect, Cursor, Connection
 
 logger = logging.getLogger(__name__)
@@ -59,13 +55,15 @@ class UserDatabase:
         """
         Creates the 'workspaces' table in the specified sqlite3 database.
         """
-        self.cursor.execute("""
+        self.cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS workspaces (
                 workspace_id INTEGER PRIMARY KEY,
                 name VARCHAR(255),
                 color BLOB(3) NOT NULL
             );
-        """)
+        """
+        )
         self.conn.commit()
         logger.debug(
             f"Table 'workspaces' created or already exists in '{self.db_name}'."
@@ -87,13 +85,15 @@ class UserDatabase:
         """
         Creates the 'pages' table in the specified sqlite3 database.
         """
-        self.cursor.execute("""
+        self.cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS pages (
                 page_id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
                 title VARCHAR(255) NOT NULL UNIQUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
+        """
+        )
         self.conn.commit()
         logger.debug(f"Table 'pages' created or already exists in '{self.db_name}'.")
 
@@ -101,7 +101,8 @@ class UserDatabase:
         """
         Creates the 'blocks' table in the specified sqlite3 database.
         """
-        self.cursor.execute("""
+        self.cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS blocks (
                 block_id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
                 content TEXT NOT NULL,
@@ -117,7 +118,8 @@ class UserDatabase:
                     (page_id IS NULL AND parent_block_id IS NOT NULL)
                 )
             );
-        """)
+        """
+        )
         self.conn.commit()
         logger.debug(f"Table 'blocks' created or already exists in '{self.db_name}'.")
 

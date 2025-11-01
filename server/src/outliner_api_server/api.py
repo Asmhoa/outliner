@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException, Query, Request
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from outliner_api_server.userdb import (
@@ -10,7 +10,6 @@ from outliner_api_server.userdb import (
     BlockNotFoundError,
 )
 from outliner_api_server.sysdb import SystemDatabase
-import os
 from datetime import datetime
 
 
@@ -18,12 +17,12 @@ from datetime import datetime
 async def lifespan(app: FastAPI):
     # Startup
     sys_db = SystemDatabase()
-    
+
     # Store the system database in app state
     app.state.sys_db = sys_db
     yield
     # Shutdown
-    if hasattr(app.state, 'sys_db'):
+    if hasattr(app.state, "sys_db"):
         app.state.sys_db.close_conn()
 
 
@@ -44,15 +43,18 @@ app.add_middleware(
 
 def get_db(db_name: str, request: Request):
     sys_db = request.app.state.sys_db
-    
+
     # Get the database path from system database
     db_info = sys_db.get_user_database_by_name(db_name)
     if not db_info:
         # If the database doesn't exist, return an error
         # The user should create the database via a separate API first
-        raise HTTPException(status_code=404, detail=f"Database '{db_name}' not found. Please create it first.")
-    
-    db = UserDatabase(db_info['path'])
+        raise HTTPException(
+            status_code=404,
+            detail=f"Database '{db_name}' not found. Please create it first.",
+        )
+
+    db = UserDatabase(db_info["path"])
     try:
         yield db
     finally:
@@ -369,7 +371,9 @@ def get_blocks(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
         },
     },
 )
-def update_block_content(db_name: str, block: BlockUpdateContent, db: UserDatabase = Depends(get_db)):
+def update_block_content(
+    db_name: str, block: BlockUpdateContent, db: UserDatabase = Depends(get_db)
+):
     try:
         db.update_block_content(block.block_id, block.new_content)
         return {"status": "success"}
@@ -398,7 +402,9 @@ def update_block_content(db_name: str, block: BlockUpdateContent, db: UserDataba
         },
     },
 )
-def update_block_parent(db_name: str, block: BlockUpdateParent, db: UserDatabase = Depends(get_db)):
+def update_block_parent(
+    db_name: str, block: BlockUpdateParent, db: UserDatabase = Depends(get_db)
+):
     try:
         db.update_block_parent(
             block.block_id, block.new_page_id, block.new_parent_block_id
@@ -473,7 +479,9 @@ class WorkspaceUpdate(BaseModel):
         },
     },
 )
-def add_workspace(db_name: str, workspace: WorkspaceCreate, db: UserDatabase = Depends(get_db)):
+def add_workspace(
+    db_name: str, workspace: WorkspaceCreate, db: UserDatabase = Depends(get_db)
+):
     workspace_id = db.add_workspace(workspace.name, workspace.color)
     workspace_data = db.get_workspace_by_id(workspace_id)
     if not workspace_data:
@@ -562,7 +570,9 @@ def get_workspaces(db_name: str, db: UserDatabase = Depends(get_db)):
         },
     },
 )
-def update_workspace(db_name: str, workspace: WorkspaceUpdate, db: UserDatabase = Depends(get_db)):
+def update_workspace(
+    db_name: str, workspace: WorkspaceUpdate, db: UserDatabase = Depends(get_db)
+):
     try:
         db.update_workspace(
             workspace.workspace_id, workspace.new_name, workspace.new_color
@@ -587,7 +597,9 @@ def update_workspace(db_name: str, workspace: WorkspaceUpdate, db: UserDatabase 
         },
     },
 )
-def delete_workspace(db_name: str, workspace_id: int, db: UserDatabase = Depends(get_db)):
+def delete_workspace(
+    db_name: str, workspace_id: int, db: UserDatabase = Depends(get_db)
+):
     try:
         db.delete_workspace(workspace_id)
         return {"status": "success"}
@@ -614,7 +626,7 @@ class DatabaseCreate(BaseModel):
                             "id": 1,
                             "name": "my_database",
                             "path": "/path/to/database.db",
-                            "created_at": "2023-01-01T00:00:00"
+                            "created_at": "2023-01-01T00:00:00",
                         }
                     ]
                 }
@@ -649,5 +661,8 @@ def create_database(request: Request, db_create: DatabaseCreate):
     sys_db = request.app.state.sys_db
     success = sys_db.add_user_database(db_create.name, db_create.path)
     if not success:
-        raise HTTPException(status_code=409, detail=f"Database with name '{db_create.name}' already exists")
+        raise HTTPException(
+            status_code=409,
+            detail=f"Database with name '{db_create.name}' already exists",
+        )
     return {"status": "success"}

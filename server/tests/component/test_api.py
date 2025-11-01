@@ -56,11 +56,11 @@ def client(test_db):
         yield c
 
 
-
 def test_add_and_get_workspace(client):
     # Add a workspace
     response = client.post(
-        f"/db/{TEST_DB_NAME}/workspaces", json={"name": "Test Workspace", "color": "#FF5733"}
+        f"/db/{TEST_DB_NAME}/workspaces",
+        json={"name": "Test Workspace", "color": "#FF5733"},
     )
     assert response.status_code == 200
     new_workspace = response.json()
@@ -84,8 +84,14 @@ def test_get_all_workspaces(client, test_db):
     test_db.conn.commit()
 
     # Add a couple of workspaces
-    client.post(f"/db/{TEST_DB_NAME}/workspaces", json={"name": "Workspace 1", "color": "#111111"})
-    client.post(f"/db/{TEST_DB_NAME}/workspaces", json={"name": "Workspace 2", "color": "#222222"})
+    client.post(
+        f"/db/{TEST_DB_NAME}/workspaces",
+        json={"name": "Workspace 1", "color": "#111111"},
+    )
+    client.post(
+        f"/db/{TEST_DB_NAME}/workspaces",
+        json={"name": "Workspace 2", "color": "#222222"},
+    )
 
     # Get all workspaces
     response = client.get(f"/db/{TEST_DB_NAME}/workspaces")
