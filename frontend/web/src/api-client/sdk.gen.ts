@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddBlockBlocksPostData, AddBlockBlocksPostErrors, AddBlockBlocksPostResponses, AddPagePagesPostData, AddPagePagesPostErrors, AddPagePagesPostResponses, AddWorkspaceWorkspacesPostData, AddWorkspaceWorkspacesPostErrors, AddWorkspaceWorkspacesPostResponses, DeleteBlockBlocksBlockIdDeleteData, DeleteBlockBlocksBlockIdDeleteErrors, DeleteBlockBlocksBlockIdDeleteResponses, DeletePagePagesPageIdDeleteData, DeletePagePagesPageIdDeleteErrors, DeletePagePagesPageIdDeleteResponses, DeleteWorkspaceWorkspacesWorkspaceIdDeleteData, DeleteWorkspaceWorkspacesWorkspaceIdDeleteErrors, DeleteWorkspaceWorkspacesWorkspaceIdDeleteResponses, GetBlockBlockBlockIdGetData, GetBlockBlockBlockIdGetErrors, GetBlockBlockBlockIdGetResponses, GetBlocksBlocksPageIdGetData, GetBlocksBlocksPageIdGetErrors, GetBlocksBlocksPageIdGetResponses, GetPagePagesPageIdGetData, GetPagePagesPageIdGetErrors, GetPagePagesPageIdGetResponses, GetPagesPagesGetData, GetPagesPagesGetResponses, GetWorkspacesWorkspacesGetData, GetWorkspacesWorkspacesGetResponses, GetWorkspaceWorkspacesWorkspaceIdGetData, GetWorkspaceWorkspacesWorkspaceIdGetErrors, GetWorkspaceWorkspacesWorkspaceIdGetResponses, RenamePagePagesPutData, RenamePagePagesPutErrors, RenamePagePagesPutResponses, UpdateBlockContentBlocksContentPutData, UpdateBlockContentBlocksContentPutErrors, UpdateBlockContentBlocksContentPutResponses, UpdateBlockParentBlocksParentPutData, UpdateBlockParentBlocksParentPutErrors, UpdateBlockParentBlocksParentPutResponses, UpdateWorkspaceWorkspacesPutData, UpdateWorkspaceWorkspacesPutErrors, UpdateWorkspaceWorkspacesPutResponses } from './types.gen';
+import type { AddBlockDbDbNameBlocksPostData, AddBlockDbDbNameBlocksPostErrors, AddBlockDbDbNameBlocksPostResponses, AddPageDbDbNamePagesPostData, AddPageDbDbNamePagesPostErrors, AddPageDbDbNamePagesPostResponses, AddWorkspaceDbDbNameWorkspacesPostData, AddWorkspaceDbDbNameWorkspacesPostErrors, AddWorkspaceDbDbNameWorkspacesPostResponses, CreateDatabaseDatabasesPostData, CreateDatabaseDatabasesPostErrors, CreateDatabaseDatabasesPostResponses, DeleteBlockDbDbNameBlocksBlockIdDeleteData, DeleteBlockDbDbNameBlocksBlockIdDeleteErrors, DeleteBlockDbDbNameBlocksBlockIdDeleteResponses, DeletePageDbDbNamePagesPageIdDeleteData, DeletePageDbDbNamePagesPageIdDeleteErrors, DeletePageDbDbNamePagesPageIdDeleteResponses, DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteData, DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteErrors, DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteResponses, GetBlockDbDbNameBlockBlockIdGetData, GetBlockDbDbNameBlockBlockIdGetErrors, GetBlockDbDbNameBlockBlockIdGetResponses, GetBlocksDbDbNameBlocksPageIdGetData, GetBlocksDbDbNameBlocksPageIdGetErrors, GetBlocksDbDbNameBlocksPageIdGetResponses, GetDatabasesDatabasesGetData, GetDatabasesDatabasesGetResponses, GetPageDbDbNamePagesPageIdGetData, GetPageDbDbNamePagesPageIdGetErrors, GetPageDbDbNamePagesPageIdGetResponses, GetPagesDbDbNamePagesGetData, GetPagesDbDbNamePagesGetErrors, GetPagesDbDbNamePagesGetResponses, GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetData, GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetErrors, GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetResponses, GetWorkspacesDbDbNameWorkspacesGetData, GetWorkspacesDbDbNameWorkspacesGetErrors, GetWorkspacesDbDbNameWorkspacesGetResponses, RenamePageDbDbNamePagesPutData, RenamePageDbDbNamePagesPutErrors, RenamePageDbDbNamePagesPutResponses, UpdateBlockContentDbDbNameBlocksContentPutData, UpdateBlockContentDbDbNameBlocksContentPutErrors, UpdateBlockContentDbDbNameBlocksContentPutResponses, UpdateBlockParentDbDbNameBlocksParentPutData, UpdateBlockParentDbDbNameBlocksParentPutErrors, UpdateBlockParentDbDbNameBlocksParentPutResponses, UpdateWorkspaceDbDbNameWorkspacesPutData, UpdateWorkspaceDbDbNameWorkspacesPutErrors, UpdateWorkspaceDbDbNameWorkspacesPutResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -21,9 +21,9 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 /**
  * Get Pages
  */
-export const getPagesPagesGet = <ThrowOnError extends boolean = false>(options?: Options<GetPagesPagesGetData, ThrowOnError>) => {
-    return (options?.client ?? client).get<GetPagesPagesGetResponses, unknown, ThrowOnError>({
-        url: '/pages',
+export const getPagesDbDbNamePagesGet = <ThrowOnError extends boolean = false>(options: Options<GetPagesDbDbNamePagesGetData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetPagesDbDbNamePagesGetResponses, GetPagesDbDbNamePagesGetErrors, ThrowOnError>({
+        url: '/db/{db_name}/pages',
         ...options
     });
 };
@@ -31,9 +31,9 @@ export const getPagesPagesGet = <ThrowOnError extends boolean = false>(options?:
 /**
  * Add Page
  */
-export const addPagePagesPost = <ThrowOnError extends boolean = false>(options: Options<AddPagePagesPostData, ThrowOnError>) => {
-    return (options.client ?? client).post<AddPagePagesPostResponses, AddPagePagesPostErrors, ThrowOnError>({
-        url: '/pages',
+export const addPageDbDbNamePagesPost = <ThrowOnError extends boolean = false>(options: Options<AddPageDbDbNamePagesPostData, ThrowOnError>) => {
+    return (options.client ?? client).post<AddPageDbDbNamePagesPostResponses, AddPageDbDbNamePagesPostErrors, ThrowOnError>({
+        url: '/db/{db_name}/pages',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -45,9 +45,9 @@ export const addPagePagesPost = <ThrowOnError extends boolean = false>(options: 
 /**
  * Rename Page
  */
-export const renamePagePagesPut = <ThrowOnError extends boolean = false>(options: Options<RenamePagePagesPutData, ThrowOnError>) => {
-    return (options.client ?? client).put<RenamePagePagesPutResponses, RenamePagePagesPutErrors, ThrowOnError>({
-        url: '/pages',
+export const renamePageDbDbNamePagesPut = <ThrowOnError extends boolean = false>(options: Options<RenamePageDbDbNamePagesPutData, ThrowOnError>) => {
+    return (options.client ?? client).put<RenamePageDbDbNamePagesPutResponses, RenamePageDbDbNamePagesPutErrors, ThrowOnError>({
+        url: '/db/{db_name}/pages',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -59,9 +59,9 @@ export const renamePagePagesPut = <ThrowOnError extends boolean = false>(options
 /**
  * Delete Page
  */
-export const deletePagePagesPageIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeletePagePagesPageIdDeleteData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeletePagePagesPageIdDeleteResponses, DeletePagePagesPageIdDeleteErrors, ThrowOnError>({
-        url: '/pages/{page_id}',
+export const deletePageDbDbNamePagesPageIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeletePageDbDbNamePagesPageIdDeleteData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeletePageDbDbNamePagesPageIdDeleteResponses, DeletePageDbDbNamePagesPageIdDeleteErrors, ThrowOnError>({
+        url: '/db/{db_name}/pages/{page_id}',
         ...options
     });
 };
@@ -69,9 +69,9 @@ export const deletePagePagesPageIdDelete = <ThrowOnError extends boolean = false
 /**
  * Get Page
  */
-export const getPagePagesPageIdGet = <ThrowOnError extends boolean = false>(options: Options<GetPagePagesPageIdGetData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetPagePagesPageIdGetResponses, GetPagePagesPageIdGetErrors, ThrowOnError>({
-        url: '/pages/{page_id}',
+export const getPageDbDbNamePagesPageIdGet = <ThrowOnError extends boolean = false>(options: Options<GetPageDbDbNamePagesPageIdGetData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetPageDbDbNamePagesPageIdGetResponses, GetPageDbDbNamePagesPageIdGetErrors, ThrowOnError>({
+        url: '/db/{db_name}/pages/{page_id}',
         ...options
     });
 };
@@ -79,9 +79,9 @@ export const getPagePagesPageIdGet = <ThrowOnError extends boolean = false>(opti
 /**
  * Add Block
  */
-export const addBlockBlocksPost = <ThrowOnError extends boolean = false>(options: Options<AddBlockBlocksPostData, ThrowOnError>) => {
-    return (options.client ?? client).post<AddBlockBlocksPostResponses, AddBlockBlocksPostErrors, ThrowOnError>({
-        url: '/blocks',
+export const addBlockDbDbNameBlocksPost = <ThrowOnError extends boolean = false>(options: Options<AddBlockDbDbNameBlocksPostData, ThrowOnError>) => {
+    return (options.client ?? client).post<AddBlockDbDbNameBlocksPostResponses, AddBlockDbDbNameBlocksPostErrors, ThrowOnError>({
+        url: '/db/{db_name}/blocks',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -93,9 +93,9 @@ export const addBlockBlocksPost = <ThrowOnError extends boolean = false>(options
 /**
  * Get Block
  */
-export const getBlockBlockBlockIdGet = <ThrowOnError extends boolean = false>(options: Options<GetBlockBlockBlockIdGetData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetBlockBlockBlockIdGetResponses, GetBlockBlockBlockIdGetErrors, ThrowOnError>({
-        url: '/block/{block_id}',
+export const getBlockDbDbNameBlockBlockIdGet = <ThrowOnError extends boolean = false>(options: Options<GetBlockDbDbNameBlockBlockIdGetData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetBlockDbDbNameBlockBlockIdGetResponses, GetBlockDbDbNameBlockBlockIdGetErrors, ThrowOnError>({
+        url: '/db/{db_name}/block/{block_id}',
         ...options
     });
 };
@@ -103,9 +103,9 @@ export const getBlockBlockBlockIdGet = <ThrowOnError extends boolean = false>(op
 /**
  * Get Blocks
  */
-export const getBlocksBlocksPageIdGet = <ThrowOnError extends boolean = false>(options: Options<GetBlocksBlocksPageIdGetData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetBlocksBlocksPageIdGetResponses, GetBlocksBlocksPageIdGetErrors, ThrowOnError>({
-        url: '/blocks/{page_id}',
+export const getBlocksDbDbNameBlocksPageIdGet = <ThrowOnError extends boolean = false>(options: Options<GetBlocksDbDbNameBlocksPageIdGetData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetBlocksDbDbNameBlocksPageIdGetResponses, GetBlocksDbDbNameBlocksPageIdGetErrors, ThrowOnError>({
+        url: '/db/{db_name}/blocks/{page_id}',
         ...options
     });
 };
@@ -113,9 +113,9 @@ export const getBlocksBlocksPageIdGet = <ThrowOnError extends boolean = false>(o
 /**
  * Update Block Content
  */
-export const updateBlockContentBlocksContentPut = <ThrowOnError extends boolean = false>(options: Options<UpdateBlockContentBlocksContentPutData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateBlockContentBlocksContentPutResponses, UpdateBlockContentBlocksContentPutErrors, ThrowOnError>({
-        url: '/blocks/content',
+export const updateBlockContentDbDbNameBlocksContentPut = <ThrowOnError extends boolean = false>(options: Options<UpdateBlockContentDbDbNameBlocksContentPutData, ThrowOnError>) => {
+    return (options.client ?? client).put<UpdateBlockContentDbDbNameBlocksContentPutResponses, UpdateBlockContentDbDbNameBlocksContentPutErrors, ThrowOnError>({
+        url: '/db/{db_name}/blocks/content',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -127,9 +127,9 @@ export const updateBlockContentBlocksContentPut = <ThrowOnError extends boolean 
 /**
  * Update Block Parent
  */
-export const updateBlockParentBlocksParentPut = <ThrowOnError extends boolean = false>(options: Options<UpdateBlockParentBlocksParentPutData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateBlockParentBlocksParentPutResponses, UpdateBlockParentBlocksParentPutErrors, ThrowOnError>({
-        url: '/blocks/parent',
+export const updateBlockParentDbDbNameBlocksParentPut = <ThrowOnError extends boolean = false>(options: Options<UpdateBlockParentDbDbNameBlocksParentPutData, ThrowOnError>) => {
+    return (options.client ?? client).put<UpdateBlockParentDbDbNameBlocksParentPutResponses, UpdateBlockParentDbDbNameBlocksParentPutErrors, ThrowOnError>({
+        url: '/db/{db_name}/blocks/parent',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -141,9 +141,9 @@ export const updateBlockParentBlocksParentPut = <ThrowOnError extends boolean = 
 /**
  * Delete Block
  */
-export const deleteBlockBlocksBlockIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteBlockBlocksBlockIdDeleteData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteBlockBlocksBlockIdDeleteResponses, DeleteBlockBlocksBlockIdDeleteErrors, ThrowOnError>({
-        url: '/blocks/{block_id}',
+export const deleteBlockDbDbNameBlocksBlockIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteBlockDbDbNameBlocksBlockIdDeleteData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteBlockDbDbNameBlocksBlockIdDeleteResponses, DeleteBlockDbDbNameBlocksBlockIdDeleteErrors, ThrowOnError>({
+        url: '/db/{db_name}/blocks/{block_id}',
         ...options
     });
 };
@@ -151,9 +151,9 @@ export const deleteBlockBlocksBlockIdDelete = <ThrowOnError extends boolean = fa
 /**
  * Get Workspaces
  */
-export const getWorkspacesWorkspacesGet = <ThrowOnError extends boolean = false>(options?: Options<GetWorkspacesWorkspacesGetData, ThrowOnError>) => {
-    return (options?.client ?? client).get<GetWorkspacesWorkspacesGetResponses, unknown, ThrowOnError>({
-        url: '/workspaces',
+export const getWorkspacesDbDbNameWorkspacesGet = <ThrowOnError extends boolean = false>(options: Options<GetWorkspacesDbDbNameWorkspacesGetData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetWorkspacesDbDbNameWorkspacesGetResponses, GetWorkspacesDbDbNameWorkspacesGetErrors, ThrowOnError>({
+        url: '/db/{db_name}/workspaces',
         ...options
     });
 };
@@ -161,9 +161,9 @@ export const getWorkspacesWorkspacesGet = <ThrowOnError extends boolean = false>
 /**
  * Add Workspace
  */
-export const addWorkspaceWorkspacesPost = <ThrowOnError extends boolean = false>(options: Options<AddWorkspaceWorkspacesPostData, ThrowOnError>) => {
-    return (options.client ?? client).post<AddWorkspaceWorkspacesPostResponses, AddWorkspaceWorkspacesPostErrors, ThrowOnError>({
-        url: '/workspaces',
+export const addWorkspaceDbDbNameWorkspacesPost = <ThrowOnError extends boolean = false>(options: Options<AddWorkspaceDbDbNameWorkspacesPostData, ThrowOnError>) => {
+    return (options.client ?? client).post<AddWorkspaceDbDbNameWorkspacesPostResponses, AddWorkspaceDbDbNameWorkspacesPostErrors, ThrowOnError>({
+        url: '/db/{db_name}/workspaces',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -175,9 +175,9 @@ export const addWorkspaceWorkspacesPost = <ThrowOnError extends boolean = false>
 /**
  * Update Workspace
  */
-export const updateWorkspaceWorkspacesPut = <ThrowOnError extends boolean = false>(options: Options<UpdateWorkspaceWorkspacesPutData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateWorkspaceWorkspacesPutResponses, UpdateWorkspaceWorkspacesPutErrors, ThrowOnError>({
-        url: '/workspaces',
+export const updateWorkspaceDbDbNameWorkspacesPut = <ThrowOnError extends boolean = false>(options: Options<UpdateWorkspaceDbDbNameWorkspacesPutData, ThrowOnError>) => {
+    return (options.client ?? client).put<UpdateWorkspaceDbDbNameWorkspacesPutResponses, UpdateWorkspaceDbDbNameWorkspacesPutErrors, ThrowOnError>({
+        url: '/db/{db_name}/workspaces',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -189,9 +189,9 @@ export const updateWorkspaceWorkspacesPut = <ThrowOnError extends boolean = fals
 /**
  * Delete Workspace
  */
-export const deleteWorkspaceWorkspacesWorkspaceIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteWorkspaceWorkspacesWorkspaceIdDeleteData, ThrowOnError>) => {
-    return (options.client ?? client).delete<DeleteWorkspaceWorkspacesWorkspaceIdDeleteResponses, DeleteWorkspaceWorkspacesWorkspaceIdDeleteErrors, ThrowOnError>({
-        url: '/workspaces/{workspace_id}',
+export const deleteWorkspaceDbDbNameWorkspacesWorkspaceIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteResponses, DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteErrors, ThrowOnError>({
+        url: '/db/{db_name}/workspaces/{workspace_id}',
         ...options
     });
 };
@@ -199,9 +199,33 @@ export const deleteWorkspaceWorkspacesWorkspaceIdDelete = <ThrowOnError extends 
 /**
  * Get Workspace
  */
-export const getWorkspaceWorkspacesWorkspaceIdGet = <ThrowOnError extends boolean = false>(options: Options<GetWorkspaceWorkspacesWorkspaceIdGetData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetWorkspaceWorkspacesWorkspaceIdGetResponses, GetWorkspaceWorkspacesWorkspaceIdGetErrors, ThrowOnError>({
-        url: '/workspaces/{workspace_id}',
+export const getWorkspaceDbDbNameWorkspacesWorkspaceIdGet = <ThrowOnError extends boolean = false>(options: Options<GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetResponses, GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetErrors, ThrowOnError>({
+        url: '/db/{db_name}/workspaces/{workspace_id}',
         ...options
+    });
+};
+
+/**
+ * Get Databases
+ */
+export const getDatabasesDatabasesGet = <ThrowOnError extends boolean = false>(options?: Options<GetDatabasesDatabasesGetData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetDatabasesDatabasesGetResponses, unknown, ThrowOnError>({
+        url: '/databases',
+        ...options
+    });
+};
+
+/**
+ * Create Database
+ */
+export const createDatabaseDatabasesPost = <ThrowOnError extends boolean = false>(options: Options<CreateDatabaseDatabasesPostData, ThrowOnError>) => {
+    return (options.client ?? client).post<CreateDatabaseDatabasesPostResponses, CreateDatabaseDatabasesPostErrors, ThrowOnError>({
+        url: '/databases',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
     });
 };

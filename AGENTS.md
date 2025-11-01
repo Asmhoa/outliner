@@ -74,6 +74,23 @@ The application now supports multiple databases through a SystemDatabase. Each r
 
 This allows the same server instance to handle multiple UserDatabases, enabling users to open different databases in different browser windows.
 
+### Technical Implementation
+
+FastAPI automatically passes path parameters to dependency functions. Example:
+
+```python
+def get_db(db_name: str, request: Request):
+    # db_name is automatically injected from the route path
+    sys_db = request.app.state.sys_db
+    # ... get database by name ...
+    yield db
+
+@app.get("/db/{db_name}/pages")
+def get_pages(db_name: str, db: UserDatabase = Depends(get_db)):
+    # db_name is passed to get_db dependency automatically
+    pass
+```
+
 ### Running Playwright Tests
 
 The frontend includes Playwright tests for end-to-end testing. To run these tests:

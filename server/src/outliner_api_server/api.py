@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from outliner_api_server.userdb import (
@@ -42,8 +42,17 @@ app.add_middleware(
 )
 
 
-def get_db():
-    db = UserDatabase(DATABASE_PATH)
+def get_db(db_name: str, request: Request):
+    sys_db = request.app.state.sys_db
+    
+    # Get the database path from system database
+    db_info = sys_db.get_user_database_by_name(db_name)
+    if not db_info:
+        # If the database doesn't exist, return an error
+        # The user should create the database via a separate API first
+        raise HTTPException(status_code=404, detail=f"Database '{db_name}' not found. Please create it first.")
+    
+    db = UserDatabase(db_info['path'])
     try:
         yield db
     finally:
@@ -66,7 +75,7 @@ class PageRename(BaseModel):
 
 
 @app.post(
-    "/pages",
+    "/db/{db_name}/pages",
     responses={
         200: {
             "description": "Page created successfully",
@@ -82,7 +91,7 @@ class PageRename(BaseModel):
         },
     },
 )
-def add_page(page: PageCreate, db: UserDatabase = Depends(get_db)):
+def add_page(db_name: str, page: PageCreate, db: UserDatabase = Depends(get_db)):
     try:
         page_id = db.add_page(page.title)
         return {"page_id": page_id}
@@ -91,7 +100,7 @@ def add_page(page: PageCreate, db: UserDatabase = Depends(get_db)):
 
 
 @app.get(
-    "/pages/{page_id}",
+    "/db/{db_name}/pages/{page_id}",
     response_model=Page,
     responses={
         200: {
@@ -112,7 +121,7 @@ def add_page(page: PageCreate, db: UserDatabase = Depends(get_db)):
         },
     },
 )
-def get_page(page_id: str, db: UserDatabase = Depends(get_db)):
+def get_page(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
     page_data = db.get_page_by_id(page_id)
     if not page_data:
         raise HTTPException(status_code=404, detail="Page not found")
@@ -120,7 +129,7 @@ def get_page(page_id: str, db: UserDatabase = Depends(get_db)):
 
 
 @app.get(
-    "/pages",
+    "/db/{db_name}/pages",
     response_model=list[Page],
     responses={
         200: {
@@ -139,13 +148,13 @@ def get_page(page_id: str, db: UserDatabase = Depends(get_db)):
         }
     },
 )
-def get_pages(db: UserDatabase = Depends(get_db)):
+def get_pages(db_name: str, db: UserDatabase = Depends(get_db)):
     pages_data = db.get_pages()
     return [Page(page_id=p[0], title=p[1], created_at=p[2]) for p in pages_data]
 
 
 @app.put(
-    "/pages",
+    "/db/{db_name}/pages",
     responses={
         200: {
             "description": "Page renamed successfully",
@@ -165,7 +174,7 @@ def get_pages(db: UserDatabase = Depends(get_db)):
         },
     },
 )
-def rename_page(page: PageRename, db: UserDatabase = Depends(get_db)):
+def rename_page(db_name: str, page: PageRename, db: UserDatabase = Depends(get_db)):
     try:
         db.rename_page(page.page_id, page.new_title)
         return {"status": "success"}
@@ -176,7 +185,7 @@ def rename_page(page: PageRename, db: UserDatabase = Depends(get_db)):
 
 
 @app.delete(
-    "/pages/{page_id}",
+    "/db/{db_name}/pages/{page_id}",
     responses={
         200: {
             "description": "Page deleted successfully",
@@ -188,7 +197,7 @@ def rename_page(page: PageRename, db: UserDatabase = Depends(get_db)):
         },
     },
 )
-def delete_page(page_id: str, db: UserDatabase = Depends(get_db)):
+def delete_page(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
     try:
         db.delete_page(page_id)
         return {"status": "success"}
@@ -225,7 +234,7 @@ class BlockUpdateParent(BaseModel):
 
 
 @app.post(
-    "/blocks",
+    "/db/{db_name}/blocks",
     response_model=Block,
     responses={
         200: {
@@ -249,7 +258,7 @@ class BlockUpdateParent(BaseModel):
         },
     },
 )
-def add_block(block: BlockCreate, db: UserDatabase = Depends(get_db)):
+def add_block(db_name: str, block: BlockCreate, db: UserDatabase = Depends(get_db)):
     block_id = db.add_block(
         block.content, block.position, block.page_id, block.parent_block_id
     )
@@ -267,7 +276,7 @@ def add_block(block: BlockCreate, db: UserDatabase = Depends(get_db)):
 
 
 @app.get(
-    "/block/{block_id}",
+    "/db/{db_name}/block/{block_id}",
     response_model=Block,
     responses={
         200: {
@@ -291,7 +300,7 @@ def add_block(block: BlockCreate, db: UserDatabase = Depends(get_db)):
         },
     },
 )
-def get_block(block_id: str, db: UserDatabase = Depends(get_db)):
+def get_block(db_name: str, block_id: str, db: UserDatabase = Depends(get_db)):
     block_data = db.get_block_content_by_id(block_id)
     if not block_data:
         raise HTTPException(status_code=404, detail="Block not found")
@@ -306,7 +315,7 @@ def get_block(block_id: str, db: UserDatabase = Depends(get_db)):
 
 
 @app.get(
-    "/blocks/{page_id}",
+    "/db/{db_name}/blocks/{page_id}",
     response_model=list[Block],
     responses={
         200: {
@@ -332,7 +341,7 @@ def get_block(block_id: str, db: UserDatabase = Depends(get_db)):
         },
     },
 )
-def get_blocks(page_id: str, db: UserDatabase = Depends(get_db)):
+def get_blocks(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
     blocks_data = db.get_blocks_by_page(page_id)
     return [
         Block(
@@ -348,7 +357,7 @@ def get_blocks(page_id: str, db: UserDatabase = Depends(get_db)):
 
 
 @app.put(
-    "/blocks/content",
+    "/db/{db_name}/blocks/content",
     responses={
         200: {
             "description": "Block content updated successfully",
@@ -360,7 +369,7 @@ def get_blocks(page_id: str, db: UserDatabase = Depends(get_db)):
         },
     },
 )
-def update_block_content(block: BlockUpdateContent, db: UserDatabase = Depends(get_db)):
+def update_block_content(db_name: str, block: BlockUpdateContent, db: UserDatabase = Depends(get_db)):
     try:
         db.update_block_content(block.block_id, block.new_content)
         return {"status": "success"}
@@ -369,7 +378,7 @@ def update_block_content(block: BlockUpdateContent, db: UserDatabase = Depends(g
 
 
 @app.put(
-    "/blocks/parent",
+    "/db/{db_name}/blocks/parent",
     responses={
         200: {
             "description": "Block parent updated successfully",
@@ -389,7 +398,7 @@ def update_block_content(block: BlockUpdateContent, db: UserDatabase = Depends(g
         },
     },
 )
-def update_block_parent(block: BlockUpdateParent, db: UserDatabase = Depends(get_db)):
+def update_block_parent(db_name: str, block: BlockUpdateParent, db: UserDatabase = Depends(get_db)):
     try:
         db.update_block_parent(
             block.block_id, block.new_page_id, block.new_parent_block_id
@@ -402,7 +411,7 @@ def update_block_parent(block: BlockUpdateParent, db: UserDatabase = Depends(get
 
 
 @app.delete(
-    "/blocks/{block_id}",
+    "/db/{db_name}/blocks/{block_id}",
     responses={
         200: {
             "description": "Block deleted successfully",
@@ -414,7 +423,7 @@ def update_block_parent(block: BlockUpdateParent, db: UserDatabase = Depends(get
         },
     },
 )
-def delete_block(block_id: str, db: UserDatabase = Depends(get_db)):
+def delete_block(db_name: str, block_id: str, db: UserDatabase = Depends(get_db)):
     try:
         db.delete_block(block_id)
         return {"status": "success"}
@@ -441,7 +450,7 @@ class WorkspaceUpdate(BaseModel):
 
 
 @app.post(
-    "/workspaces",
+    "/db/{db_name}/workspaces",
     response_model=Workspace,
     responses={
         200: {
@@ -464,7 +473,7 @@ class WorkspaceUpdate(BaseModel):
         },
     },
 )
-def add_workspace(workspace: WorkspaceCreate, db: UserDatabase = Depends(get_db)):
+def add_workspace(db_name: str, workspace: WorkspaceCreate, db: UserDatabase = Depends(get_db)):
     workspace_id = db.add_workspace(workspace.name, workspace.color)
     workspace_data = db.get_workspace_by_id(workspace_id)
     if not workspace_data:
@@ -477,7 +486,7 @@ def add_workspace(workspace: WorkspaceCreate, db: UserDatabase = Depends(get_db)
 
 
 @app.get(
-    "/workspaces/{workspace_id}",
+    "/db/{db_name}/workspaces/{workspace_id}",
     response_model=Workspace,
     responses={
         200: {
@@ -500,7 +509,7 @@ def add_workspace(workspace: WorkspaceCreate, db: UserDatabase = Depends(get_db)
         },
     },
 )
-def get_workspace(workspace_id: int, db: UserDatabase = Depends(get_db)):
+def get_workspace(db_name: str, workspace_id: int, db: UserDatabase = Depends(get_db)):
     workspace_data = db.get_workspace_by_id(workspace_id)
     if not workspace_data:
         raise HTTPException(status_code=404, detail="Workspace not found")
@@ -512,7 +521,7 @@ def get_workspace(workspace_id: int, db: UserDatabase = Depends(get_db)):
 
 
 @app.get(
-    "/workspaces",
+    "/db/{db_name}/workspaces",
     response_model=list[Workspace],
     responses={
         200: {
@@ -531,7 +540,7 @@ def get_workspace(workspace_id: int, db: UserDatabase = Depends(get_db)):
         }
     },
 )
-def get_workspaces(db: UserDatabase = Depends(get_db)):
+def get_workspaces(db_name: str, db: UserDatabase = Depends(get_db)):
     workspaces_data = db.get_workspaces()
     return [
         Workspace(workspace_id=w[0], name=w[1], color=w[2]) for w in workspaces_data
@@ -539,7 +548,7 @@ def get_workspaces(db: UserDatabase = Depends(get_db)):
 
 
 @app.put(
-    "/workspaces",
+    "/db/{db_name}/workspaces",
     responses={
         200: {
             "description": "Workspace updated successfully",
@@ -553,7 +562,7 @@ def get_workspaces(db: UserDatabase = Depends(get_db)):
         },
     },
 )
-def update_workspace(workspace: WorkspaceUpdate, db: UserDatabase = Depends(get_db)):
+def update_workspace(db_name: str, workspace: WorkspaceUpdate, db: UserDatabase = Depends(get_db)):
     try:
         db.update_workspace(
             workspace.workspace_id, workspace.new_name, workspace.new_color
@@ -564,7 +573,7 @@ def update_workspace(workspace: WorkspaceUpdate, db: UserDatabase = Depends(get_
 
 
 @app.delete(
-    "/workspaces/{workspace_id}",
+    "/db/{db_name}/workspaces/{workspace_id}",
     responses={
         200: {
             "description": "Workspace deleted successfully",
@@ -578,9 +587,67 @@ def update_workspace(workspace: WorkspaceUpdate, db: UserDatabase = Depends(get_
         },
     },
 )
-def delete_workspace(workspace_id: int, db: UserDatabase = Depends(get_db)):
+def delete_workspace(db_name: str, workspace_id: int, db: UserDatabase = Depends(get_db)):
     try:
         db.delete_workspace(workspace_id)
         return {"status": "success"}
     except WorkspaceNotFoundError:
         raise HTTPException(status_code=404, detail="Workspace not found")
+
+
+# Database management endpoints
+class DatabaseCreate(BaseModel):
+    name: str
+    path: str
+
+
+@app.get(
+    "/databases",
+    response_model=list,
+    responses={
+        200: {
+            "description": "List of databases retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "id": 1,
+                            "name": "my_database",
+                            "path": "/path/to/database.db",
+                            "created_at": "2023-01-01T00:00:00"
+                        }
+                    ]
+                }
+            },
+        }
+    },
+)
+def get_databases(request: Request):
+    sys_db = request.app.state.sys_db
+    databases = sys_db.get_all_user_databases()
+    return databases
+
+
+@app.post(
+    "/databases",
+    responses={
+        200: {
+            "description": "Database created successfully",
+            "content": {"application/json": {"example": {"status": "success"}}},
+        },
+        409: {
+            "description": "Conflict - Database with this name already exists",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Database with name 'mydb' already exists"}
+                }
+            },
+        },
+    },
+)
+def create_database(request: Request, db_create: DatabaseCreate):
+    sys_db = request.app.state.sys_db
+    success = sys_db.add_user_database(db_create.name, db_create.path)
+    if not success:
+        raise HTTPException(status_code=409, detail=f"Database with name '{db_create.name}' already exists")
+    return {"status": "success"}
