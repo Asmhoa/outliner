@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from outliner_api_server.data import (
-    Database,
+    UserDatabase,
     PageAlreadyExistsError,
     PageNotFoundError,
     WorkspaceNotFoundError,
@@ -20,7 +20,7 @@ DATABASE_PATH = os.path.join(current_dir, "data.db")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    db = Database(DATABASE_PATH)
+    db = UserDatabase(DATABASE_PATH)
     db.create_new_database()  # no-op if already exists
     db.close_conn()
     yield
@@ -43,7 +43,7 @@ app.add_middleware(
 
 
 def get_db():
-    db = Database(DATABASE_PATH)
+    db = UserDatabase(DATABASE_PATH)
     try:
         yield db
     finally:
@@ -82,7 +82,7 @@ class PageRename(BaseModel):
         },
     },
 )
-def add_page(page: PageCreate, db: Database = Depends(get_db)):
+def add_page(page: PageCreate, db: UserDatabase = Depends(get_db)):
     try:
         page_id = db.add_page(page.title)
         return {"page_id": page_id}
@@ -112,7 +112,7 @@ def add_page(page: PageCreate, db: Database = Depends(get_db)):
         },
     },
 )
-def get_page(page_id: str, db: Database = Depends(get_db)):
+def get_page(page_id: str, db: UserDatabase = Depends(get_db)):
     page_data = db.get_page_by_id(page_id)
     if not page_data:
         raise HTTPException(status_code=404, detail="Page not found")
@@ -139,7 +139,7 @@ def get_page(page_id: str, db: Database = Depends(get_db)):
         }
     },
 )
-def get_pages(db: Database = Depends(get_db)):
+def get_pages(db: UserDatabase = Depends(get_db)):
     pages_data = db.get_pages()
     return [Page(page_id=p[0], title=p[1], created_at=p[2]) for p in pages_data]
 
@@ -165,7 +165,7 @@ def get_pages(db: Database = Depends(get_db)):
         },
     },
 )
-def rename_page(page: PageRename, db: Database = Depends(get_db)):
+def rename_page(page: PageRename, db: UserDatabase = Depends(get_db)):
     try:
         db.rename_page(page.page_id, page.new_title)
         return {"status": "success"}
@@ -188,7 +188,7 @@ def rename_page(page: PageRename, db: Database = Depends(get_db)):
         },
     },
 )
-def delete_page(page_id: str, db: Database = Depends(get_db)):
+def delete_page(page_id: str, db: UserDatabase = Depends(get_db)):
     try:
         db.delete_page(page_id)
         return {"status": "success"}
@@ -249,7 +249,7 @@ class BlockUpdateParent(BaseModel):
         },
     },
 )
-def add_block(block: BlockCreate, db: Database = Depends(get_db)):
+def add_block(block: BlockCreate, db: UserDatabase = Depends(get_db)):
     block_id = db.add_block(
         block.content, block.position, block.page_id, block.parent_block_id
     )
@@ -291,7 +291,7 @@ def add_block(block: BlockCreate, db: Database = Depends(get_db)):
         },
     },
 )
-def get_block(block_id: str, db: Database = Depends(get_db)):
+def get_block(block_id: str, db: UserDatabase = Depends(get_db)):
     block_data = db.get_block_content_by_id(block_id)
     if not block_data:
         raise HTTPException(status_code=404, detail="Block not found")
@@ -332,7 +332,7 @@ def get_block(block_id: str, db: Database = Depends(get_db)):
         },
     },
 )
-def get_blocks(page_id: str, db: Database = Depends(get_db)):
+def get_blocks(page_id: str, db: UserDatabase = Depends(get_db)):
     blocks_data = db.get_blocks_by_page(page_id)
     return [
         Block(
@@ -360,7 +360,7 @@ def get_blocks(page_id: str, db: Database = Depends(get_db)):
         },
     },
 )
-def update_block_content(block: BlockUpdateContent, db: Database = Depends(get_db)):
+def update_block_content(block: BlockUpdateContent, db: UserDatabase = Depends(get_db)):
     try:
         db.update_block_content(block.block_id, block.new_content)
         return {"status": "success"}
@@ -389,7 +389,7 @@ def update_block_content(block: BlockUpdateContent, db: Database = Depends(get_d
         },
     },
 )
-def update_block_parent(block: BlockUpdateParent, db: Database = Depends(get_db)):
+def update_block_parent(block: BlockUpdateParent, db: UserDatabase = Depends(get_db)):
     try:
         db.update_block_parent(
             block.block_id, block.new_page_id, block.new_parent_block_id
@@ -414,7 +414,7 @@ def update_block_parent(block: BlockUpdateParent, db: Database = Depends(get_db)
         },
     },
 )
-def delete_block(block_id: str, db: Database = Depends(get_db)):
+def delete_block(block_id: str, db: UserDatabase = Depends(get_db)):
     try:
         db.delete_block(block_id)
         return {"status": "success"}
@@ -464,7 +464,7 @@ class WorkspaceUpdate(BaseModel):
         },
     },
 )
-def add_workspace(workspace: WorkspaceCreate, db: Database = Depends(get_db)):
+def add_workspace(workspace: WorkspaceCreate, db: UserDatabase = Depends(get_db)):
     workspace_id = db.add_workspace(workspace.name, workspace.color)
     workspace_data = db.get_workspace_by_id(workspace_id)
     if not workspace_data:
@@ -500,7 +500,7 @@ def add_workspace(workspace: WorkspaceCreate, db: Database = Depends(get_db)):
         },
     },
 )
-def get_workspace(workspace_id: int, db: Database = Depends(get_db)):
+def get_workspace(workspace_id: int, db: UserDatabase = Depends(get_db)):
     workspace_data = db.get_workspace_by_id(workspace_id)
     if not workspace_data:
         raise HTTPException(status_code=404, detail="Workspace not found")
@@ -531,7 +531,7 @@ def get_workspace(workspace_id: int, db: Database = Depends(get_db)):
         }
     },
 )
-def get_workspaces(db: Database = Depends(get_db)):
+def get_workspaces(db: UserDatabase = Depends(get_db)):
     workspaces_data = db.get_workspaces()
     return [
         Workspace(workspace_id=w[0], name=w[1], color=w[2]) for w in workspaces_data
@@ -553,7 +553,7 @@ def get_workspaces(db: Database = Depends(get_db)):
         },
     },
 )
-def update_workspace(workspace: WorkspaceUpdate, db: Database = Depends(get_db)):
+def update_workspace(workspace: WorkspaceUpdate, db: UserDatabase = Depends(get_db)):
     try:
         db.update_workspace(
             workspace.workspace_id, workspace.new_name, workspace.new_color
@@ -578,7 +578,7 @@ def update_workspace(workspace: WorkspaceUpdate, db: Database = Depends(get_db))
         },
     },
 )
-def delete_workspace(workspace_id: int, db: Database = Depends(get_db)):
+def delete_workspace(workspace_id: int, db: UserDatabase = Depends(get_db)):
     try:
         db.delete_workspace(workspace_id)
         return {"status": "success"}

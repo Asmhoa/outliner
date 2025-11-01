@@ -1,20 +1,22 @@
-
 import pytest
 from fastapi.testclient import TestClient
 from outliner_api_server.api import app, get_db
-from outliner_api_server.data import Database
+from outliner_api_server.data import UserDatabase
 
 # Create a new database for testing
 TEST_DB_PATH = "./test.db"
 
+
 @pytest.fixture(scope="module")
 def test_db():
-    db = Database(TEST_DB_PATH)
+    db = UserDatabase(TEST_DB_PATH)
     db.create_new_database()
     yield db
     db.close_conn()
     import os
+
     os.remove(TEST_DB_PATH)
+
 
 @pytest.fixture(scope="module")
 def client(test_db):
@@ -28,9 +30,12 @@ def client(test_db):
     with TestClient(app) as c:
         yield c
 
+
 def test_add_and_get_workspace(client):
     # Add a workspace
-    response = client.post("/workspaces", json={"name": "Test Workspace", "color": "#FF5733"})
+    response = client.post(
+        "/workspaces", json={"name": "Test Workspace", "color": "#FF5733"}
+    )
     assert response.status_code == 200
     new_workspace = response.json()
     assert new_workspace["name"] == "Test Workspace"
@@ -46,6 +51,7 @@ def test_add_and_get_workspace(client):
     assert workspace["color"] == "#FF5733"
     assert workspace["workspace_id"] == workspace_id
 
+
 def test_get_all_workspaces(client, test_db):
     # Clear workspaces
     test_db.cursor.execute("DELETE FROM workspaces WHERE workspace_id != 0")
@@ -59,7 +65,7 @@ def test_get_all_workspaces(client, test_db):
     response = client.get("/workspaces")
     assert response.status_code == 200
     workspaces = response.json()
-    assert len(workspaces) >= 2 # >= because of default workspace
+    assert len(workspaces) >= 2  # >= because of default workspace
     assert workspaces[-2]["name"] == "Workspace 1"
     assert workspaces[-2]["color"] == "#111111"
     assert workspaces[-1]["name"] == "Workspace 2"

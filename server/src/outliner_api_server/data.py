@@ -10,30 +10,34 @@ logger = logging.getLogger(__name__)
 
 class PageAlreadyExistsError(Exception):
     """Raised when trying to create a page with a title that already exists."""
+
     pass
 
 
 class PageNotFoundError(Exception):
     """Raised when a page is not found."""
+
     pass
 
 
 class WorkspaceNotFoundError(Exception):
     """Raised when a workspace is not found."""
+
     pass
 
 
 class BlockNotFoundError(Exception):
     """Raised when a block is not found."""
+
     pass
 
 
-class Database:
+class UserDatabase:
     def __init__(self, db_name: str) -> None:
         self.db_name: str = db_name
-        # NOTE: in api.py, we use a separate Database() object for each request
+        # NOTE: in api.py, we use a separate UserDatabase() object for each request
         # So one conn is used by only 1 request, making it safe to not check same thread
-        # This is required since the api server thread that creates a Database object
+        # This is required since the api server thread that creates a UserDatabase object
         # is a different one from the one that executes a query.
         # TODO: add a pytest to ensure each api function has its own Depends()
         self.conn: Connection = connect(self.db_name, check_same_thread=False)
@@ -163,9 +167,7 @@ class Database:
         rows = self.cursor.fetchall()
         return [(row[0], row[1], f"#{row[2].hex().upper()}") for row in rows]
 
-    def update_workspace(
-        self, workspace_id: int, new_name: str, new_color: str
-    ):
+    def update_workspace(self, workspace_id: int, new_name: str, new_color: str):
         """
         Updates an existing workspace.
         Raises WorkspaceNotFoundError if workspace is not found.
