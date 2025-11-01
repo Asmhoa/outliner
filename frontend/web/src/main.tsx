@@ -6,6 +6,7 @@ import { MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import AppRoutes from "./AppRoutes";
 import "./index.css";
+import { DatabaseProvider } from "./contexts/DatabaseContext";
 
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css"; // need for proper positioning
@@ -14,8 +15,10 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <MantineProvider>
-        <Notifications position="top-right" />
-        <AppRoutes />
+        <DatabaseProvider>
+          <Notifications position="top-right" />
+          <AppRoutes />
+        </DatabaseProvider>
       </MantineProvider>
     </BrowserRouter>
   </StrictMode>,

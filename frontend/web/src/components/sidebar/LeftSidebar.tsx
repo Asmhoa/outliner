@@ -24,6 +24,8 @@ import WorkspaceSidebar from "./WorkspaceSidebar";
 import type { Page as PageType } from "../../api-client";
 import log from "../../utils/logger";
 import { useNavigate } from "react-router-dom";
+import { useDisclosure } from "@mantine/hooks";
+import { CreateDatabaseModal } from "../CreateDatabaseModal";
 
 interface Workspace {
   workspace_id: number;
@@ -41,6 +43,7 @@ interface LeftSidebarProps {
   activeWorkspaceId: number | null;
   setActiveWorkspaceId: (id: number) => void;
   databases: { value: string; label: string }[];
+  onDatabaseCreated: () => void;
 }
 
 const LeftSidebar = ({
@@ -53,11 +56,16 @@ const LeftSidebar = ({
   activeWorkspaceId,
   setActiveWorkspaceId,
   databases,
+  onDatabaseCreated,
 }: LeftSidebarProps) => {
   // const activeWorkspace = workspaces.find((ws) => ws.id === activeWorkspaceId);
   // const backgroundColor = activeWorkspace ? activeWorkspace.color : "white";
   //
   const navigate = useNavigate();
+  const [
+    createDbModalOpened,
+    { open: openCreateDbModal, close: closeCreateDbModal },
+  ] = useDisclosure(false);
 
   return (
     // <AppShell.Navbar pt="sm" pb="sm" style={{ backgroundColor }}>
@@ -85,11 +93,31 @@ const LeftSidebar = ({
               </Menu.Target>
               <Menu.Dropdown>
                 {databases.map((db) => (
-                  <Menu.Item key={db.value}>{db.label}</Menu.Item>
+                  <Menu.Item
+                    key={db.value}
+                    onClick={() => navigate(`/db/${db.value}`)}
+                  >
+                    {db.label}
+                  </Menu.Item>
                 ))}
+                <Menu.Divider />
+                <Menu.Item
+                  leftSection={<IconPlus size={14} />}
+                  onClick={openCreateDbModal}
+                >
+                  Create New Database
+                </Menu.Item>
               </Menu.Dropdown>
             </Menu>
           </AppShell.Section>
+          <CreateDatabaseModal
+            opened={createDbModalOpened}
+            onClose={closeCreateDbModal}
+            onDatabaseCreated={() => {
+              onDatabaseCreated();
+              closeCreateDbModal();
+            }}
+          />
           <Divider />
           <AppShell.Section>
             <NavLink

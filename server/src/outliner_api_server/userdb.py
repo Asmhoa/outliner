@@ -43,6 +43,7 @@ class UserDatabase:
         self.conn: Connection = connect(self.db_name, check_same_thread=False)
         self.cursor: Cursor = self.conn.cursor()
         self.cursor.execute("PRAGMA foreign_keys = ON")
+        self.create_new_database()
 
         # Handle exits gracefully
         # atexit.register(self._close_conn)

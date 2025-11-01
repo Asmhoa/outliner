@@ -21,14 +21,18 @@ import {
   type Block,
   type Page as PageType,
   type Workspace,
+  type HTTPError,
 } from "./api-client";
 import SearchBox from "./components/sidebar/SearchBox";
 import LeftSidebar from "./components/sidebar/LeftSidebar";
+import { useDatabase } from "./hooks/useDatabase";
+import { CreateDatabaseModal } from "./components/CreateDatabaseModal";
 
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
 function App() {
-  const { pageId } = useParams<{ pageId: string }>(); // get page_id from URL
+  const { dbName: dbNameParam, pageId } = useParams<{ dbName: string; pageId: string }>(); // get page_id from URL
+  const { dbName, setDbName } = useDatabase();
 
   const [currentPageId, setCurrentPageId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -37,6 +41,7 @@ function App() {
   const [opened, { toggle }] = useDisclosure();
 
   const [isRenaming, setIsRenaming] = useState(false);
+  const [createDbModalOpened, setCreateDbModalOpened] = useState(false);
 
   // Load things from the DB
   // Workspaces
@@ -45,10 +50,12 @@ function App() {
     null,
   );
 
-  async function getAllWorkspaces() {
-    const { data: all_workspaces, error } = await getWorkspacesWorkspacesGet(
-      {},
-    );
+  const getAllWorkspaces = useCallback(async () => {
+    if (!dbName) return;
+    const { data: all_workspaces, error } =
+      await getWorkspacesDbDbNameWorkspacesGet({
+        path: { db_name: dbName },
+      });
     if (error) {
       log.error("[App] Failed to fetch workspaces:", error);
       return;
@@ -65,18 +72,42 @@ function App() {
         setActiveWorkspaceId(0);
       }
     }
-  }
+  }, [dbName, activeWorkspaceId]);
 
   useEffect(() => {
     getAllWorkspaces();
-  }, []);
+  }, [getAllWorkspaces]);
 
   // Other
-  const databases = [
-    { value: "db1", label: "Database 1" },
-    { value: "db2", label: "Database 2" },
-    { value: "db3", label: "Database 3" },
-  ];
+  const [databases, setDatabases] = useState<{ value: string; label: string }[]>(
+    [],
+  );
+
+  const getAllDatabases = useCallback(async () => {
+    const { data, error } = await getDatabasesDatabasesGet();
+    if (error) {
+      log.error("[App] Failed to fetch databases:", error);
+      return;
+    }
+    if (data) {
+      if (data.length === 0) {
+        setCreateDbModalOpened(true);
+      } else {
+        setDatabases(
+          data.map((db) => ({ value: db.name, label: db.name })),
+        );
+        if (!dbName && dbNameParam) {
+          setDbName(dbNameParam);
+        } else if (!dbName) {
+          setDbName(data[0].name);
+        }
+      }
+    }
+  }, [dbName, setDbName, dbNameParam]);
+
+  useEffect(() => {
+    getAllDatabases();
+  }, [getAllDatabases]);
 
   // UI elements visibility
   const [navbarVisibility, setNavbarVisibility] =
@@ -100,8 +131,11 @@ function App() {
   };
 
   const fetchPages = useCallback(async () => {
+    if (!dbName) return;
     log.debug("[App] Fetching pages...");
-    const { data, error } = await getPagesPagesGet({});
+    const { data, error } = await getPagesDbDbNamePagesGet({
+      path: { db_name: dbName },
+    });
     if (error) {
       log.error("[App] Failed to fetch pages:", error);
       return;
@@ -114,12 +148,13 @@ function App() {
         setCurrentPageId(data[0].page_id);
       }
     }
-  }, [currentPageId]);
+  }, [currentPageId, dbName]);
 
   const handleDeletePage = async (page_id: string) => {
+    if (!dbName) return;
     log.debug(`[App] Deleting page`, { page_id });
-    const { error } = await deletePagePagesPageIdDelete({
-      path: { page_id },
+    const { error } = await deletePageDbDbNamePagesPageIdDelete({
+      path: { db_name: dbName, page_id },
     });
 
     if (error) {
@@ -138,15 +173,19 @@ function App() {
   };
 
   const handleAddPage = async (title: string) => {
+    if (!dbName) return;
     log.debug(`[App] Adding new page`, { title });
-    const { data, error, response } = await addPagePagesPost({
+    const { data, error, response } = await addPageDbDbNamePagesPost({
+      path: { db_name: dbName },
       body: { title },
     });
 
     if (error) {
       if (response.status === 409) {
+        const httpError = error as HTTPError;
         const errorMessage =
-          (error as any).detail || "A page with this title already exists.";
+          (httpError.body as { detail: string }).detail ||
+          "A page with this title already exists.";
         log.error(errorMessage);
         showNotification({
           title: "Failed to add page",
@@ -169,12 +208,13 @@ function App() {
   };
 
   useEffect(() => {
+    if (!dbName) return;
     log.debug(`[App] Current page ID changed`, { currentPageId });
     const fetchTitle = async () => {
       if (!currentPageId) return;
       log.debug(`[App] Fetching title`, { page_id: currentPageId });
-      const { data, error } = await getPagePagesPageIdGet({
-        path: { page_id: currentPageId },
+      const { data, error } = await getPageDbDbNamePagesPageIdGet({
+        path: { db_name: dbName, page_id: currentPageId },
       });
 
       if (error) {
@@ -190,8 +230,8 @@ function App() {
     const fetchBlocks = async () => {
       if (!currentPageId) return;
       log.debug(`[App] Fetching blocks`, { page_id: currentPageId });
-      const { data, error } = await getBlocksBlocksPageIdGet({
-        path: { page_id: currentPageId },
+      const { data, error } = await getBlocksDbDbNameBlocksPageIdGet({
+        path: { db_name: dbName, page_id: currentPageId },
       });
 
       if (error) {
@@ -205,7 +245,8 @@ function App() {
             page_id: currentPageId,
           });
           const { data: newBlock, error: newBlockError } =
-            await addBlockBlocksPost({
+            await addBlockDbDbNameBlocksPost({
+              path: { db_name: dbName },
               body: { page_id: currentPageId, content: "", position: 0 },
             });
 
@@ -229,11 +270,11 @@ function App() {
 
     fetchTitle();
     fetchBlocks();
-  }, [currentPageId]);
+  }, [currentPageId, dbName]);
 
   useEffect(() => {
     fetchPages();
-  }, []);
+  }, [fetchPages]);
 
   // Update current page ID based on URL parameter
   useEffect(() => {
@@ -247,8 +288,23 @@ function App() {
         log.error(`Page with ID ${pageId} does not exist`);
         // Leave currentPageId as null, so nothing is displayed
       }
+    } else if (pages.length > 0) {
+      // If no pageId in URL, but pages exist, set to first page
+      setCurrentPageId(pages[0].page_id);
+    } else {
+      setCurrentPageId(null);
     }
   }, [pageId, pages]);
+
+  if (!dbName) {
+    return (
+      <CreateDatabaseModal
+        opened={createDbModalOpened}
+        onClose={() => setCreateDbModalOpened(false)}
+        onDatabaseCreated={getAllDatabases}
+      />
+    );
+  }
 
   return (
     <AppShell
@@ -292,6 +348,7 @@ function App() {
         activeWorkspaceId={activeWorkspaceId}
         setActiveWorkspaceId={setActiveWorkspaceId}
         databases={databases}
+        onDatabaseCreated={getAllDatabases}
       />
       <AppShell.Main>
         {currentPageId && (

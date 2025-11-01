@@ -2,16 +2,16 @@ import React, { useState, useEffect, useRef } from "react";
 import { showNotification } from "@mantine/notifications";
 import Block from "./Block";
 import {
-  renamePagePagesPut,
-  addBlockBlocksPost,
-  deleteBlockBlocksBlockIdDelete,
+  renamePageDbDbNamePagesPut,
+  addBlockDbDbNameBlocksPost,
+  deleteBlockDbDbNameBlocksBlockIdDelete,
 } from "../api-client/sdk.gen";
 import log from "../utils/logger";
-import { Button, Group } from "@mantine/core";
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import { Group } from "@mantine/core";
 import PageMenu from "./PageMenu";
+import { useDatabase } from "../hooks/useDatabase";
 
-import { type Block as BlockType } from "../api-client";
+import { type Block as BlockType, type HTTPError } from "../api-client";
 
 interface PageProps {
   page_id: string;
@@ -32,6 +32,7 @@ const Page: React.FC<PageProps> = ({
   handleDeletePage,
   handleRenamePage,
 }) => {
+  const { dbName } = useDatabase();
   const [pageTitle, setPageTitle] = useState(title);
   const [blocks, setBlocks] = useState<BlockType[]>(initialBlocks);
   const blockRefs = useRef<{
@@ -71,11 +72,13 @@ const Page: React.FC<PageProps> = ({
   const handleTitleBlur = async (
     event: React.FocusEvent<HTMLHeadingElement>,
   ) => {
+    if (!dbName) return;
     const newTitle = event.currentTarget.textContent || "";
     setPageTitle(newTitle);
     log.debug(`[Page] Updating page title`, { page_id, new_title: newTitle });
 
-    const { error, response } = await renamePagePagesPut({
+    const { error, response } = await renamePageDbDbNamePagesPut({
+      path: { db_name: dbName },
       body: {
         page_id: page_id,
         new_title: newTitle,
@@ -84,8 +87,10 @@ const Page: React.FC<PageProps> = ({
 
     if (error) {
       if (response.status === 409) {
+        const httpError = error as HTTPError;
         const errorMessage =
-          (error as any).detail || "A page with this title already exists.";
+          (httpError.body as { detail: string }).detail ||
+          "A page with this title already exists.";
         log.error(errorMessage);
         showNotification({
           title: "Failed to rename page",
@@ -101,11 +106,13 @@ const Page: React.FC<PageProps> = ({
   };
 
   const handleNewBlock = async (currentBlockId: string) => {
+    if (!dbName) return;
     log.debug(`[Page] Adding new block`, {
       page_id,
       current_block_id: currentBlockId,
     });
-    const { data: newBlock, error } = await addBlockBlocksPost({
+    const { data: newBlock, error } = await addBlockDbDbNameBlocksPost({
+      path: { db_name: dbName },
       body: { page_id: page_id, content: "", position: 0 },
     });
 
@@ -126,11 +133,11 @@ const Page: React.FC<PageProps> = ({
   };
 
   const handleDeleteBlock = async (currentBlockId: string) => {
-    if (blocks.length <= 1) return;
+    if (blocks.length <= 1 || !dbName) return;
 
     log.debug(`[Page] Deleting block`, { block_id: currentBlockId, page_id });
-    const { error } = await deleteBlockBlocksBlockIdDelete({
-      path: { block_id: currentBlockId },
+    const { error } = await deleteBlockDbDbNameBlocksBlockIdDelete({
+      path: { db_name: dbName, block_id: currentBlockId },
     });
 
     if (error) {

@@ -22,6 +22,10 @@ class SystemDatabase:
         if self.db_path is None:
             current_dir = os.path.dirname(os.path.realpath(__file__))
             self.db_path = os.path.join(current_dir, "system.db")
+
+        # Define the directory for user databases
+        self.databases_dir = os.path.join(os.path.dirname(os.path.dirname(current_dir)), "databases")
+        os.makedirs(self.databases_dir, exist_ok=True)
         
         # Use check_same_thread=False since we'll have different threads accessing 
         # the database in a web server context
@@ -61,12 +65,13 @@ class SystemDatabase:
             True if successfully added, False if name already exists
         """
         try:
+            full_path = os.path.join(self.databases_dir, path)
             self.cursor.execute(
                 "INSERT INTO user_databases (name, path) VALUES (?, ?)",
-                (name, path)
+                (name, full_path)
             )
             self.conn.commit()
-            logger.debug(f"User database '{name}' with path '{path}' added successfully.")
+            logger.debug(f"User database '{name}' with path '{full_path}' added successfully.")
             return True
         except Exception as e:
             logger.warning(f"Failed to add user database '{name}': {str(e)}")
@@ -127,8 +132,9 @@ class SystemDatabase:
         Returns:
             List of dictionaries with 'id', 'name', 'path', 'created_at'
         """
-        self.cursor.execute("SELECT id, name, path, created_at FROM user_databases")
-        rows = self.cursor.fetchall()
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT id, name, path, created_at FROM user_databases")
+        rows = cursor.fetchall()
         return [
             {
                 'id': row[0],

@@ -18,12 +18,13 @@ import {
 import { showNotification } from "@mantine/notifications";
 import { useDisclosure } from "@mantine/hooks";
 import {
-  addWorkspaceWorkspacesPost,
-  deleteWorkspaceWorkspacesWorkspaceIdDelete,
-  updateWorkspaceWorkspacesPut,
+  addWorkspaceDbDbNameWorkspacesPost,
+  deleteWorkspaceDbDbNameWorkspacesWorkspaceIdDelete,
+  updateWorkspaceDbDbNameWorkspacesPut,
   type Workspace,
 } from "../../api-client";
 import { IconPlus } from "@tabler/icons-react";
+import { useDatabase } from "../../hooks/useDatabase";
 import log from "../../utils/logger";
 
 interface WorkspaceSidebarProps {
@@ -39,6 +40,7 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   activeWorkspaceId,
   setActiveWorkspaceId,
 }) => {
+  const { dbName } = useDatabase();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const activeWorkspacePosition = workspaces.findIndex(
     (ws) => ws.workspace_id === activeWorkspaceId,
@@ -84,7 +86,10 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   };
 
   const handleCreateWorkspace = async () => {
-    const { data: newWs, error } = await addWorkspaceWorkspacesPost({
+    const { data: newWs, error } = await addWorkspaceDbDbNameWorkspacesPost({
+      path: {
+        db_name: dbName as string,
+      },
       body: {
         name: newWorkspaceName,
         color: newWorkspaceColor,
@@ -117,7 +122,10 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   const handleUpdateWorkspaceSubmit = async () => {
     if (!editingWorkspace) return;
 
-    const { error } = await updateWorkspaceWorkspacesPut({
+    const { error } = await updateWorkspaceDbDbNameWorkspacesPut({
+      path: {
+        db_name: dbName as string,
+      },
       body: {
         workspace_id: editingWorkspace.workspace_id,
         new_name: editWorkspaceName,
@@ -152,8 +160,9 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   const handleDeleteWorkspace = async () => {
     if (!editingWorkspace) return;
 
-    const { error } = await deleteWorkspaceWorkspacesWorkspaceIdDelete({
+    const { error } = await deleteWorkspaceDbDbNameWorkspacesWorkspaceIdDelete({
       path: {
+        db_name: dbName as string,
         workspace_id: editingWorkspace.workspace_id,
       },
     });
