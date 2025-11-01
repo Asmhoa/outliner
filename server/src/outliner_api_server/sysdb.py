@@ -33,8 +33,8 @@ class SystemDatabase:
         self.conn: Connection = connect(self.db_path, check_same_thread=False)
         self.cursor: Cursor = self.conn.cursor()
         self.cursor.execute("PRAGMA foreign_keys = ON")
-        self._create_system_tables()
         logger.debug(f"System database connection established to '{self.db_path}'.")
+        self._create_system_tables()
 
     def close_conn(self) -> None:
         """Close the database connection."""
@@ -70,13 +70,18 @@ class SystemDatabase:
             True if successfully added, False if name already exists
         """
         try:
-            # Sanitize the path to ensure it's safe
-            sanitized_path = path.replace("/", "_").replace("\\", "_").replace("..", "_")
-            
-            # Check if path is already an absolute path
-            if os.path.isabs(sanitized_path):
+            # Check if path is already an absolute path before sanitizing
+            if os.path.isabs(path):
+                # For absolute paths, sanitize the path to ensure it's safe
+                sanitized_path = (
+                    path.replace("/", "_").replace("\\", "_").replace("..", "_")
+                )
                 full_path = sanitized_path
             else:
+                # For relative paths, sanitize after prepending with databases directory
+                sanitized_path = (
+                    path.replace("/", "_").replace("\\", "_").replace("..", "_")
+                )
                 # If it's a relative path, prepend with databases directory
                 full_path = os.path.join(self.databases_dir, sanitized_path)
             self.cursor.execute(
