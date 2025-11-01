@@ -134,13 +134,13 @@ def test_add_block_to_block(db):
 
 
 def test_add_block_with_both_page_and_parent(db):
-    """Test that adding a block with both page_id and parent_block_id returns None."""
+    """Test that adding a block with both page_id and parent_block_id raises ValueError."""
     page_id = db.add_page("Test Page")
     parent_block_id = db.add_block("Parent Block", 1, page_id=page_id)
-    block_id = db.add_block(
-        "Test Block", 1, page_id=page_id, parent_block_id=parent_block_id
-    )
-    assert block_id is None
+    with pytest.raises(ValueError):
+        db.add_block(
+            "Test Block", 1, page_id=page_id, parent_block_id=parent_block_id
+        )
 
 
 def test_delete_block(db):
@@ -352,8 +352,8 @@ def test_delete_workspace(db):
     """Test deleting a workspace."""
     workspace_id = db.add_workspace("Test Workspace", "#FF0000")
     db.delete_workspace(workspace_id)  # Should not raise an exception
-    workspace = db.get_workspace_by_id(workspace_id)
-    assert workspace is None
+    with pytest.raises(WorkspaceNotFoundError):
+        db.get_workspace_by_id(workspace_id)
 
 
 def test_delete_nonexistent_workspace(db):

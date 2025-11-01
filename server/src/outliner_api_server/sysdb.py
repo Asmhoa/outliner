@@ -1,6 +1,11 @@
 import os
 import logging
-from sqlite3 import connect, Cursor, Connection
+from sqlite3 import connect, Cursor, Connection, IntegrityError
+
+from outliner_api_server.errors import (
+    UserDatabaseAlreadyExistsError,
+    UserDatabaseNotFoundError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +63,7 @@ class SystemDatabase:
             f"Table 'user_databases' created or already exists in '{self.db_path}'."
         )
 
-    def add_user_database(self, name: str, path: str) -> bool:
+    def add_user_database(self, name: str, path: str) -> None:
         """
         Add a new UserDatabase entry.
 
@@ -66,8 +71,8 @@ class SystemDatabase:
             name: The name of the user database
             path: The file path to the user database (will be sanitized and made relative to databases dir if not absolute)
 
-        Returns:
-            True if successfully added, False if name already exists
+        Raises:
+            UserDatabaseAlreadyExistsError: If the database name already exists.
         """
         try:
             # Check if path is already an absolute path before sanitizing
@@ -92,12 +97,11 @@ class SystemDatabase:
             logger.debug(
                 f"User database '{name}' with path '{full_path}' added successfully."
             )
-            return True
-        except Exception as e:
+        except IntegrityError as e:
             logger.warning(f"Failed to add user database '{name}': {str(e)}")
-            return False
+            raise UserDatabaseAlreadyExistsError(f"Database '{name}' already exists.")
 
-    def get_user_database_by_name(self, name: str) -> dict | None:
+    def get_user_database_by_name(self, name: str) -> dict:
         """
         Get a UserDatabase by name.
 
@@ -105,7 +109,10 @@ class SystemDatabase:
             name: The name of the user database
 
         Returns:
-            Dictionary with 'id', 'name', 'path', 'created_at' if found, else None
+            Dictionary with 'id', 'name', 'path', 'created_at' if found
+
+        Raises:
+            UserDatabaseNotFoundError: If the database is not found.
         """
         self.cursor.execute(
             "SELECT id, name, path, created_at FROM user_databases WHERE name = ?",
@@ -114,9 +121,9 @@ class SystemDatabase:
         row = self.cursor.fetchone()
         if row:
             return {"id": row[0], "name": row[1], "path": row[2], "created_at": row[3]}
-        return None
+        raise UserDatabaseNotFoundError(f"Database '{name}' not found.")
 
-    def get_user_database_by_path(self, path: str) -> dict | None:
+    def get_user_database_by_path(self, path: str) -> dict:
         """
         Get a UserDatabase by path.
 
@@ -124,7 +131,10 @@ class SystemDatabase:
             path: The file path of the user database
 
         Returns:
-            Dictionary with 'id', 'name', 'path', 'created_at' if found, else None
+            Dictionary with 'id', 'name', 'path', 'created_at' if found
+
+        Raises:
+            UserDatabaseNotFoundError: If the database is not found.
         """
         self.cursor.execute(
             "SELECT id, name, path, created_at FROM user_databases WHERE path = ?",
@@ -133,7 +143,7 @@ class SystemDatabase:
         row = self.cursor.fetchone()
         if row:
             return {"id": row[0], "name": row[1], "path": row[2], "created_at": row[3]}
-        return None
+        raise UserDatabaseNotFoundError(f"Database with path '{path}' not found.")
 
     def get_all_user_databases(self) -> list:
         """
@@ -152,7 +162,7 @@ class SystemDatabase:
 
     def update_user_database(
         self, name: str, new_path: str = None, new_name: str = None
-    ) -> bool:
+    ) -> None:
         """
         Update a UserDatabase.
 
@@ -161,20 +171,22 @@ class SystemDatabase:
             new_path: The new path (optional)
             new_name: The new name (optional)
 
-        Returns:
-            True if updated successfully, False if not found or other error
+        Raises:
+            UserDatabaseNotFoundError: If the database to update is not found.
+            UserDatabaseAlreadyExistsError: If the new name already exists.
         """
         if new_path is None and new_name is None:
-            return False
+            return
 
         if new_name is not None:
-            # Check if the new name already exists
-            existing = self.get_user_database_by_name(new_name)
-            if existing is not None and existing["name"] != name:
-                logger.warning(
-                    f"Cannot update database '{name}' to '{new_name}': name already exists"
-                )
-                return False
+            try:
+                existing = self.get_user_database_by_name(new_name)
+                if existing["name"] != name:
+                    raise UserDatabaseAlreadyExistsError(
+                        f"Cannot update database '{name}' to '{new_name}': name already exists"
+                    )
+            except UserDatabaseNotFoundError:
+                pass  # New name doesn't exist, which is good
 
         update_fields = []
         params = []
@@ -188,7 +200,7 @@ class SystemDatabase:
             params.append(new_name)
 
         if not update_fields:
-            return False
+            return
 
         params.append(name)
 
@@ -199,28 +211,26 @@ class SystemDatabase:
             )
             self.conn.commit()
             if self.cursor.rowcount == 0:
-                logger.debug(f"User database '{name}' not found.")
-                return False
+                raise UserDatabaseNotFoundError(f"User database '{name}' not found.")
             logger.debug(f"User database '{name}' updated.")
-            return True
-        except Exception as e:
+        except IntegrityError as e:
             logger.error(f"Failed to update user database '{name}': {str(e)}")
-            return False
+            raise UserDatabaseAlreadyExistsError(
+                f"Database '{new_name or name}' already exists."
+            )
 
-    def delete_user_database(self, name: str) -> bool:
+    def delete_user_database(self, name: str) -> None:
         """
         Delete a UserDatabase.
 
         Args:
             name: The name of the user database to delete
 
-        Returns:
-            True if deleted successfully, False if not found
+        Raises:
+            UserDatabaseNotFoundError: If the database to delete is not found.
         """
         self.cursor.execute("DELETE FROM user_databases WHERE name = ?", (name,))
         self.conn.commit()
         if self.cursor.rowcount == 0:
-            logger.debug(f"User database '{name}' not found.")
-            return False
+            raise UserDatabaseNotFoundError(f"User database '{name}' not found.")
         logger.debug(f"User database '{name}' deleted successfully.")
-        return True

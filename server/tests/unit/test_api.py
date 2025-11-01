@@ -2,6 +2,11 @@ import pytest
 from fastapi.testclient import TestClient
 from outliner_api_server.api import app, get_db
 from outliner_api_server.userdb import UserDatabase
+from outliner_api_server.errors import (
+    PageNotFoundError,
+    BlockNotFoundError,
+    WorkspaceNotFoundError,
+)
 
 client = TestClient(app)
 
@@ -79,7 +84,7 @@ def test_get_page_not_found(override_get_db):
     response = client.get(f"/db/{TEST_DB_NAME}/pages/xyz999")
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Page not found"}
+    assert response.json() == {"detail": "Page with ID xyz999 not found"}
 
 
 def test_get_pages_success(override_get_db):
@@ -148,8 +153,8 @@ def test_delete_page_success(override_get_db):
     assert response.json() == {"status": "success"}
 
     # Verify the page was deleted from the database
-    page_data = db.get_page_by_id(page_id)
-    assert page_data is None
+    with pytest.raises(PageNotFoundError):
+        db.get_page_by_id(page_id)
 
 
 def test_delete_page_not_found(override_get_db):
@@ -157,7 +162,7 @@ def test_delete_page_not_found(override_get_db):
     response = client.delete(f"/db/{TEST_DB_NAME}/pages/xyz999")
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Page not found"}
+    assert response.json()["detail"] == "Page with ID xyz999 not found"
 
 
 # Block endpoint tests
@@ -221,7 +226,7 @@ def test_get_block_not_found(override_get_db):
     response = client.get(f"/db/{TEST_DB_NAME}/block/xyz999")
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Block not found"}
+    assert response.json() == {"detail": "Block with ID xyz999 not found"}
 
 
 def test_get_blocks_by_page_success(override_get_db):
@@ -345,8 +350,8 @@ def test_delete_block_success(override_get_db):
     assert response.json() == {"status": "success"}
 
     # Verify the block was deleted from the database
-    block_data = db.get_block_content_by_id(block_id)
-    assert block_data is None
+    with pytest.raises(BlockNotFoundError):
+        db.get_block_content_by_id(block_id)
 
 
 def test_delete_block_not_found(override_get_db):
@@ -423,7 +428,7 @@ def test_get_workspace_not_found(override_get_db):
     )  # Use a large number unlikely to exist
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Workspace not found"}
+    assert response.json() == {"detail": "Workspace with ID 999999 not found"}
 
 
 def test_get_workspaces_success(override_get_db):
@@ -539,8 +544,8 @@ def test_delete_workspace_success(override_get_db):
     assert response.json() == {"status": "success"}
 
     # Verify the workspace was deleted from the database
-    workspace_data = db.get_workspace_by_id(workspace_id)
-    assert workspace_data is None
+    with pytest.raises(WorkspaceNotFoundError):
+        db.get_workspace_by_id(workspace_id)
 
 
 def test_delete_workspace_not_found(override_get_db):

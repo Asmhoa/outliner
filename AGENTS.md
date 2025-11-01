@@ -144,3 +144,13 @@ The Playwright configuration is set up to:
 -   `frontend/ui`: This directory is intended for shared UI components (e.g., React components) that can be used across different frontend applications.
 -   `frontend/web`: The web application, which consumes shared components from `frontend/ui`.
 -   `frontend/desktop`: The desktop application, which also consumes shared components from `frontend/ui`.
+
+## Code Location Preference
+
+When implementing features or making changes, prefer handling logic and data manipulation as low in the stack as possible. For example, path sanitization should occur in the database code rather than the frontend. This ensures that any consumers of the API or database code directly also benefit from these implementations, promoting consistency and reducing duplication.
+
+## API Error Handling
+
+When making changes to the API, prefer using custom error classes for error handling rather than boolean flags to indicate success/failure.
+
+For example, instead of returning `{"success": false, "error": "Page not found"}`, the API should raise specific exceptions like `PageNotFoundError` which are then caught and converted to properly structured HTTP responses with appropriate status codes. The `api.py` file should be responsible for catching these exceptions and returning the appropriate HTTP status codes and error messages.

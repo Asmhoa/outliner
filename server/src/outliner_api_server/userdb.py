@@ -1,31 +1,14 @@
 import logging
 from sqlite3 import connect, Cursor, Connection
 
+from .errors import (
+    BlockNotFoundError,
+    PageAlreadyExistsError,
+    PageNotFoundError,
+    WorkspaceNotFoundError,
+)
+
 logger = logging.getLogger(__name__)
-
-
-class PageAlreadyExistsError(Exception):
-    """Raised when trying to create a page with a title that already exists."""
-
-    pass
-
-
-class PageNotFoundError(Exception):
-    """Raised when a page is not found."""
-
-    pass
-
-
-class WorkspaceNotFoundError(Exception):
-    """Raised when a workspace is not found."""
-
-    pass
-
-
-class BlockNotFoundError(Exception):
-    """Raised when a block is not found."""
-
-    pass
 
 
 class UserDatabase:
@@ -160,7 +143,7 @@ class UserDatabase:
         row = self.cursor.fetchone()
         if row:
             return row[0], row[1], f"#{row[2].hex().upper()}"
-        return None
+        raise WorkspaceNotFoundError(f"Workspace with ID {workspace_id} not found")
 
     def get_workspaces(self):
         """
@@ -226,7 +209,10 @@ class UserDatabase:
         Retrieves a page by its ID.
         """
         self.cursor.execute("SELECT * FROM pages WHERE page_id = ?", (page_id,))
-        return self.cursor.fetchone()
+        page = self.cursor.fetchone()
+        if page:
+            return page
+        raise PageNotFoundError(f"Page with ID {page_id} not found")
 
     def get_pages(self):
         """
@@ -306,7 +292,9 @@ class UserDatabase:
             logger.error(
                 "A block must be associated with either a page_id or a parent_block_id, but not both."
             )
-            return None  # Or raise an exception
+            raise ValueError(
+                "A block must be associated with either a page_id or a parent_block_id, but not both."
+            )
 
         self.conn.commit()
         logger.debug(
@@ -326,7 +314,10 @@ class UserDatabase:
         Retrieves a block by its ID.
         """
         self.cursor.execute("SELECT * FROM blocks WHERE block_id = ?", (block_id,))
-        return self.cursor.fetchone()
+        block = self.cursor.fetchone()
+        if block:
+            return block
+        raise BlockNotFoundError(f"Block with ID {block_id} not found")
 
     def update_block_content(self, block_id: str, new_content: str):
         """
