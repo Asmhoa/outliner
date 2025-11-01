@@ -1,14 +1,16 @@
 import pytest
 from fastapi.testclient import TestClient
-from outliner_api_server.api import app
+from outliner_api_server.api import app, get_db
 from outliner_api_server.userdb import UserDatabase
 
 client = TestClient(app)
 
+TEST_DB_NAME = "test_db"
+
 
 @pytest.fixture
 def db():
-    """Set up a new database for each test."""
+    """Set up a new in-memory database for each test."""
     database = UserDatabase(":memory:")
     database.create_new_database()
     yield database
@@ -17,13 +19,14 @@ def db():
 
 @pytest.fixture
 def override_get_db(db):
-    """Override the get_db dependency to use the in-memory database."""
-    from outliner_api_server.api import get_db
+    """Override the get_db dependency to use the in-memory database for a specific db_name."""
+    def _override_get_db(db_name: str):
+        if db_name == TEST_DB_NAME:
+            yield db
+        else:
+            pytest.fail(f"Unexpected db_name: {db_name}")
 
-    def override_get_db():
-        yield db
-
-    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_db] = _override_get_db
 
     yield db
 
@@ -36,7 +39,7 @@ def test_add_page_success(override_get_db):
     """Test adding a new page via API."""
     db = override_get_db
 
-    response = client.post("/pages", json={"title": "Test Page"})
+    response = client.post(f"/db/{TEST_DB_NAME}/pages", json={"title": "Test Page"})
 
     assert response.status_code == 200
     page_id = response.json()["page_id"]
@@ -55,7 +58,7 @@ def test_get_page_success(override_get_db):
     # Create a page first
     page_id = db.add_page("Test Page")
 
-    response = client.get(f"/pages/{page_id}")
+    response = client.get(f"/db/{TEST_DB_NAME}/pages/{page_id}")
 
     assert response.status_code == 200
     json_response = response.json()
@@ -72,7 +75,7 @@ def test_get_page_success(override_get_db):
 
 def test_get_page_not_found(override_get_db):
     """Test getting a non-existent page via API."""
-    response = client.get("/pages/xyz999")
+    response = client.get(f"/db/{TEST_DB_NAME}/pages/xyz999")
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Page not found"}
@@ -86,7 +89,7 @@ def test_get_pages_success(override_get_db):
     page_id_1 = db.add_page("Page 1")
     page_id_2 = db.add_page("Page 2")
 
-    response = client.get("/pages")
+    response = client.get(f"/db/{TEST_DB_NAME}/pages")
 
     assert response.status_code == 200
     pages = response.json()
@@ -107,7 +110,7 @@ def test_rename_page_success(override_get_db):
     # Create a page first
     page_id = db.add_page("Old Title")
 
-    response = client.put("/pages", json={"page_id": page_id, "new_title": "New Title"})
+    response = client.put(f"/db/{TEST_DB_NAME}/pages", json={"page_id": page_id, "new_title": "New Title"})
 
     assert response.status_code == 200
     assert response.json() == {"status": "success"}
@@ -121,7 +124,7 @@ def test_rename_page_success(override_get_db):
 def test_rename_page_not_found(override_get_db):
     """Test renaming a non-existent page via API."""
     response = client.put(
-        "/pages", json={"page_id": "xyz999", "new_title": "New Title"}
+        f"/db/{TEST_DB_NAME}/pages", json={"page_id": "xyz999", "new_title": "New Title"}
     )
 
     assert response.status_code == 404
@@ -135,7 +138,7 @@ def test_delete_page_success(override_get_db):
     # Create a page first
     page_id = db.add_page("Test Page")
 
-    response = client.delete(f"/pages/{page_id}")
+    response = client.delete(f"/db/{TEST_DB_NAME}/pages/{page_id}")
 
     assert response.status_code == 200
     assert response.json() == {"status": "success"}
@@ -147,7 +150,7 @@ def test_delete_page_success(override_get_db):
 
 def test_delete_page_not_found(override_get_db):
     """Test deleting a non-existent page via API."""
-    response = client.delete("/pages/xyz999")
+    response = client.delete(f"/db/{TEST_DB_NAME}/pages/xyz999")
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Page not found"}
@@ -162,7 +165,7 @@ def test_add_block_success(override_get_db):
     page_id = db.add_page("Test Page")
 
     response = client.post(
-        "/blocks", json={"content": "Test Block", "position": 1, "page_id": page_id}
+        f"/db/{TEST_DB_NAME}/blocks", json={"content": "Test Block", "position": 1, "page_id": page_id}
     )
 
     assert response.status_code == 200
@@ -187,7 +190,7 @@ def test_get_block_success(override_get_db):
     page_id = db.add_page("Test Page")
     block_id = db.add_block("Test Block", 1, page_id=page_id)
 
-    response = client.get(f"/block/{block_id}")
+    response = client.get(f"/db/{TEST_DB_NAME}/block/{block_id}")
 
     assert response.status_code == 200
     response_data = response.json()
@@ -210,7 +213,7 @@ def test_get_block_success(override_get_db):
 
 def test_get_block_not_found(override_get_db):
     """Test getting a non-existent block via API."""
-    response = client.get("/block/xyz999")
+    response = client.get(f"/db/{TEST_DB_NAME}/block/xyz999")
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Block not found"}
@@ -225,7 +228,7 @@ def test_get_blocks_by_page_success(override_get_db):
     block1_id = db.add_block("Block 1", 1, page_id=page_id)
     block2_id = db.add_block("Block 2", 2, page_id=page_id)
 
-    response = client.get(f"/blocks/{page_id}")
+    response = client.get(f"/db/{TEST_DB_NAME}/blocks/{page_id}")
 
     assert response.status_code == 200
     blocks = response.json()
@@ -257,7 +260,7 @@ def test_update_block_content_success(override_get_db):
     block_id = db.add_block("Original Content", 1, page_id=page_id)
 
     response = client.put(
-        "/blocks/content", json={"block_id": block_id, "new_content": "Updated Content"}
+        f"/db/{TEST_DB_NAME}/blocks/content", json={"block_id": block_id, "new_content": "Updated Content"}
     )
 
     assert response.status_code == 200
@@ -272,7 +275,7 @@ def test_update_block_content_success(override_get_db):
 def test_update_block_content_not_found(override_get_db):
     """Test updating content of a non-existent block via API."""
     response = client.put(
-        "/blocks/content", json={"block_id": "xyz999", "new_content": "Updated Content"}
+        f"/db/{TEST_DB_NAME}/blocks/content", json={"block_id": "xyz999", "new_content": "Updated Content"}
     )
 
     assert response.status_code == 404
@@ -289,7 +292,7 @@ def test_update_block_parent_success(override_get_db):
     new_page_id = db.add_page("New Page")
 
     response = client.put(
-        "/blocks/parent", json={"block_id": block_id, "new_page_id": new_page_id}
+        f"/db/{TEST_DB_NAME}/blocks/parent", json={"block_id": block_id, "new_page_id": new_page_id}
     )
 
     assert response.status_code == 200
@@ -305,7 +308,7 @@ def test_update_block_parent_success(override_get_db):
 def test_update_block_parent_invalid(override_get_db):
     """Test updating block parent with invalid parameters via API."""
     response = client.put(
-        "/blocks/parent",
+        f"/db/{TEST_DB_NAME}/blocks/parent",
         json={
             "block_id": "xyz999",
             "new_page_id": "abc123",
@@ -328,7 +331,7 @@ def test_delete_block_success(override_get_db):
     page_id = db.add_page("Test Page")
     block_id = db.add_block("Test Block", 1, page_id=page_id)
 
-    response = client.delete(f"/blocks/{block_id}")
+    response = client.delete(f"/db/{TEST_DB_NAME}/blocks/{block_id}")
 
     assert response.status_code == 200
     assert response.json() == {"status": "success"}
@@ -340,7 +343,7 @@ def test_delete_block_success(override_get_db):
 
 def test_delete_block_not_found(override_get_db):
     """Test deleting a non-existent block via API."""
-    response = client.delete("/blocks/xyz999")
+    response = client.delete(f"/db/{TEST_DB_NAME}/blocks/xyz999")
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Block not found"}
@@ -352,7 +355,7 @@ def test_add_workspace_success(override_get_db):
     db = override_get_db
 
     response = client.post(
-        "/workspaces", json={"name": "Test Workspace", "color": "#FF0000"}
+        f"/db/{TEST_DB_NAME}/workspaces", json={"name": "Test Workspace", "color": "#FF0000"}
     )
 
     assert response.status_code == 200
@@ -372,7 +375,7 @@ def test_add_workspace_with_special_chars(override_get_db):
     db = override_get_db
 
     response = client.post(
-        "/workspaces", json={"name": "Workspace & Test!", "color": "#00AAFF"}
+        f"/db/{TEST_DB_NAME}/workspaces", json={"name": "Workspace & Test!", "color": "#00AAFF"}
     )
 
     assert response.status_code == 200
@@ -394,7 +397,7 @@ def test_get_workspace_success(override_get_db):
     # Create a workspace first
     workspace_id = db.add_workspace("Test Workspace", "#FF0000")
 
-    response = client.get(f"/workspaces/{workspace_id}")
+    response = client.get(f"/db/{TEST_DB_NAME}/workspaces/{workspace_id}")
 
     assert response.status_code == 200
     response_data = response.json()
@@ -405,7 +408,7 @@ def test_get_workspace_success(override_get_db):
 
 def test_get_workspace_not_found(override_get_db):
     """Test getting a non-existent workspace via API."""
-    response = client.get("/workspaces/999999")  # Use a large number unlikely to exist
+    response = client.get(f"/db/{TEST_DB_NAME}/workspaces/999999")  # Use a large number unlikely to exist
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Workspace not found"}
@@ -420,7 +423,7 @@ def test_get_workspaces_success(override_get_db):
     workspace2_id = db.add_workspace("Workspace 2", "#00FF00")
     workspace3_id = db.add_workspace("Workspace 3", "#0000FF")
 
-    response = client.get("/workspaces")
+    response = client.get(f"/db/{TEST_DB_NAME}/workspaces")
 
     assert response.status_code == 200
     workspaces = response.json()
@@ -452,7 +455,7 @@ def test_update_workspace_success(override_get_db):
     workspace_id = db.add_workspace("Old Workspace", "#FF0000")
 
     response = client.put(
-        "/workspaces",
+        f"/db/{TEST_DB_NAME}/workspaces",
         json={
             "workspace_id": workspace_id,
             "new_name": "Updated Workspace",
@@ -473,7 +476,7 @@ def test_update_workspace_success(override_get_db):
 def test_update_workspace_not_found(override_get_db):
     """Test updating a non-existent workspace via API."""
     response = client.put(
-        "/workspaces",
+        f"/db/{TEST_DB_NAME}/workspaces",
         json={
             "workspace_id": 999999,  # Use a large number unlikely to exist
             "new_name": "Updated Workspace",
@@ -493,7 +496,7 @@ def test_update_workspace_with_special_chars(override_get_db):
     workspace_id = db.add_workspace("Test Workspace", "#FF0000")
 
     response = client.put(
-        "/workspaces",
+        f"/db/{TEST_DB_NAME}/workspaces",
         json={
             "workspace_id": workspace_id,
             "new_name": "Updated Workspace & Test!",
@@ -518,7 +521,7 @@ def test_delete_workspace_success(override_get_db):
     # Create a workspace first
     workspace_id = db.add_workspace("Test Workspace", "#FF0000")
 
-    response = client.delete(f"/workspaces/{workspace_id}")
+    response = client.delete(f"/db/{TEST_DB_NAME}/workspaces/{workspace_id}")
 
     assert response.status_code == 200
     assert response.json() == {"status": "success"}
@@ -531,7 +534,7 @@ def test_delete_workspace_success(override_get_db):
 def test_delete_workspace_not_found(override_get_db):
     """Test deleting a non-existent workspace via API."""
     response = client.delete(
-        "/workspaces/999999"
+        f"/db/{TEST_DB_NAME}/workspaces/999999"
     )  # Use a large number unlikely to exist
 
     assert response.status_code == 404
@@ -543,7 +546,7 @@ def test_add_page_empty_title(override_get_db):
     """Test adding a page with an empty title."""
     db = override_get_db
 
-    response = client.post("/pages", json={"title": ""})
+    response = client.post(f"/db/{TEST_DB_NAME}/pages", json={"title": ""})
 
     assert response.status_code == 200
     page_id = response.json()["page_id"]
@@ -560,7 +563,7 @@ def test_add_page_long_title(override_get_db):
     db = override_get_db
     long_title = "A" * 1000
 
-    response = client.post("/pages", json={"title": long_title})
+    response = client.post(f"/db/{TEST_DB_NAME}/pages", json={"title": long_title})
 
     assert response.status_code == 200
     page_id = response.json()["page_id"]
@@ -576,7 +579,7 @@ def test_get_pages_empty(override_get_db):
     """Test getting all pages when there are no pages."""
     # No pages have been created yet
 
-    response = client.get("/pages")
+    response = client.get(f"/db/{TEST_DB_NAME}/pages")
 
     assert response.status_code == 200
     assert response.json() == []  # Should return an empty list
@@ -592,7 +595,7 @@ def test_add_block_with_parent(override_get_db):
 
     # First add the child block to the page
     response = client.post(
-        "/blocks", json={"content": "Child Block", "position": 2, "page_id": page_id}
+        f"/db/{TEST_DB_NAME}/blocks", json={"content": "Child Block", "position": 2, "page_id": page_id}
     )
 
     assert response.status_code == 200
@@ -610,7 +613,7 @@ def test_add_block_with_parent(override_get_db):
 
     # Now update the block's parent to be the parent_block
     response = client.put(
-        "/blocks/parent",
+        f"/db/{TEST_DB_NAME}/blocks/parent",
         json={"block_id": block_id, "new_parent_block_id": parent_block_id},
     )
 
@@ -634,7 +637,7 @@ def test_get_blocks_by_page_empty(override_get_db):
     # Create a page but no blocks
     page_id = db.add_page("Test Page")
 
-    response = client.get(f"/blocks/{page_id}")
+    response = client.get(f"/db/{TEST_DB_NAME}/blocks/{page_id}")
 
     assert response.status_code == 200
     assert response.json() == []  # Should return an empty list
@@ -650,7 +653,7 @@ def test_update_block_content_special_chars(override_get_db):
 
     special_content = "Special chars: !@#$%^&*()_+-={}[]|\\:;\"'<>?,./"
     response = client.put(
-        "/blocks/content", json={"block_id": block_id, "new_content": special_content}
+        f"/db/{TEST_DB_NAME}/blocks/content", json={"block_id": block_id, "new_content": special_content}
     )
 
     assert response.status_code == 200
@@ -667,7 +670,7 @@ def test_add_workspace_long_name(override_get_db):
     db = override_get_db
     long_name = "A" * 500
 
-    response = client.post("/workspaces", json={"name": long_name, "color": "#ABCDEF"})
+    response = client.post(f"/db/{TEST_DB_NAME}/workspaces", json={"name": long_name, "color": "#ABCDEF"})
 
     assert response.status_code == 200
     response_data = response.json()
@@ -689,7 +692,7 @@ def test_rename_page_special_chars(override_get_db):
     page_id = db.add_page("Old Title")
 
     response = client.put(
-        "/pages", json={"page_id": page_id, "new_title": "Page with & Special # Chars!"}
+        f"/db/{TEST_DB_NAME}/pages", json={"page_id": page_id, "new_title": "Page with & Special # Chars!"}
     )
 
     assert response.status_code == 200
@@ -707,7 +710,7 @@ def test_get_workspaces_empty(override_get_db):
 
     # Clear any default workspaces to test empty response
     # Note: Default workspace always exists, so there will be at least one
-    response = client.get("/workspaces")
+    response = client.get(f"/db/{TEST_DB_NAME}/workspaces")
 
     assert response.status_code == 200
     workspaces = response.json()
@@ -720,13 +723,13 @@ def test_add_page_duplicate_title(override_get_db):
     db = override_get_db
 
     # Add the first page
-    response1 = client.post("/pages", json={"title": "Test Page"})
+    response1 = client.post(f"/db/{TEST_DB_NAME}/pages", json={"title": "Test Page"})
     assert response1.status_code == 200
     page_id_1 = response1.json()["page_id"]
     assert isinstance(page_id_1, str)
 
     # Try to add a second page with the same title - should return 409
-    response2 = client.post("/pages", json={"title": "Test Page"})
+    response2 = client.post(f"/db/{TEST_DB_NAME}/pages", json={"title": "Test Page"})
     assert response2.status_code == 409
     assert "Test Page" in response2.json()["detail"]
 
@@ -736,19 +739,19 @@ def test_rename_page_duplicate_title(override_get_db):
     db = override_get_db
 
     # Add two pages with different titles
-    response1 = client.post("/pages", json={"title": "Page One"})
+    response1 = client.post(f"/db/{TEST_DB_NAME}/pages", json={"title": "Page One"})
     assert response1.status_code == 200
     page_id_1 = response1.json()["page_id"]
     assert isinstance(page_id_1, str)
 
-    response2 = client.post("/pages", json={"title": "Page Two"})
+    response2 = client.post(f"/db/{TEST_DB_NAME}/pages", json={"title": "Page Two"})
     assert response2.status_code == 200
     page_id_2 = response2.json()["page_id"]
     assert isinstance(page_id_2, str)
 
     # Try to rename page 2 to page 1's title - should return 409
     response3 = client.put(
-        "/pages", json={"page_id": page_id_2, "new_title": "Page One"}
+        f"/db/{TEST_DB_NAME}/pages", json={"page_id": page_id_2, "new_title": "Page One"}
     )
     assert response3.status_code == 409
     assert "Page One" in response3.json()["detail"]

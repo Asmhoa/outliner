@@ -10,13 +10,14 @@ import "./App.css";
 import Page from "./components/Page";
 import RightSidebar from "./components/sidebar/RightSidebar";
 import {
-  getPagePagesPageIdGet,
-  getBlocksBlocksPageIdGet,
-  addPagePagesPost,
-  getPagesPagesGet,
-  deletePagePagesPageIdDelete,
-  addBlockBlocksPost,
-  getWorkspacesWorkspacesGet,
+  getPageDbDbNamePagesPageIdGet,
+  getBlocksDbDbNameBlocksPageIdGet,
+  addPageDbDbNamePagesPost,
+  getPagesDbDbNamePagesGet,
+  deletePageDbDbNamePagesPageIdDelete,
+  addBlockDbDbNameBlocksPost,
+  getWorkspacesDbDbNameWorkspacesGet,
+  getDatabasesDatabasesGet,
   type Block,
   type Page as PageType,
   type Workspace,

@@ -10,19 +10,19 @@ class SystemDatabase:
     It maintains a table of database names and their corresponding file paths.
     """
     
-    def __init__(self, db_path: str = None) -> None:
+    def __init__(self) -> None:
         """
         Initialize the SystemDatabase.
         
-        Args:
-            db_path: Path to the system database file. If None, defaults to a system.db file
-                     in the same directory as this module.
+        The path to the system database file is determined in the following order:
+        1. OUTLINER_SYS_DB_PATH environment variable
+        2. A 'system.db' file in the same directory as this module.
         """
-        if db_path is None:
+        self.db_path = os.environ.get("OUTLINER_SYS_DB_PATH")
+        if self.db_path is None:
             current_dir = os.path.dirname(os.path.realpath(__file__))
-            db_path = os.path.join(current_dir, "system.db")
+            self.db_path = os.path.join(current_dir, "system.db")
         
-        self.db_path = db_path
         # Use check_same_thread=False since we'll have different threads accessing 
         # the database in a web server context
         self.conn: Connection = connect(self.db_path, check_same_thread=False)
