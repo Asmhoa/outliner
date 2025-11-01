@@ -175,7 +175,7 @@ const LeftSidebar = ({
                 key={page.page_id}
                 // active={page.page_id === currentPageId}
                 onClick={() => {
-                  navigate("/" + page.page_id);
+                  navigate("/pages/" + page.page_id);
                   // setCurrentPageId(page.page_id);
                 }}
               >

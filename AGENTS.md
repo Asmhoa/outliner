@@ -63,6 +63,17 @@ To update the client after making changes to the FastAPI application:
 
 This script executes the `openapi-ts` command, which fetches the latest `openapi.json` from the running server and regenerates the client code. This ensures the frontend's API client is always in sync with the backend API.
 
+## Database Management
+
+The application now supports multiple databases through a SystemDatabase. Each request can specify which database to use via a path parameter:
+
+- `GET /db/{db_name}/pages` - Get all pages from a specific database
+- `GET /db/{db_name}/pages/{page_id}` - Get a specific page from a specific database
+- `POST /db/{db_name}/pages` - Create a page in a specific database
+- And so on for all other endpoints
+
+This allows the same server instance to handle multiple UserDatabases, enabling users to open different databases in different browser windows.
+
 ### Running Playwright Tests
 
 The frontend includes Playwright tests for end-to-end testing. To run these tests:

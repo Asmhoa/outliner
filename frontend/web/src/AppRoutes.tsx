@@ -5,7 +5,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<App />} />
-      <Route path="/:pageId" element={<App />} />
+      <Route path="/pages/:pageId" element={<App />} />
     </Routes>
   );
 }

@@ -97,7 +97,7 @@ export default function SearchBox({
           >
             <IconSearch style={{ width: rem(16), height: rem(16) }} />
           </ActionIcon>
-          <ActionIcon variant="subtle" onClick={openModal}>
+          <ActionIcon variant="subtle" onClick={openModal} data-testid="add-page-button">
             <IconPencilPlus style={{ width: rem(16), height: rem(16) }} />
           </ActionIcon>
         </Group>

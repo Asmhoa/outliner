@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from outliner_api_server.userdb import (
@@ -9,22 +9,22 @@ from outliner_api_server.userdb import (
     WorkspaceNotFoundError,
     BlockNotFoundError,
 )
+from outliner_api_server.sysdb import SystemDatabase
 import os
 from datetime import datetime
-
-# Construct the absolute path to the database file
-current_dir = os.path.dirname(os.path.realpath(__file__))
-DATABASE_PATH = os.path.join(current_dir, "data.db")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    db = UserDatabase(DATABASE_PATH)
-    db.create_new_database()  # no-op if already exists
-    db.close_conn()
+    sys_db = SystemDatabase()
+    
+    # Store the system database in app state
+    app.state.sys_db = sys_db
     yield
-    # Shutdown (if needed)
+    # Shutdown
+    if hasattr(app.state, 'sys_db'):
+        app.state.sys_db.close_conn()
 
 
 app = FastAPI(lifespan=lifespan)
