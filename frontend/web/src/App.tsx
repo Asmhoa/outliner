@@ -276,6 +276,18 @@ function App() {
     fetchPages();
   }, [fetchPages]);
 
+  useEffect(() => {
+    if (dbName) {
+      // Reset current page and blocks when dbName changes
+      setCurrentPageId(null);
+      setTitle("");
+      setBlocks([]);
+      // Re-fetch workspaces and pages for the new database
+      getAllWorkspaces();
+      fetchPages();
+    }
+  }, [dbName, getAllWorkspaces, fetchPages]);
+
   // Update current page ID based on URL parameter
   useEffect(() => {
     if (pageId) {

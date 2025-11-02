@@ -27,28 +27,32 @@ class SystemDatabase(BaseDatabase):
         2. A 'system.db' file in the same directory as this module.
         """
         current_dir = os.path.dirname(os.path.realpath(__file__))
-        db_path = os.environ.get("OUTLINER_SYS_DB_PATH")
-        if db_path is None:
-            db_path = os.path.join(current_dir, "system.db")
+        parent_dir = os.path.dirname(current_dir)
 
         # Define the directory for user databases
-        self.databases_dir = os.path.join(current_dir, "databases")
+        self.databases_dir = os.path.join(parent_dir, "databases")
+
+        db_path = os.environ.get("OUTLINER_SYS_DB_PATH")
+        if db_path is None:
+            db_path = os.path.join(self.databases_dir, "system.db")
+
         os.makedirs(self.databases_dir, exist_ok=True)
 
         super().__init__(db_path)
 
     def initialize_tables(self) -> None:
         """Create the system tables if they don't exist."""
-        self.cursor.execute(
+        with self.single_use_cursor() as cursor:
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS user_databases (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT UNIQUE NOT NULL,
+                    path TEXT UNIQUE NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
             """
-            CREATE TABLE IF NOT EXISTS user_databases (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT UNIQUE NOT NULL,
-                path TEXT UNIQUE NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """
-        )
+            )
         self.conn.commit()
         logger.debug(
             f"Table 'user_databases' created or already exists in '{self.db_path}'."
@@ -73,10 +77,11 @@ class SystemDatabase(BaseDatabase):
                 path.lower().replace("/", "_").replace("\\", "_").replace("..", "_")
             )
             full_path = os.path.join(self.databases_dir, sanitized_path)
-            self.cursor.execute(
-                "INSERT INTO user_databases (name, path) VALUES (?, ?)",
-                (name, full_path),
-            )
+            with self.single_use_cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO user_databases (name, path) VALUES (?, ?)",
+                    (name, full_path),
+                )
             self.conn.commit()
             logger.debug(
                 f"User database '{name}' with path '{full_path}' added successfully."
@@ -98,11 +103,12 @@ class SystemDatabase(BaseDatabase):
         Raises:
             UserDatabaseNotFoundError: If the database is not found.
         """
-        self.cursor.execute(
-            "SELECT id, name, path, created_at FROM user_databases WHERE name = ?",
-            (name,),
-        )
-        row = self.cursor.fetchone()
+        with self.single_use_cursor() as cursor:
+            cursor.execute(
+                "SELECT id, name, path, created_at FROM user_databases WHERE name = ?",
+                (name,),
+            )
+            row = cursor.fetchone()
         if row:
             return UserDatabaseModel(**row)
         raise UserDatabaseNotFoundError(f"Database '{name}' not found.")
@@ -120,11 +126,12 @@ class SystemDatabase(BaseDatabase):
         Raises:
             UserDatabaseNotFoundError: If the database is not found.
         """
-        self.cursor.execute(
-            "SELECT id, name, path, created_at FROM user_databases WHERE path = ?",
-            (path,),
-        )
-        row = self.cursor.fetchone()
+        with self.single_use_cursor() as cursor:
+            cursor.execute(
+                "SELECT id, name, path, created_at FROM user_databases WHERE path = ?",
+                (path,),
+            )
+            row = cursor.fetchone()
         if row:
             return UserDatabaseModel(**row)
         raise UserDatabaseNotFoundError(f"Database with path '{path}' not found.")
@@ -136,9 +143,9 @@ class SystemDatabase(BaseDatabase):
         Returns:
             List of dictionaries with 'id', 'name', 'path', 'created_at'
         """
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT id, name, path, created_at FROM user_databases")
-        rows = cursor.fetchall()
+        with self.single_use_cursor() as cursor:
+            cursor.execute("SELECT id, name, path, created_at FROM user_databases")
+            rows = cursor.fetchall()
         return [UserDatabaseModel(**row) for row in rows]
 
     def update_user_database(
@@ -186,12 +193,15 @@ class SystemDatabase(BaseDatabase):
         params.append(name)
 
         try:
-            self.cursor.execute(
-                f"UPDATE user_databases SET {', '.join(update_fields)} WHERE name = ?",
-                params,
-            )
+            rows_affected = 0
+            with self.single_use_cursor() as cursor:
+                cursor.execute(
+                    f"UPDATE user_databases SET {', '.join(update_fields)} WHERE name = ?",
+                    params,
+                )
+                rows_affected = cursor.rowcount
             self.conn.commit()
-            if self.cursor.rowcount == 0:
+            if rows_affected == 0:
                 raise UserDatabaseNotFoundError(f"User database '{name}' not found.")
             logger.debug(f"User database '{name}' updated.")
         except IntegrityError as e:
@@ -210,8 +220,11 @@ class SystemDatabase(BaseDatabase):
         Raises:
             UserDatabaseNotFoundError: If the database to delete is not found.
         """
-        self.cursor.execute("DELETE FROM user_databases WHERE name = ?", (name,))
+        rows_affected = 0
+        with self.single_use_cursor() as cursor:
+            cursor.execute("DELETE FROM user_databases WHERE name = ?", (name,))
+            rows_affected = cursor.rowcount
         self.conn.commit()
-        if self.cursor.rowcount == 0:
+        if rows_affected == 0:
             raise UserDatabaseNotFoundError(f"User database '{name}' not found.")
         logger.debug(f"User database '{name}' deleted successfully.")

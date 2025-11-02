@@ -20,7 +20,8 @@ class UserDatabase(BaseDatabase):
         # This is required since the api server thread that creates a UserDatabase object
         # is a different one from the one that executes a query.
         # TODO: add a pytest to ensure each api function has its own Depends()
-        super().__init__(db_path)
+        super().__init__(db_path, init_singleton_cursor=True)
+        # shared singleton cursor is fine since this entire object is recreated for each api call
 
         # Handle exits gracefully
         # atexit.register(self._close_conn)

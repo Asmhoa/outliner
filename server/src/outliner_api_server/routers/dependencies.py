@@ -19,7 +19,7 @@ def get_db(db_name: str, request: Request):
             detail=f"Database '{db_name}' not found. Please create it first.",
         )
 
-    db = UserDatabase(db_info["path"])
+    db = UserDatabase(db_info.path)
     try:
         yield db
     finally:

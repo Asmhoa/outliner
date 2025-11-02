@@ -5,9 +5,32 @@ export type ClientOptions = {
 };
 
 /**
- * Block
+ * BlockCreate
  */
-export type Block = {
+export type BlockCreate = {
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Page Id
+     */
+    page_id?: string | null;
+    /**
+     * Parent Block Id
+     */
+    parent_block_id?: string | null;
+};
+
+/**
+ * BlockModel
+ * Pydantic model for block entries in the user database.
+ */
+export type BlockModel = {
     /**
      * Block Id
      */
@@ -32,28 +55,6 @@ export type Block = {
      * Created At
      */
     created_at: string;
-};
-
-/**
- * BlockCreate
- */
-export type BlockCreate = {
-    /**
-     * Content
-     */
-    content: string;
-    /**
-     * Position
-     */
-    position: number;
-    /**
-     * Page Id
-     */
-    page_id?: string | null;
-    /**
-     * Parent Block Id
-     */
-    parent_block_id?: string | null;
 };
 
 /**
@@ -113,9 +114,20 @@ export type HttpValidationError = {
 };
 
 /**
- * Page
+ * PageCreate
  */
-export type Page = {
+export type PageCreate = {
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * PageModel
+ * Pydantic model for page entries in the user database.
+ */
+export type PageModel = {
     /**
      * Page Id
      */
@@ -128,16 +140,6 @@ export type Page = {
      * Created At
      */
     created_at: string;
-};
-
-/**
- * PageCreate
- */
-export type PageCreate = {
-    /**
-     * Title
-     */
-    title: string;
 };
 
 /**
@@ -173,13 +175,9 @@ export type ValidationError = {
 };
 
 /**
- * Workspace
+ * WorkspaceCreate
  */
-export type Workspace = {
-    /**
-     * Workspace Id
-     */
-    workspace_id: number;
+export type WorkspaceCreate = {
     /**
      * Name
      */
@@ -191,9 +189,14 @@ export type Workspace = {
 };
 
 /**
- * WorkspaceCreate
+ * WorkspaceModel
+ * Pydantic model for workspace entries in the user database.
  */
-export type WorkspaceCreate = {
+export type WorkspaceModel = {
+    /**
+     * Workspace Id
+     */
+    workspace_id: number;
     /**
      * Name
      */
@@ -248,7 +251,7 @@ export type GetPagesDbDbNamePagesGetResponses = {
      * Response Get Pages Db  Db Name  Pages Get
      * List of pages retrieved successfully
      */
-    200: Array<Page>;
+    200: Array<PageModel>;
 };
 
 export type GetPagesDbDbNamePagesGetResponse = GetPagesDbDbNamePagesGetResponses[keyof GetPagesDbDbNamePagesGetResponses];
@@ -390,7 +393,7 @@ export type GetPageDbDbNamePagesPageIdGetResponses = {
     /**
      * Page retrieved successfully
      */
-    200: Page;
+    200: PageModel;
 };
 
 export type GetPageDbDbNamePagesPageIdGetResponse = GetPageDbDbNamePagesPageIdGetResponses[keyof GetPageDbDbNamePagesPageIdGetResponses];
@@ -424,7 +427,7 @@ export type AddBlockDbDbNameBlocksPostResponses = {
     /**
      * Block created successfully
      */
-    200: Block;
+    200: BlockModel;
 };
 
 export type AddBlockDbDbNameBlocksPostResponse = AddBlockDbDbNameBlocksPostResponses[keyof AddBlockDbDbNameBlocksPostResponses];
@@ -462,7 +465,7 @@ export type GetBlockDbDbNameBlockBlockIdGetResponses = {
     /**
      * Block retrieved successfully
      */
-    200: Block;
+    200: BlockModel;
 };
 
 export type GetBlockDbDbNameBlockBlockIdGetResponse = GetBlockDbDbNameBlockBlockIdGetResponses[keyof GetBlockDbDbNameBlockBlockIdGetResponses];
@@ -501,7 +504,7 @@ export type GetBlocksDbDbNameBlocksPageIdGetResponses = {
      * Response Get Blocks Db  Db Name  Blocks  Page Id  Get
      * List of blocks retrieved successfully
      */
-    200: Array<Block>;
+    200: Array<BlockModel>;
 };
 
 export type GetBlocksDbDbNameBlocksPageIdGetResponse = GetBlocksDbDbNameBlocksPageIdGetResponses[keyof GetBlocksDbDbNameBlocksPageIdGetResponses];
@@ -636,7 +639,7 @@ export type GetWorkspacesDbDbNameWorkspacesGetResponses = {
      * Response Get Workspaces Db  Db Name  Workspaces Get
      * List of workspaces retrieved successfully
      */
-    200: Array<Workspace>;
+    200: Array<WorkspaceModel>;
 };
 
 export type GetWorkspacesDbDbNameWorkspacesGetResponse = GetWorkspacesDbDbNameWorkspacesGetResponses[keyof GetWorkspacesDbDbNameWorkspacesGetResponses];
@@ -670,7 +673,7 @@ export type AddWorkspaceDbDbNameWorkspacesPostResponses = {
     /**
      * Workspace created successfully
      */
-    200: Workspace;
+    200: WorkspaceModel;
 };
 
 export type AddWorkspaceDbDbNameWorkspacesPostResponse = AddWorkspaceDbDbNameWorkspacesPostResponses[keyof AddWorkspaceDbDbNameWorkspacesPostResponses];
@@ -776,7 +779,7 @@ export type GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetResponses = {
     /**
      * Workspace retrieved successfully
      */
-    200: Workspace;
+    200: WorkspaceModel;
 };
 
 export type GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetResponse = GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetResponses[keyof GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetResponses];
@@ -824,3 +827,72 @@ export type CreateDatabaseDatabasesPostResponses = {
      */
     200: unknown;
 };
+
+export type DeleteDatabaseDatabasesDbNameDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Db Name
+         */
+        db_name: string;
+    };
+    query?: never;
+    url: '/databases/{db_name}';
+};
+
+export type DeleteDatabaseDatabasesDbNameDeleteErrors = {
+    /**
+     * Database not found
+     */
+    404: unknown;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteDatabaseDatabasesDbNameDeleteError = DeleteDatabaseDatabasesDbNameDeleteErrors[keyof DeleteDatabaseDatabasesDbNameDeleteErrors];
+
+export type DeleteDatabaseDatabasesDbNameDeleteResponses = {
+    /**
+     * Database deleted successfully
+     */
+    200: unknown;
+};
+
+export type GetDatabaseDatabasesDbNameGetData = {
+    body?: never;
+    path: {
+        /**
+         * Db Name
+         */
+        db_name: string;
+    };
+    query?: never;
+    url: '/databases/{db_name}';
+};
+
+export type GetDatabaseDatabasesDbNameGetErrors = {
+    /**
+     * Database not found
+     */
+    404: unknown;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetDatabaseDatabasesDbNameGetError = GetDatabaseDatabasesDbNameGetErrors[keyof GetDatabaseDatabasesDbNameGetErrors];
+
+export type GetDatabaseDatabasesDbNameGetResponses = {
+    /**
+     * Response Get Database Databases  Db Name  Get
+     * Database retrieved successfully
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type GetDatabaseDatabasesDbNameGetResponse = GetDatabaseDatabasesDbNameGetResponses[keyof GetDatabaseDatabasesDbNameGetResponses];

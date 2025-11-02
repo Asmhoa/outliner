@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddBlockDbDbNameBlocksPostData, AddBlockDbDbNameBlocksPostErrors, AddBlockDbDbNameBlocksPostResponses, AddPageDbDbNamePagesPostData, AddPageDbDbNamePagesPostErrors, AddPageDbDbNamePagesPostResponses, AddWorkspaceDbDbNameWorkspacesPostData, AddWorkspaceDbDbNameWorkspacesPostErrors, AddWorkspaceDbDbNameWorkspacesPostResponses, CreateDatabaseDatabasesPostData, CreateDatabaseDatabasesPostErrors, CreateDatabaseDatabasesPostResponses, DeleteBlockDbDbNameBlocksBlockIdDeleteData, DeleteBlockDbDbNameBlocksBlockIdDeleteErrors, DeleteBlockDbDbNameBlocksBlockIdDeleteResponses, DeletePageDbDbNamePagesPageIdDeleteData, DeletePageDbDbNamePagesPageIdDeleteErrors, DeletePageDbDbNamePagesPageIdDeleteResponses, DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteData, DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteErrors, DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteResponses, GetBlockDbDbNameBlockBlockIdGetData, GetBlockDbDbNameBlockBlockIdGetErrors, GetBlockDbDbNameBlockBlockIdGetResponses, GetBlocksDbDbNameBlocksPageIdGetData, GetBlocksDbDbNameBlocksPageIdGetErrors, GetBlocksDbDbNameBlocksPageIdGetResponses, GetDatabasesDatabasesGetData, GetDatabasesDatabasesGetResponses, GetPageDbDbNamePagesPageIdGetData, GetPageDbDbNamePagesPageIdGetErrors, GetPageDbDbNamePagesPageIdGetResponses, GetPagesDbDbNamePagesGetData, GetPagesDbDbNamePagesGetErrors, GetPagesDbDbNamePagesGetResponses, GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetData, GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetErrors, GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetResponses, GetWorkspacesDbDbNameWorkspacesGetData, GetWorkspacesDbDbNameWorkspacesGetErrors, GetWorkspacesDbDbNameWorkspacesGetResponses, RenamePageDbDbNamePagesPutData, RenamePageDbDbNamePagesPutErrors, RenamePageDbDbNamePagesPutResponses, UpdateBlockContentDbDbNameBlocksContentPutData, UpdateBlockContentDbDbNameBlocksContentPutErrors, UpdateBlockContentDbDbNameBlocksContentPutResponses, UpdateBlockParentDbDbNameBlocksParentPutData, UpdateBlockParentDbDbNameBlocksParentPutErrors, UpdateBlockParentDbDbNameBlocksParentPutResponses, UpdateWorkspaceDbDbNameWorkspacesPutData, UpdateWorkspaceDbDbNameWorkspacesPutErrors, UpdateWorkspaceDbDbNameWorkspacesPutResponses } from './types.gen';
+import type { AddBlockDbDbNameBlocksPostData, AddBlockDbDbNameBlocksPostErrors, AddBlockDbDbNameBlocksPostResponses, AddPageDbDbNamePagesPostData, AddPageDbDbNamePagesPostErrors, AddPageDbDbNamePagesPostResponses, AddWorkspaceDbDbNameWorkspacesPostData, AddWorkspaceDbDbNameWorkspacesPostErrors, AddWorkspaceDbDbNameWorkspacesPostResponses, CreateDatabaseDatabasesPostData, CreateDatabaseDatabasesPostErrors, CreateDatabaseDatabasesPostResponses, DeleteBlockDbDbNameBlocksBlockIdDeleteData, DeleteBlockDbDbNameBlocksBlockIdDeleteErrors, DeleteBlockDbDbNameBlocksBlockIdDeleteResponses, DeleteDatabaseDatabasesDbNameDeleteData, DeleteDatabaseDatabasesDbNameDeleteErrors, DeleteDatabaseDatabasesDbNameDeleteResponses, DeletePageDbDbNamePagesPageIdDeleteData, DeletePageDbDbNamePagesPageIdDeleteErrors, DeletePageDbDbNamePagesPageIdDeleteResponses, DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteData, DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteErrors, DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteResponses, GetBlockDbDbNameBlockBlockIdGetData, GetBlockDbDbNameBlockBlockIdGetErrors, GetBlockDbDbNameBlockBlockIdGetResponses, GetBlocksDbDbNameBlocksPageIdGetData, GetBlocksDbDbNameBlocksPageIdGetErrors, GetBlocksDbDbNameBlocksPageIdGetResponses, GetDatabaseDatabasesDbNameGetData, GetDatabaseDatabasesDbNameGetErrors, GetDatabaseDatabasesDbNameGetResponses, GetDatabasesDatabasesGetData, GetDatabasesDatabasesGetResponses, GetPageDbDbNamePagesPageIdGetData, GetPageDbDbNamePagesPageIdGetErrors, GetPageDbDbNamePagesPageIdGetResponses, GetPagesDbDbNamePagesGetData, GetPagesDbDbNamePagesGetErrors, GetPagesDbDbNamePagesGetResponses, GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetData, GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetErrors, GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetResponses, GetWorkspacesDbDbNameWorkspacesGetData, GetWorkspacesDbDbNameWorkspacesGetErrors, GetWorkspacesDbDbNameWorkspacesGetResponses, RenamePageDbDbNamePagesPutData, RenamePageDbDbNamePagesPutErrors, RenamePageDbDbNamePagesPutResponses, UpdateBlockContentDbDbNameBlocksContentPutData, UpdateBlockContentDbDbNameBlocksContentPutErrors, UpdateBlockContentDbDbNameBlocksContentPutResponses, UpdateBlockParentDbDbNameBlocksParentPutData, UpdateBlockParentDbDbNameBlocksParentPutErrors, UpdateBlockParentDbDbNameBlocksParentPutResponses, UpdateWorkspaceDbDbNameWorkspacesPutData, UpdateWorkspaceDbDbNameWorkspacesPutErrors, UpdateWorkspaceDbDbNameWorkspacesPutResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -227,5 +227,25 @@ export const createDatabaseDatabasesPost = <ThrowOnError extends boolean = false
             'Content-Type': 'application/json',
             ...options.headers
         }
+    });
+};
+
+/**
+ * Delete Database
+ */
+export const deleteDatabaseDatabasesDbNameDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteDatabaseDatabasesDbNameDeleteData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteDatabaseDatabasesDbNameDeleteResponses, DeleteDatabaseDatabasesDbNameDeleteErrors, ThrowOnError>({
+        url: '/databases/{db_name}',
+        ...options
+    });
+};
+
+/**
+ * Get Database
+ */
+export const getDatabaseDatabasesDbNameGet = <ThrowOnError extends boolean = false>(options: Options<GetDatabaseDatabasesDbNameGetData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetDatabaseDatabasesDbNameGetResponses, GetDatabaseDatabasesDbNameGetErrors, ThrowOnError>({
+        url: '/databases/{db_name}',
+        ...options
     });
 };
