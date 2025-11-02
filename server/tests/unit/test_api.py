@@ -19,7 +19,7 @@ TEST_DB_NAME = "test_db"
 def db():
     """Set up a new in-memory database for each test."""
     database = UserDatabase(":memory:")
-    database.create_new_database()
+    database.initialize_tables()
     yield database
     database.close_conn()
 

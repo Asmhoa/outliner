@@ -36,7 +36,7 @@ def sys_db(setup_test_data_dir):
 def test_db(sys_db):
     sys_db.add_user_database(TEST_DB_NAME, TEST_USER_DB_PATH)
     db = UserDatabase(TEST_USER_DB_PATH)
-    db.create_new_database()
+    db.initialize_tables()
     yield db
     db.close_conn()
     sys_db.delete_user_database(TEST_DB_NAME)

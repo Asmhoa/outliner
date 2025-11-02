@@ -1,8 +1,8 @@
 import os
 import logging
-from sqlite3 import connect, Cursor, Connection, IntegrityError, Row
-from typing import Any
+from sqlite3 import IntegrityError
 
+from outliner_api_server.db.base_db import BaseDatabase
 from outliner_api_server.db.errors import (
     UserDatabaseAlreadyExistsError,
     UserDatabaseNotFoundError,
@@ -12,7 +12,7 @@ from outliner_api_server.db.models import UserDatabaseModel
 logger = logging.getLogger(__name__)
 
 
-class SystemDatabase:
+class SystemDatabase(BaseDatabase):
     """
     SystemDatabase manages the list of UserDatabases available to the application.
     It maintains a table of database names and their corresponding file paths.
@@ -27,29 +27,17 @@ class SystemDatabase:
         2. A 'system.db' file in the same directory as this module.
         """
         current_dir = os.path.dirname(os.path.realpath(__file__))
-        self.db_path = os.environ.get("OUTLINER_SYS_DB_PATH")
-        if self.db_path is None:
-            self.db_path = os.path.join(current_dir, "system.db")
+        db_path = os.environ.get("OUTLINER_SYS_DB_PATH")
+        if db_path is None:
+            db_path = os.path.join(current_dir, "system.db")
 
         # Define the directory for user databases
         self.databases_dir = os.path.join(current_dir, "databases")
         os.makedirs(self.databases_dir, exist_ok=True)
 
-        # Use check_same_thread=False since we'll have different threads accessing
-        # the database in a web server context
-        self.conn: Connection = connect(self.db_path, check_same_thread=False)
-        self.conn.row_factory = Row
-        self.cursor: Cursor = self.conn.cursor()
-        self.cursor.execute("PRAGMA foreign_keys = ON")
-        logger.debug(f"System database connection established to '{self.db_path}'.")
-        self.initialize()
+        super().__init__(db_path)
 
-    def close_conn(self) -> None:
-        """Close the database connection."""
-        self.conn.close()
-        logger.debug(f"System database connection to '{self.db_path}' closed.")
-
-    def initialize(self) -> None:
+    def initialize_tables(self) -> None:
         """Create the system tables if they don't exist."""
         self.cursor.execute(
             """

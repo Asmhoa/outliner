@@ -1,7 +1,7 @@
 import logging
-from sqlite3 import connect, Cursor, Connection, Row
 from datetime import datetime
 
+from outliner_api_server.db.base_db import BaseDatabase
 from outliner_api_server.db.errors import (
     BlockNotFoundError,
     PageAlreadyExistsError,
@@ -13,29 +13,19 @@ from outliner_api_server.db.models import PageModel, BlockModel, WorkspaceModel
 logger = logging.getLogger(__name__)
 
 
-class UserDatabase:
-    def __init__(self, db_name: str) -> None:
-        self.db_name: str = db_name
+class UserDatabase(BaseDatabase):
+    def __init__(self, db_path: str) -> None:
         # NOTE: in api.py, we use a separate UserDatabase() object for each request
         # So one conn is used by only 1 request, making it safe to not check same thread
         # This is required since the api server thread that creates a UserDatabase object
         # is a different one from the one that executes a query.
         # TODO: add a pytest to ensure each api function has its own Depends()
-        self.conn: Connection = connect(self.db_name, check_same_thread=False)
-        self.conn.row_factory = Row  # make rows behave like dicts
-        self.cursor: Cursor = self.conn.cursor()
-        self.cursor.execute("PRAGMA foreign_keys = ON")
-        self.create_new_database()  # NOTE: potential source of latency
+        super().__init__(db_path)
 
         # Handle exits gracefully
         # atexit.register(self._close_conn)
         # signal.signal(signal.SIGINT, kill_handler)
         # signal.signal(signal.SIGTERM, kill_handler)
-        logger.debug(f"Database connection established to '{self.db_name}'.")
-
-    def close_conn(self) -> None:
-        self.conn.close()
-        logger.debug(f"Database connection to '{self.db_name}' closed.")
 
     def _create_table_workspaces(self) -> None:
         """
@@ -52,7 +42,7 @@ class UserDatabase:
         )
         self.conn.commit()
         logger.debug(
-            f"Table 'workspaces' created or already exists in '{self.db_name}'."
+            f"Table 'workspaces' created or already exists in '{self.db_path}'."
         )
         # Create default workspace if it doesn't exist
         self.cursor.execute("SELECT 1 FROM workspaces WHERE workspace_id = 0")
@@ -81,7 +71,7 @@ class UserDatabase:
         """
         )
         self.conn.commit()
-        logger.debug(f"Table 'pages' created or already exists in '{self.db_name}'.")
+        logger.debug(f"Table 'pages' created or already exists in '{self.db_path}'.")
 
     def _create_table_blocks(self) -> None:
         """
@@ -107,9 +97,9 @@ class UserDatabase:
         """
         )
         self.conn.commit()
-        logger.debug(f"Table 'blocks' created or already exists in '{self.db_name}'.")
+        logger.debug(f"Table 'blocks' created or already exists in '{self.db_path}'.")
 
-    def create_new_database(self) -> None:
+    def initialize_tables(self) -> None:
         """
         Initializes the database by creating necessary tables.
         """

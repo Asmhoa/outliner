@@ -12,12 +12,12 @@ from outliner_api_server.db.userdb import (
 def db():
     """Set up a new database for each test."""
     database = UserDatabase(":memory:")
-    database.create_new_database()
+    database.initialize_tables()
     yield database
     database.close_conn()
 
 
-def test_create_new_database(db):
+def test_initialize_tables(db):
     """Test if tables are created."""
     cursor = db.conn.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='pages'")
