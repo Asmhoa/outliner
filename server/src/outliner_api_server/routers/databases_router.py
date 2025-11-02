@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from outliner_api_server.db.sysdb import SystemDatabase
-from outliner_api_server.routers.models import DatabaseCreate
+from outliner_api_server.routers.request_models import DatabaseCreate
 from outliner_api_server.db.errors import (
     UserDatabaseAlreadyExistsError,
     UserDatabaseNotFoundError,

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from outliner_api_server.db.userdb import UserDatabase
 from outliner_api_server.routers.dependencies import get_db
 from outliner_api_server.db.models import PageModel
-from outliner_api_server.routers.models import PageCreate, PageRename
+from outliner_api_server.routers.request_models import PageCreate, PageRename
 from outliner_api_server.db.errors import PageAlreadyExistsError, PageNotFoundError
 
 
