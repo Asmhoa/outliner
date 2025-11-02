@@ -1,8 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
-from outliner_api_server.userdb import UserDatabase
+from outliner_api_server.db.userdb import UserDatabase
 from outliner_api_server.routers.dependencies import get_db
-from outliner_api_server.routers.models import Block, BlockCreate, BlockUpdateContent, BlockUpdateParent
-from outliner_api_server.errors import BlockNotFoundError
+from outliner_api_server.routers.models import (
+    Block,
+    BlockCreate,
+    BlockUpdateContent,
+    BlockUpdateParent,
+)
+from outliner_api_server.db.errors import BlockNotFoundError
 
 
 router = APIRouter()
@@ -40,12 +45,12 @@ def add_block(db_name: str, block: BlockCreate, db: UserDatabase = Depends(get_d
         )
         block_data = db.get_block_content_by_id(block_id)
         return Block(
-            block_id=block_data[0],
-            content=block_data[1],
-            page_id=block_data[2],
-            parent_block_id=block_data[3],
-            position=block_data[4],
-            created_at=block_data[5],
+            block_id=block_data.block_id,
+            content=block_data.content,
+            page_id=block_data.page_id,
+            parent_block_id=block_data.parent_block_id,
+            position=block_data.position,
+            created_at=block_data.created_at,
         )
     except BlockNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -82,12 +87,12 @@ def get_block(db_name: str, block_id: str, db: UserDatabase = Depends(get_db)):
     try:
         block_data = db.get_block_content_by_id(block_id)
         return Block(
-            block_id=block_data[0],
-            content=block_data[1],
-            page_id=block_data[2],
-            parent_block_id=block_data[3],
-            position=block_data[4],
-            created_at=block_data[5],
+            block_id=block_data.block_id,
+            content=block_data.content,
+            page_id=block_data.page_id,
+            parent_block_id=block_data.parent_block_id,
+            position=block_data.position,
+            created_at=block_data.created_at,
         )
     except BlockNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -124,12 +129,12 @@ def get_blocks(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
     blocks_data = db.get_blocks_by_page(page_id)
     return [
         Block(
-            block_id=b[0],
-            content=b[1],
-            page_id=b[2],
-            parent_block_id=b[3],
-            position=b[4],
-            created_at=b[5],
+            block_id=b.block_id,
+            content=b.content,
+            page_id=b.page_id,
+            parent_block_id=b.parent_block_id,
+            position=b.position,
+            created_at=b.created_at,
         )
         for b in blocks_data
     ]

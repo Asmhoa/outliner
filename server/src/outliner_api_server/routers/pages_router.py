@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
-from outliner_api_server.userdb import UserDatabase
+from outliner_api_server.db.userdb import UserDatabase
 from outliner_api_server.routers.dependencies import get_db
 from outliner_api_server.routers.models import Page, PageCreate, PageRename
-from outliner_api_server.errors import PageAlreadyExistsError, PageNotFoundError
+from outliner_api_server.db.errors import PageAlreadyExistsError, PageNotFoundError
 
 
 router = APIRouter()
@@ -58,7 +58,11 @@ def add_page(db_name: str, page: PageCreate, db: UserDatabase = Depends(get_db))
 def get_page(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
     try:
         page_data = db.get_page_by_id(page_id)
-        return Page(page_id=page_data[0], title=page_data[1], created_at=page_data[2])
+        return Page(
+            page_id=page_data.page_id,
+            title=page_data.title,
+            created_at=page_data.created_at,
+        )
     except PageNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -85,7 +89,10 @@ def get_page(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
 )
 def get_pages(db_name: str, db: UserDatabase = Depends(get_db)):
     pages_data = db.get_pages()
-    return [Page(page_id=p[0], title=p[1], created_at=p[2]) for p in pages_data]
+    return [
+        Page(page_id=p.page_id, title=p.title, created_at=p.created_at)
+        for p in pages_data
+    ]
 
 
 @router.put(

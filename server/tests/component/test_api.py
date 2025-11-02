@@ -2,8 +2,8 @@ import pytest
 from fastapi.testclient import TestClient
 from outliner_api_server.api import app
 from outliner_api_server.routers.dependencies import get_db
-from outliner_api_server.userdb import UserDatabase
-from outliner_api_server.sysdb import SystemDatabase
+from outliner_api_server.db.userdb import UserDatabase
+from outliner_api_server.db.sysdb import SystemDatabase
 import os
 
 # Define paths relative to the server directory

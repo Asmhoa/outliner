@@ -1,5 +1,5 @@
 import pytest
-from outliner_api_server.userdb import (
+from outliner_api_server.db.userdb import (
     UserDatabase,
     PageNotFoundError,
     PageAlreadyExistsError,
@@ -138,9 +138,7 @@ def test_add_block_with_both_page_and_parent(db):
     page_id = db.add_page("Test Page")
     parent_block_id = db.add_block("Parent Block", 1, page_id=page_id)
     with pytest.raises(ValueError):
-        db.add_block(
-            "Test Block", 1, page_id=page_id, parent_block_id=parent_block_id
-        )
+        db.add_block("Test Block", 1, page_id=page_id, parent_block_id=parent_block_id)
 
 
 def test_delete_block(db):
@@ -305,18 +303,18 @@ def test_add_workspace(db):
     cursor.execute(
         "SELECT name, color FROM workspaces WHERE workspace_id = ?", (workspace_id,)
     )
-    title, color = cursor.fetchone()
-    assert title == "Test Workspace"
-    assert color == b"\xff\x00\x00"
+    row = cursor.fetchone()
+    assert row["name"] == "Test Workspace"
+    assert row["color"] == b"\xff\x00\x00"
 
 
 def test_get_workspace_by_id(db):
     """Test retrieving a workspace by its ID."""
     workspace_id = db.add_workspace("Test Workspace", "#00FF00")
     workspace = db.get_workspace_by_id(workspace_id)
-    assert workspace[0] == workspace_id
-    assert workspace[1] == "Test Workspace"
-    assert workspace[2] == "#00FF00"
+    assert workspace.workspace_id == workspace_id
+    assert workspace.name == "Test Workspace"
+    assert workspace.color == "#00FF00"
 
 
 def test_get_workspaces(db):
@@ -325,10 +323,15 @@ def test_get_workspaces(db):
     db.add_workspace("Workspace 2", "#00FF00")
     workspaces = db.get_workspaces()
     assert len(workspaces) == 3  # Including default workspace
-    assert workspaces[1][1] == "Workspace 1"
-    assert workspaces[1][2] == "#FF0000"
-    assert workspaces[2][1] == "Workspace 2"
-    assert workspaces[2][2] == "#00FF00"
+    # Find the workspace with name "Workspace 1"
+    workspace_1 = next((w for w in workspaces if w.name == "Workspace 1"), None)
+    workspace_2 = next((w for w in workspaces if w.name == "Workspace 2"), None)
+    assert workspace_1 is not None
+    assert workspace_1.name == "Workspace 1"
+    assert workspace_1.color == "#FF0000"
+    assert workspace_2 is not None
+    assert workspace_2.name == "Workspace 2"
+    assert workspace_2.color == "#00FF00"
 
 
 def test_update_workspace(db):
@@ -338,8 +341,8 @@ def test_update_workspace(db):
         workspace_id, "New Title", "#0000FF"
     )  # Should not raise an exception
     workspace = db.get_workspace_by_id(workspace_id)
-    assert workspace[1] == "New Title"
-    assert workspace[2] == "#0000FF"
+    assert workspace.name == "New Title"
+    assert workspace.color == "#0000FF"
 
 
 def test_update_nonexistent_workspace(db):

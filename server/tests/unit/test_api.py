@@ -1,9 +1,10 @@
+from outliner_api_server.db.models import PageModel
 import pytest
 from fastapi.testclient import TestClient
 from outliner_api_server.api import app
 from outliner_api_server.routers.dependencies import get_db
-from outliner_api_server.userdb import UserDatabase
-from outliner_api_server.errors import (
+from outliner_api_server.db.userdb import UserDatabase
+from outliner_api_server.db.errors import (
     PageNotFoundError,
     BlockNotFoundError,
     WorkspaceNotFoundError,
@@ -55,7 +56,7 @@ def test_add_page_success(override_get_db):
     # Verify the page exists in the database
     page_data = db.get_page_by_id(page_id)
     assert page_data is not None
-    assert page_data[1] == "Test Page"  # Title should match
+    assert page_data.title == "Test Page"  # Title should match
 
 
 def test_get_page_success(override_get_db):
@@ -76,8 +77,8 @@ def test_get_page_success(override_get_db):
     # Verify that the page exists in the database with the same values
     page_data = db.get_page_by_id(page_id)
     assert page_data is not None
-    assert page_data[0] == page_id
-    assert page_data[1] == "Test Page"
+    assert page_data.page_id == page_id
+    assert page_data.title == "Test Page"
 
 
 def test_get_page_not_found(override_get_db):
@@ -127,7 +128,7 @@ def test_rename_page_success(override_get_db):
     # Verify the page was renamed in the database
     page_data = db.get_page_by_id(page_id)
     assert page_data is not None
-    assert page_data[1] == "New Title"
+    assert page_data.title == "New Title"
 
 
 def test_rename_page_not_found(override_get_db):
@@ -187,10 +188,10 @@ def test_add_block_success(override_get_db):
     # Verify the block exists in the database
     block_data = db.get_block_content_by_id(block_id)
     assert block_data is not None
-    assert block_data[1] == "Test Block"  # Content should match
-    assert block_data[2] == page_id  # Page ID should match
-    assert block_data[3] is None  # Parent should be None
-    assert block_data[4] == 1  # Position should be 1
+    assert block_data.content == "Test Block"  # Content should match
+    assert block_data.page_id == page_id  # Page ID should match
+    assert block_data.parent_block_id is None  # Parent should be None
+    assert block_data.position == 1  # Position should be 1
 
 
 def test_get_block_success(override_get_db):
@@ -215,11 +216,11 @@ def test_get_block_success(override_get_db):
     # Verify that the block exists in the database with the same values
     block_data = db.get_block_content_by_id(block_id)
     assert block_data is not None
-    assert block_data[0] == block_id
-    assert block_data[1] == "Test Block"
-    assert block_data[2] == page_id
-    assert block_data[3] is None
-    assert block_data[4] == 1
+    assert block_data.block_id == block_id
+    assert block_data.content == "Test Block"
+    assert block_data.page_id == page_id
+    assert block_data.parent_block_id is None
+    assert block_data.position == 1
 
 
 def test_get_block_not_found(override_get_db):
@@ -281,7 +282,7 @@ def test_update_block_content_success(override_get_db):
     # Verify the block content was updated in the database
     block_data = db.get_block_content_by_id(block_id)
     assert block_data is not None
-    assert block_data[1] == "Updated Content"
+    assert block_data.content == "Updated Content"
 
 
 def test_update_block_content_not_found(override_get_db):
@@ -315,8 +316,10 @@ def test_update_block_parent_success(override_get_db):
     # Verify the block parent was updated in the database
     block_data = db.get_block_content_by_id(block_id)
     assert block_data is not None
-    assert block_data[2] == new_page_id  # Should be on the new page
-    assert block_data[3] is None  # Parent should be None (not a child block)
+    assert block_data.page_id == new_page_id  # Should be on the new page
+    assert (
+        block_data.parent_block_id is None
+    )  # Parent should be None (not a child block)
 
 
 def test_update_block_parent_invalid(override_get_db):
@@ -381,8 +384,8 @@ def test_add_workspace_success(override_get_db):
     # Verify the workspace exists in the database
     workspace_data = db.get_workspace_by_id(workspace_id)
     assert workspace_data is not None
-    assert workspace_data[1] == "Test Workspace"
-    assert workspace_data[2] == "#FF0000"
+    assert workspace_data.name == "Test Workspace"
+    assert workspace_data.color == "#FF0000"
 
 
 def test_add_workspace_with_special_chars(override_get_db):
@@ -402,8 +405,8 @@ def test_add_workspace_with_special_chars(override_get_db):
     # Verify the workspace exists in the database
     workspace_data = db.get_workspace_by_id(workspace_id)
     assert workspace_data is not None
-    assert workspace_data[1] == "Workspace & Test!"
-    assert workspace_data[2] == "#00AAFF"
+    assert workspace_data.name == "Workspace & Test!"
+    assert workspace_data.color == "#00AAFF"
 
 
 def test_get_workspace_success(override_get_db):
@@ -487,8 +490,8 @@ def test_update_workspace_success(override_get_db):
     # Verify the workspace was updated in the database
     workspace_data = db.get_workspace_by_id(workspace_id)
     assert workspace_data is not None
-    assert workspace_data[1] == "Updated Workspace"
-    assert workspace_data[2] == "#FFFFFF"
+    assert workspace_data.name == "Updated Workspace"
+    assert workspace_data.color == "#FFFFFF"
 
 
 def test_update_workspace_not_found(override_get_db):
@@ -528,8 +531,8 @@ def test_update_workspace_with_special_chars(override_get_db):
     # Verify the workspace was updated in the database
     workspace_data = db.get_workspace_by_id(workspace_id)
     assert workspace_data is not None
-    assert workspace_data[1] == "Updated Workspace & Test!"
-    assert workspace_data[2] == "#123ABC"
+    assert workspace_data.name == "Updated Workspace & Test!"
+    assert workspace_data.color == "#123ABC"
 
 
 def test_delete_workspace_success(override_get_db):
@@ -573,7 +576,7 @@ def test_add_page_empty_title(override_get_db):
     # Verify the page exists in the database with empty title
     page_data = db.get_page_by_id(page_id)
     assert page_data is not None
-    assert page_data[1] == ""  # Title should be empty
+    assert page_data.title == ""  # Title should be empty
 
 
 def test_add_page_long_title(override_get_db):
@@ -590,7 +593,7 @@ def test_add_page_long_title(override_get_db):
     # Verify the page exists in the database with the long title
     page_data = db.get_page_by_id(page_id)
     assert page_data is not None
-    assert page_data[1] == long_title
+    assert page_data.title == long_title
 
 
 def test_get_pages_empty(override_get_db):
@@ -625,10 +628,10 @@ def test_add_block_with_parent(override_get_db):
     # Verify the block exists in the database (initially associated with the page)
     block_data = db.get_block_content_by_id(block_id)
     assert block_data is not None
-    assert block_data[1] == "Child Block"
-    assert block_data[2] == page_id  # Initially associated with the page
-    assert block_data[3] is None  # Initially no parent block
-    assert block_data[4] == 2  # Position should be 2
+    assert block_data.content == "Child Block"
+    assert block_data.page_id == page_id  # Initially associated with the page
+    assert block_data.parent_block_id is None  # Initially no parent block
+    assert block_data.position == 2  # Position should be 2
 
     # Now update the block's parent to be the parent_block
     response = client.put(
@@ -642,11 +645,13 @@ def test_add_block_with_parent(override_get_db):
     # Verify the block was updated with the correct parent
     updated_block_data = db.get_block_content_by_id(block_id)
     assert updated_block_data is not None
-    assert updated_block_data[1] == "Child Block"
+    assert updated_block_data.content == "Child Block"
     assert (
-        updated_block_data[2] is None
+        updated_block_data.page_id is None
     )  # Should no longer be directly associated with page
-    assert updated_block_data[3] == parent_block_id  # Should have the correct parent
+    assert (
+        updated_block_data.parent_block_id == parent_block_id
+    )  # Should have the correct parent
 
 
 def test_get_blocks_by_page_empty(override_get_db):
@@ -682,7 +687,7 @@ def test_update_block_content_special_chars(override_get_db):
     # Verify the block content was updated in the database
     block_data = db.get_block_content_by_id(block_id)
     assert block_data is not None
-    assert block_data[1] == special_content
+    assert block_data.content == special_content
 
 
 def test_add_workspace_long_name(override_get_db):
@@ -702,8 +707,8 @@ def test_add_workspace_long_name(override_get_db):
     # Verify the workspace exists in the database
     workspace_data = db.get_workspace_by_id(workspace_id)
     assert workspace_data is not None
-    assert workspace_data[1] == long_name
-    assert workspace_data[2] == "#ABCDEF"
+    assert workspace_data.name == long_name
+    assert workspace_data.color == "#ABCDEF"
 
 
 def test_rename_page_special_chars(override_get_db):
@@ -724,7 +729,7 @@ def test_rename_page_special_chars(override_get_db):
     # Verify the page was renamed in the database
     page_data = db.get_page_by_id(page_id)
     assert page_data is not None
-    assert page_data[1] == "Page with & Special # Chars!"
+    assert page_data.title == "Page with & Special # Chars!"
 
 
 def test_get_workspaces_empty(override_get_db):
@@ -783,4 +788,4 @@ def test_rename_page_duplicate_title(override_get_db):
     # Verify page 2 still has its original title
     page_data = db.get_page_by_id(page_id_2)
     assert page_data is not None
-    assert page_data[1] == "Page Two"
+    assert page_data.title == "Page Two"

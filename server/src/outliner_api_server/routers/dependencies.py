@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, Request
-from outliner_api_server.userdb import UserDatabase
-from outliner_api_server.sysdb import SystemDatabase
-from outliner_api_server.errors import UserDatabaseNotFoundError
+from outliner_api_server.db.userdb import UserDatabase
+from outliner_api_server.db.sysdb import SystemDatabase
+from outliner_api_server.db.errors import UserDatabaseNotFoundError
 
 
 def get_db(db_name: str, request: Request):

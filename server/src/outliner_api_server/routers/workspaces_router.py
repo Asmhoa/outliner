@@ -1,8 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
-from outliner_api_server.userdb import UserDatabase
+from outliner_api_server.db.userdb import UserDatabase
 from outliner_api_server.routers.dependencies import get_db
-from outliner_api_server.routers.models import Workspace, WorkspaceCreate, WorkspaceUpdate
-from outliner_api_server.errors import WorkspaceNotFoundError
+from outliner_api_server.routers.models import (
+    Workspace,
+    WorkspaceCreate,
+    WorkspaceUpdate,
+)
+from outliner_api_server.db.errors import WorkspaceNotFoundError
 
 
 router = APIRouter()
@@ -39,9 +43,9 @@ def add_workspace(
         workspace_id = db.add_workspace(workspace.name, workspace.color)
         workspace_data = db.get_workspace_by_id(workspace_id)
         return Workspace(
-            workspace_id=workspace_data[0],
-            name=workspace_data[1],
-            color=workspace_data[2],
+            workspace_id=workspace_data.workspace_id,
+            name=workspace_data.name,
+            color=workspace_data.color,
         )
     except WorkspaceNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -75,9 +79,9 @@ def get_workspace(db_name: str, workspace_id: int, db: UserDatabase = Depends(ge
     try:
         workspace_data = db.get_workspace_by_id(workspace_id)
         return Workspace(
-            workspace_id=workspace_data[0],
-            name=workspace_data[1],
-            color=workspace_data[2],
+            workspace_id=workspace_data.workspace_id,
+            name=workspace_data.name,
+            color=workspace_data.color,
         )
     except WorkspaceNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -106,7 +110,8 @@ def get_workspace(db_name: str, workspace_id: int, db: UserDatabase = Depends(ge
 def get_workspaces(db_name: str, db: UserDatabase = Depends(get_db)):
     workspaces_data = db.get_workspaces()
     return [
-        Workspace(workspace_id=w[0], name=w[1], color=w[2]) for w in workspaces_data
+        Workspace(workspace_id=w.workspace_id, name=w.name, color=w.color)
+        for w in workspaces_data
     ]
 
 
