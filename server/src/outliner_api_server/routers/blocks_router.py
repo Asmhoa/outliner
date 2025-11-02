@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from outliner_api_server.db.userdb import UserDatabase
+from outliner_api_server.db.models import BlockModel
 from outliner_api_server.routers.dependencies import get_db
 from outliner_api_server.routers.models import (
-    Block,
     BlockCreate,
     BlockUpdateContent,
     BlockUpdateParent,
@@ -15,7 +15,7 @@ router = APIRouter()
 
 @router.post(
     "/db/{db_name}/blocks",
-    response_model=Block,
+    response_model=BlockModel,
     responses={
         200: {
             "description": "Block created successfully",
@@ -44,7 +44,7 @@ def add_block(db_name: str, block: BlockCreate, db: UserDatabase = Depends(get_d
             block.content, block.position, block.page_id, block.parent_block_id
         )
         block_data = db.get_block_content_by_id(block_id)
-        return Block(
+        return BlockModel(
             block_id=block_data.block_id,
             content=block_data.content,
             page_id=block_data.page_id,
@@ -60,7 +60,7 @@ def add_block(db_name: str, block: BlockCreate, db: UserDatabase = Depends(get_d
 
 @router.get(
     "/db/{db_name}/block/{block_id}",
-    response_model=Block,
+    response_model=BlockModel,
     responses={
         200: {
             "description": "Block retrieved successfully",
@@ -86,7 +86,7 @@ def add_block(db_name: str, block: BlockCreate, db: UserDatabase = Depends(get_d
 def get_block(db_name: str, block_id: str, db: UserDatabase = Depends(get_db)):
     try:
         block_data = db.get_block_content_by_id(block_id)
-        return Block(
+        return BlockModel(
             block_id=block_data.block_id,
             content=block_data.content,
             page_id=block_data.page_id,
@@ -100,7 +100,7 @@ def get_block(db_name: str, block_id: str, db: UserDatabase = Depends(get_db)):
 
 @router.get(
     "/db/{db_name}/blocks/{page_id}",
-    response_model=list[Block],
+    response_model=list[BlockModel],
     responses={
         200: {
             "description": "List of blocks retrieved successfully",
@@ -128,7 +128,7 @@ def get_block(db_name: str, block_id: str, db: UserDatabase = Depends(get_db)):
 def get_blocks(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
     blocks_data = db.get_blocks_by_page(page_id)
     return [
-        Block(
+        BlockModel(
             block_id=b.block_id,
             content=b.content,
             page_id=b.page_id,

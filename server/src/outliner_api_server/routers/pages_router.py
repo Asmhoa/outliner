@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from outliner_api_server.db.userdb import UserDatabase
 from outliner_api_server.routers.dependencies import get_db
-from outliner_api_server.routers.models import Page, PageCreate, PageRename
+from outliner_api_server.db.models import PageModel
+from outliner_api_server.routers.models import PageCreate, PageRename
 from outliner_api_server.db.errors import PageAlreadyExistsError, PageNotFoundError
 
 
@@ -35,7 +36,7 @@ def add_page(db_name: str, page: PageCreate, db: UserDatabase = Depends(get_db))
 
 @router.get(
     "/db/{db_name}/pages/{page_id}",
-    response_model=Page,
+    response_model=PageModel,
     responses={
         200: {
             "description": "Page retrieved successfully",
@@ -58,7 +59,7 @@ def add_page(db_name: str, page: PageCreate, db: UserDatabase = Depends(get_db))
 def get_page(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
     try:
         page_data = db.get_page_by_id(page_id)
-        return Page(
+        return PageModel(
             page_id=page_data.page_id,
             title=page_data.title,
             created_at=page_data.created_at,
@@ -69,7 +70,7 @@ def get_page(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
 
 @router.get(
     "/db/{db_name}/pages",
-    response_model=list[Page],
+    response_model=list[PageModel],
     responses={
         200: {
             "description": "List of pages retrieved successfully",
@@ -90,7 +91,7 @@ def get_page(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
 def get_pages(db_name: str, db: UserDatabase = Depends(get_db)):
     pages_data = db.get_pages()
     return [
-        Page(page_id=p.page_id, title=p.title, created_at=p.created_at)
+        PageModel(page_id=p.page_id, title=p.title, created_at=p.created_at)
         for p in pages_data
     ]
 

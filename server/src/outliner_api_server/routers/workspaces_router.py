@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from outliner_api_server.db.userdb import UserDatabase
+from outliner_api_server.db.models import WorkspaceModel
 from outliner_api_server.routers.dependencies import get_db
 from outliner_api_server.routers.models import (
-    Workspace,
     WorkspaceCreate,
     WorkspaceUpdate,
 )
@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.post(
     "/db/{db_name}/workspaces",
-    response_model=Workspace,
+    response_model=WorkspaceModel,
     responses={
         200: {
             "description": "Workspace created successfully",
@@ -42,7 +42,7 @@ def add_workspace(
     try:
         workspace_id = db.add_workspace(workspace.name, workspace.color)
         workspace_data = db.get_workspace_by_id(workspace_id)
-        return Workspace(
+        return WorkspaceModel(
             workspace_id=workspace_data.workspace_id,
             name=workspace_data.name,
             color=workspace_data.color,
@@ -53,7 +53,7 @@ def add_workspace(
 
 @router.get(
     "/db/{db_name}/workspaces/{workspace_id}",
-    response_model=Workspace,
+    response_model=WorkspaceModel,
     responses={
         200: {
             "description": "Workspace retrieved successfully",
@@ -78,7 +78,7 @@ def add_workspace(
 def get_workspace(db_name: str, workspace_id: int, db: UserDatabase = Depends(get_db)):
     try:
         workspace_data = db.get_workspace_by_id(workspace_id)
-        return Workspace(
+        return WorkspaceModel(
             workspace_id=workspace_data.workspace_id,
             name=workspace_data.name,
             color=workspace_data.color,
@@ -89,7 +89,7 @@ def get_workspace(db_name: str, workspace_id: int, db: UserDatabase = Depends(ge
 
 @router.get(
     "/db/{db_name}/workspaces",
-    response_model=list[Workspace],
+    response_model=list[WorkspaceModel],
     responses={
         200: {
             "description": "List of workspaces retrieved successfully",
@@ -110,7 +110,7 @@ def get_workspace(db_name: str, workspace_id: int, db: UserDatabase = Depends(ge
 def get_workspaces(db_name: str, db: UserDatabase = Depends(get_db)):
     workspaces_data = db.get_workspaces()
     return [
-        Workspace(workspace_id=w.workspace_id, name=w.name, color=w.color)
+        WorkspaceModel(workspace_id=w.workspace_id, name=w.name, color=w.color)
         for w in workspaces_data
     ]
 

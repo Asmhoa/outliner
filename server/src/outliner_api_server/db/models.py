@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Union, Dict, Any
+from typing import Union, Dict, Any
 from pydantic import BaseModel, model_validator
 from typing_extensions import Self
 
@@ -50,7 +50,7 @@ class BlockModel(BaseModel):
 
     block_id: str
     content: str
-    page_id: Optional[str] = None
-    parent_block_id: Optional[str] = None
+    page_id: str | None = None
+    parent_block_id: str | None = None
     position: int
     created_at: datetime
