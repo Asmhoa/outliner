@@ -26,6 +26,7 @@ import log from "../../utils/logger";
 import { useNavigate } from "react-router-dom";
 import { useDisclosure } from "@mantine/hooks";
 import { CreateDatabaseModal } from "../CreateDatabaseModal";
+import { useDatabase } from "../../hooks/useDatabase";
 
 interface Workspace {
   workspace_id: number;
@@ -62,6 +63,7 @@ const LeftSidebar = ({
   // const backgroundColor = activeWorkspace ? activeWorkspace.color : "white";
   //
   const navigate = useNavigate();
+  const { dbName } = useDatabase();
   const [
     createDbModalOpened,
     { open: openCreateDbModal, close: closeCreateDbModal },
@@ -203,7 +205,7 @@ const LeftSidebar = ({
                 key={page.page_id}
                 // active={page.page_id === currentPageId}
                 onClick={() => {
-                  navigate("/pages/" + page.page_id);
+                  navigate("/db/" + dbName + "/pages/" + page.page_id);
                   // setCurrentPageId(page.page_id);
                 }}
               >

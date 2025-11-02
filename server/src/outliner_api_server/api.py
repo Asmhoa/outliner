@@ -10,20 +10,20 @@ from outliner_api_server.routers import (
 )
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    sys_db = SystemDatabase()
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     # Startup
+#     sys_db = SystemDatabase()
 
-    # Store the system database in app state
-    app.state.sys_db = sys_db
-    yield
-    # Shutdown
-    if hasattr(app.state, "sys_db"):
-        app.state.sys_db.close_conn()
+#     # Store the system database in app state
+#     app.state.sys_db = sys_db
+#     yield
+#     # Shutdown
+#     if hasattr(app.state, "sys_db"):
+#         app.state.sys_db.close_conn()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 origins = [
     "http://localhost:5173",

@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from outliner_api_server.db.sysdb import SystemDatabase
 from outliner_api_server.routers.request_models import DatabaseCreate
 from outliner_api_server.db.errors import (
     UserDatabaseAlreadyExistsError,
     UserDatabaseNotFoundError,
 )
+from outliner_api_server.routers.dependencies import get_sys_db
 
 
 router = APIRouter()
@@ -31,8 +32,7 @@ router = APIRouter()
         }
     },
 )
-def get_databases(request: Request):
-    sys_db = request.app.state.sys_db
+def get_databases(sys_db: SystemDatabase = Depends(get_sys_db)):
     databases = sys_db.get_all_user_databases()
     return databases
 
@@ -54,8 +54,7 @@ def get_databases(request: Request):
         },
     },
 )
-def create_database(request: Request, db_create: DatabaseCreate):
-    sys_db = request.app.state.sys_db
+def create_database(db_create: DatabaseCreate, sys_db: SystemDatabase = Depends(get_sys_db)):
 
     # Generate path from name if not provided
     if db_create.path is None:
@@ -98,8 +97,7 @@ def create_database(request: Request, db_create: DatabaseCreate):
         },
     },
 )
-def get_database(request: Request, db_name: str):
-    sys_db = request.app.state.sys_db
+def get_database(db_name: str, sys_db: SystemDatabase = Depends(get_sys_db)):
     try:
         db = sys_db.get_user_database_by_name(db_name)
         return db
@@ -122,8 +120,7 @@ def get_database(request: Request, db_name: str):
         },
     },
 )
-def delete_database(request: Request, db_name: str):
-    sys_db = request.app.state.sys_db
+def delete_database(db_name: str, sys_db: SystemDatabase = Depends(get_sys_db)):
     try:
         sys_db.delete_user_database(db_name)
         return {"status": "success"}

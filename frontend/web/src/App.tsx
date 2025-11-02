@@ -1,4 +1,4 @@
-import { AppShell } from "@mantine/core";
+import { AppShell, Box, LoadingOverlay } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
 
 import { useDisclosure } from "@mantine/hooks";
@@ -39,6 +39,7 @@ function App() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [pages, setPages] = useState<PageType[]>([]);
   const [opened, { toggle }] = useDisclosure();
+  const [isSwitchingDatabase, setIsSwitchingDatabase] = useState(false);
 
   const [isRenaming, setIsRenaming] = useState(false);
   const [createDbModalOpened, setCreateDbModalOpened] = useState(false);
@@ -103,7 +104,18 @@ function App() {
         }
       }
     }
-  }, [dbName, setDbName, dbNameParam]);
+  }, [setDbName, dbNameParam]);
+
+  useEffect(() => {
+    if (dbNameParam) {
+      if (dbNameParam !== dbName) {
+        setPages([]);
+        setCurrentPageId(null);
+        setIsSwitchingDatabase(true);
+      }
+      setDbName(dbNameParam);
+    }
+  }, [dbNameParam, dbName, setDbName]);
 
   useEffect(() => {
     getAllDatabases();
@@ -143,12 +155,8 @@ function App() {
     if (data) {
       log.debug(`[App] Fetched ${data.length} pages`);
       setPages(data);
-      if (data.length > 0 && currentPageId === null) {
-        log.debug(`[App] Setting current page to ${data[0].page_id}`);
-        setCurrentPageId(data[0].page_id);
-      }
     }
-  }, [currentPageId, dbName]);
+  }, [dbName]);
 
   const handleDeletePage = async (page_id: string) => {
     if (!dbName) return;
@@ -278,13 +286,14 @@ function App() {
 
   useEffect(() => {
     if (dbName) {
-      // Reset current page and blocks when dbName changes
-      setCurrentPageId(null);
-      setTitle("");
-      setBlocks([]);
-      // Re-fetch workspaces and pages for the new database
-      getAllWorkspaces();
-      fetchPages();
+      log.debug(`[App] dbName changed to ${dbName}, re-fetching data`);
+      const fetchData = async () => {
+        await getAllWorkspaces();
+        await fetchPages();
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // Temporary slowdown
+        setIsSwitchingDatabase(false);
+      };
+      fetchData();
     }
   }, [dbName, getAllWorkspaces, fetchPages]);
 
@@ -319,28 +328,34 @@ function App() {
   }
 
   return (
-    <AppShell
-      header={{
-        height: 30 + 2 * 10, // div + top and bottom padding
-      }}
-      navbar={{
-        width: navbarVisibility === "workspace-collapsed" ? 240 : 290, // each tab has width 40 + 10 padding. TODO: move to a constant
-        breakpoint: "sm",
-        collapsed: {
-          mobile: !opened,
-          desktop: navbarVisibility === "sidebar-collapsed",
-        },
-      }}
-      aside={{
-        width: 300,
-        breakpoint: "sm",
-        collapsed: {
-          mobile: rightSidebarCollapsed,
-          desktop: rightSidebarCollapsed,
-        },
-      }}
-      padding="md"
-    >
+    <Box pos="relative">
+      <LoadingOverlay
+        visible={isSwitchingDatabase}
+        zIndex={1000}
+        overlayProps={{ radius: "sm", blur: 2 }}
+      />
+      <AppShell
+        header={{
+          height: 30 + 2 * 10, // div + top and bottom padding
+        }}
+        navbar={{
+          width: navbarVisibility === "workspace-collapsed" ? 240 : 290, // each tab has width 40 + 10 padding. TODO: move to a constant
+          breakpoint: "sm",
+          collapsed: {
+            mobile: !opened,
+            desktop: navbarVisibility === "sidebar-collapsed",
+          },
+        }}
+        aside={{
+          width: 300,
+          breakpoint: "sm",
+          collapsed: {
+            mobile: rightSidebarCollapsed,
+            desktop: rightSidebarCollapsed,
+          },
+        }}
+        padding="md"
+      >
       <AppShell.Header bd={"none"}>
         <SearchBox
           onAddPage={handleAddPage}
@@ -379,8 +394,8 @@ function App() {
       <AppShell.Aside p="md" pt={0}>
         <RightSidebar onClose={handleRightSidebarToggle} />
       </AppShell.Aside>
-    </AppShell>
-  );
-}
-
+          </AppShell>
+        </Box>
+      );
+    }
 export default App;
