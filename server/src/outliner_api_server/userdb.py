@@ -1,5 +1,6 @@
 import logging
 from sqlite3 import connect, Cursor, Connection
+from datetime import datetime
 
 from outliner_api_server.errors import (
     BlockNotFoundError,
@@ -7,6 +8,7 @@ from outliner_api_server.errors import (
     PageNotFoundError,
     WorkspaceNotFoundError,
 )
+from outliner_api_server.models import PageModel, BlockModel, WorkspaceModel
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,7 @@ class UserDatabase:
         # is a different one from the one that executes a query.
         # TODO: add a pytest to ensure each api function has its own Depends()
         self.conn: Connection = connect(self.db_name, check_same_thread=False)
+        self.conn.row_factory = self._dict_factory  # Use dict_factory to return rows as dictionaries
         self.cursor: Cursor = self.conn.cursor()
         self.cursor.execute("PRAGMA foreign_keys = ON")
         self.create_new_database()  # NOTE: potential source of latency
@@ -29,6 +32,13 @@ class UserDatabase:
         # signal.signal(signal.SIGINT, kill_handler)
         # signal.signal(signal.SIGTERM, kill_handler)
         logger.debug(f"Database connection established to '{self.db_name}'.")
+
+    def _dict_factory(self, cursor, row):
+        """Convert row to dictionary for easier access."""
+        d = {}
+        for idx, col in enumerate(cursor.description):
+            d[col[0]] = row[idx]
+        return d
 
     def close_conn(self) -> None:
         self.conn.close()
@@ -132,7 +142,7 @@ class UserDatabase:
         )
         return new_workspace_id
 
-    def get_workspace_by_id(self, workspace_id: int):
+    def get_workspace_by_id(self, workspace_id: int) -> WorkspaceModel:
         """
         Retrieves a workspace by its ID.
         """
@@ -142,16 +152,26 @@ class UserDatabase:
         )
         row = self.cursor.fetchone()
         if row:
-            return row[0], row[1], f"#{row[2].hex().upper()}"
+            # Convert color bytes to hex string before creating the model
+            row_dict = dict(row)
+            row_dict['color'] = f"#{row['color'].hex().upper()}"
+            return WorkspaceModel(**row_dict)
         raise WorkspaceNotFoundError(f"Workspace with ID {workspace_id} not found")
 
-    def get_workspaces(self):
+    def get_workspaces(self) -> list[WorkspaceModel]:
         """
         Retrieves all workspaces from the database.
         """
         self.cursor.execute("SELECT workspace_id, name, color FROM workspaces")
         rows = self.cursor.fetchall()
-        return [(row[0], row[1], f"#{row[2].hex().upper()}") for row in rows]
+        return [
+            WorkspaceModel(
+                workspace_id=row['workspace_id'], 
+                name=row['name'], 
+                color=f"#{row['color'].hex().upper()}"
+            ) 
+            for row in rows
+        ]
 
     def update_workspace(self, workspace_id: int, new_name: str, new_color: str):
         """
@@ -199,27 +219,29 @@ class UserDatabase:
         self.cursor.execute(
             "INSERT INTO pages (title) VALUES (?) RETURNING page_id", (title,)
         )
-        new_page_id = self.cursor.fetchone()[0]
+        result = self.cursor.fetchone()
+        new_page_id = result['page_id'] if isinstance(result, dict) else result[0]
         self.conn.commit()
         logger.debug(f"Page '{title}' added successfully with ID: {new_page_id}")
         return new_page_id
 
-    def get_page_by_id(self, page_id: str):
+    def get_page_by_id(self, page_id: str) -> PageModel:
         """
         Retrieves a page by its ID.
         """
-        self.cursor.execute("SELECT * FROM pages WHERE page_id = ?", (page_id,))
+        self.cursor.execute("SELECT page_id, title, created_at FROM pages WHERE page_id = ?", (page_id,))
         page = self.cursor.fetchone()
         if page:
-            return page
+            return PageModel(**page)
         raise PageNotFoundError(f"Page with ID {page_id} not found")
 
-    def get_pages(self):
+    def get_pages(self) -> list[PageModel]:
         """
         Retrieves all pages from the database.
         """
-        self.cursor.execute("SELECT * FROM pages")
-        return self.cursor.fetchall()
+        self.cursor.execute("SELECT page_id, title, created_at FROM pages")
+        rows = self.cursor.fetchall()
+        return [PageModel(**row) for row in rows]
 
     def rename_page(self, page_id: str, new_title: str):
         """
@@ -302,21 +324,28 @@ class UserDatabase:
         )
         return new_block_id
 
-    def get_blocks_by_page(self, page_id: str):
+    def get_blocks_by_page(self, page_id: str) -> list[BlockModel]:
         """
         Retrieves all blocks for a given page ID.
         """
-        self.cursor.execute("SELECT * FROM blocks WHERE page_id = ?", (page_id,))
-        return self.cursor.fetchall()
+        self.cursor.execute(
+            "SELECT block_id, content, page_id, parent_block_id, position, created_at FROM blocks WHERE page_id = ?", 
+            (page_id,)
+        )
+        rows = self.cursor.fetchall()
+        return [BlockModel(**row) for row in rows]
 
-    def get_block_content_by_id(self, block_id: str):
+    def get_block_content_by_id(self, block_id: str) -> BlockModel:
         """
         Retrieves a block by its ID.
         """
-        self.cursor.execute("SELECT * FROM blocks WHERE block_id = ?", (block_id,))
+        self.cursor.execute(
+            "SELECT block_id, content, page_id, parent_block_id, position, created_at FROM blocks WHERE block_id = ?", 
+            (block_id,)
+        )
         block = self.cursor.fetchone()
         if block:
-            return block
+            return BlockModel(**block)
         raise BlockNotFoundError(f"Block with ID {block_id} not found")
 
     def update_block_content(self, block_id: str, new_content: str):

@@ -1,11 +1,13 @@
 import os
 import logging
 from sqlite3 import connect, Cursor, Connection, IntegrityError
+from datetime import datetime
 
 from outliner_api_server.errors import (
     UserDatabaseAlreadyExistsError,
     UserDatabaseNotFoundError,
 )
+from outliner_api_server.models import UserDatabaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +38,18 @@ class SystemDatabase:
         # Use check_same_thread=False since we'll have different threads accessing
         # the database in a web server context
         self.conn: Connection = connect(self.db_path, check_same_thread=False)
+        self.conn.row_factory = self._dict_factory  # Use dict_factory to return rows as dictionaries
         self.cursor: Cursor = self.conn.cursor()
         self.cursor.execute("PRAGMA foreign_keys = ON")
         logger.debug(f"System database connection established to '{self.db_path}'.")
         self._create_system_tables()
+
+    def _dict_factory(self, cursor, row):
+        """Convert row to dictionary for easier access."""
+        d = {}
+        for idx, col in enumerate(cursor.description):
+            d[col[0]] = row[idx]
+        return d
 
     def close_conn(self) -> None:
         """Close the database connection."""
@@ -101,7 +111,7 @@ class SystemDatabase:
             logger.warning(f"Failed to add user database '{name}': {str(e)}")
             raise UserDatabaseAlreadyExistsError(f"Database '{name}' already exists.")
 
-    def get_user_database_by_name(self, name: str) -> dict:
+    def get_user_database_by_name(self, name: str) -> UserDatabaseModel:
         """
         Get a UserDatabase by name.
 
@@ -109,7 +119,7 @@ class SystemDatabase:
             name: The name of the user database
 
         Returns:
-            Dictionary with 'id', 'name', 'path', 'created_at' if found
+            UserDatabaseModel with 'id', 'name', 'path', 'created_at' if found
 
         Raises:
             UserDatabaseNotFoundError: If the database is not found.
@@ -120,10 +130,10 @@ class SystemDatabase:
         )
         row = self.cursor.fetchone()
         if row:
-            return {"id": row[0], "name": row[1], "path": row[2], "created_at": row[3]}
+            return UserDatabaseModel(**row)
         raise UserDatabaseNotFoundError(f"Database '{name}' not found.")
 
-    def get_user_database_by_path(self, path: str) -> dict:
+    def get_user_database_by_path(self, path: str) -> UserDatabaseModel:
         """
         Get a UserDatabase by path.
 
@@ -131,7 +141,7 @@ class SystemDatabase:
             path: The file path of the user database
 
         Returns:
-            Dictionary with 'id', 'name', 'path', 'created_at' if found
+            UserDatabaseModel with 'id', 'name', 'path', 'created_at' if found
 
         Raises:
             UserDatabaseNotFoundError: If the database is not found.
@@ -142,23 +152,19 @@ class SystemDatabase:
         )
         row = self.cursor.fetchone()
         if row:
-            return {"id": row[0], "name": row[1], "path": row[2], "created_at": row[3]}
+            return UserDatabaseModel(**row)
         raise UserDatabaseNotFoundError(f"Database with path '{path}' not found.")
 
-    def get_all_user_databases(self) -> list:
+    def get_all_user_databases(self) -> list[UserDatabaseModel]:
         """
         Get all UserDatabases.
 
         Returns:
-            List of dictionaries with 'id', 'name', 'path', 'created_at'
+            List of UserDatabaseModel with 'id', 'name', 'path', 'created_at'
         """
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT id, name, path, created_at FROM user_databases")
-        rows = cursor.fetchall()
-        return [
-            {"id": row[0], "name": row[1], "path": row[2], "created_at": row[3]}
-            for row in rows
-        ]
+        self.cursor.execute("SELECT id, name, path, created_at FROM user_databases")
+        rows = self.cursor.fetchall()
+        return [UserDatabaseModel(**row) for row in rows]
 
     def update_user_database(
         self, name: str, new_path: str = None, new_name: str = None
@@ -181,7 +187,7 @@ class SystemDatabase:
         if new_name is not None:
             try:
                 existing = self.get_user_database_by_name(new_name)
-                if existing["name"] != name:
+                if existing.name != name:
                     raise UserDatabaseAlreadyExistsError(
                         f"Cannot update database '{name}' to '{new_name}': name already exists"
                     )
