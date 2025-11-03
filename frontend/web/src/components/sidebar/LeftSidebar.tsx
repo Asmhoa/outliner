@@ -8,6 +8,7 @@ import {
   Menu,
   Button,
   Text,
+  useMantineTheme,
 } from "@mantine/core";
 import {
   IconDatabase,
@@ -64,6 +65,7 @@ const LeftSidebar = ({
   //
   const navigate = useNavigate();
   const { dbName } = useDatabase();
+  const theme = useMantineTheme();
   const [
     createDbModalOpened,
     { open: openCreateDbModal, close: closeCreateDbModal },
@@ -98,6 +100,10 @@ const LeftSidebar = ({
                   <Menu.Item
                     key={db.value}
                     onClick={() => navigate(`/db/${db.value}`)}
+                    bg={
+                      db.value === dbName ? theme.primaryColor : "transparent"
+                    }
+                    c={db.value === dbName ? "white" : theme.colors.dark[9]}
                   >
                     {db.label}
                   </Menu.Item>
