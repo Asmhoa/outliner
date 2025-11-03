@@ -54,16 +54,11 @@ def get_databases(sys_db: SystemDatabase = Depends(get_sys_db)):
         },
     },
 )
-def create_database(db_create: DatabaseCreate, sys_db: SystemDatabase = Depends(get_sys_db)):
-
-    # Generate path from name if not provided
-    if db_create.path is None:
-        generated_path = db_create.name.lower().replace(" ", "_") + ".db"
-    else:
-        generated_path = db_create.path
-
+def create_database(
+    db_create: DatabaseCreate, sys_db: SystemDatabase = Depends(get_sys_db)
+):
     try:
-        sys_db.add_user_database(db_create.name, generated_path)
+        sys_db.add_user_database(db_create.name)
     except UserDatabaseAlreadyExistsError as e:
         raise HTTPException(
             status_code=409,

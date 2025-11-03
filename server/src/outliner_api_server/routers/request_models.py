@@ -42,4 +42,3 @@ class WorkspaceUpdate(BaseModel):
 
 class DatabaseCreate(BaseModel):
     name: str
-    path: str | None = None

@@ -31,7 +31,10 @@ import { CreateDatabaseModal } from "./components/CreateDatabaseModal";
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
 function App() {
-  const { dbName: dbNameParam, pageId } = useParams<{ dbName: string; pageId: string }>(); // get page_id from URL
+  const { dbName: dbNameParam, pageId } = useParams<{
+    dbName: string;
+    pageId: string;
+  }>(); // get page_id from URL
   const { dbName, setDbName } = useDatabase();
 
   const [currentPageId, setCurrentPageId] = useState<string | null>(null);
@@ -80,9 +83,9 @@ function App() {
   }, [getAllWorkspaces]);
 
   // Other
-  const [databases, setDatabases] = useState<{ value: string; label: string }[]>(
-    [],
-  );
+  const [databases, setDatabases] = useState<
+    { value: string; label: string }[]
+  >([]);
 
   const getAllDatabases = useCallback(async () => {
     const { data, error } = await getDatabasesDatabasesGet();
@@ -94,9 +97,7 @@ function App() {
       if (data.length === 0) {
         setCreateDbModalOpened(true);
       } else {
-        setDatabases(
-          data.map((db) => ({ value: db.name, label: db.name })),
-        );
+        setDatabases(data.map((db) => ({ value: db.name, label: db.name })));
         if (!dbName && dbNameParam) {
           setDbName(dbNameParam);
         } else if (!dbName) {
@@ -285,12 +286,12 @@ function App() {
   }, [fetchPages]);
 
   useEffect(() => {
+    // Update everything on DB change
     if (dbName) {
       log.debug(`[App] dbName changed to ${dbName}, re-fetching data`);
       const fetchData = async () => {
         await getAllWorkspaces();
         await fetchPages();
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // Temporary slowdown
         setIsSwitchingDatabase(false);
       };
       fetchData();
@@ -356,46 +357,46 @@ function App() {
         }}
         padding="md"
       >
-      <AppShell.Header bd={"none"}>
-        <SearchBox
-          onAddPage={handleAddPage}
-          navbarVisibility={navbarVisibility}
-          onLeftSidebarToggle={handleLeftSidebarToggle}
-          rightSidebarCollapsed={rightSidebarCollapsed}
-          onRightSidebarToggle={handleRightSidebarToggle}
-        />
-      </AppShell.Header>
-      <LeftSidebar
-        pages={pages}
-        currentPageId={currentPageId}
-        setCurrentPageId={setCurrentPageId}
-        navbarVisibility={navbarVisibility}
-        workspaces={workspaces}
-        setWorkspaces={setWorkspaces}
-        activeWorkspaceId={activeWorkspaceId}
-        setActiveWorkspaceId={setActiveWorkspaceId}
-        databases={databases}
-        onDatabaseCreated={getAllDatabases}
-      />
-      <AppShell.Main>
-        {currentPageId && (
-          <Page
-            key={currentPageId}
-            page_id={currentPageId}
-            title={title}
-            blocks={blocks}
-            isRenaming={isRenaming}
-            setIsRenaming={setIsRenaming}
-            handleDeletePage={handleDeletePage}
-            handleRenamePage={handleRenamePage}
+        <AppShell.Header bd={"none"}>
+          <SearchBox
+            onAddPage={handleAddPage}
+            navbarVisibility={navbarVisibility}
+            onLeftSidebarToggle={handleLeftSidebarToggle}
+            rightSidebarCollapsed={rightSidebarCollapsed}
+            onRightSidebarToggle={handleRightSidebarToggle}
           />
-        )}
-      </AppShell.Main>
-      <AppShell.Aside p="md" pt={0}>
-        <RightSidebar onClose={handleRightSidebarToggle} />
-      </AppShell.Aside>
-          </AppShell>
-        </Box>
-      );
-    }
+        </AppShell.Header>
+        <LeftSidebar
+          pages={pages}
+          currentPageId={currentPageId}
+          setCurrentPageId={setCurrentPageId}
+          navbarVisibility={navbarVisibility}
+          workspaces={workspaces}
+          setWorkspaces={setWorkspaces}
+          activeWorkspaceId={activeWorkspaceId}
+          setActiveWorkspaceId={setActiveWorkspaceId}
+          databases={databases}
+          onDatabaseCreated={getAllDatabases}
+        />
+        <AppShell.Main>
+          {currentPageId && (
+            <Page
+              key={currentPageId}
+              page_id={currentPageId}
+              title={title}
+              blocks={blocks}
+              isRenaming={isRenaming}
+              setIsRenaming={setIsRenaming}
+              handleDeletePage={handleDeletePage}
+              handleRenamePage={handleRenamePage}
+            />
+          )}
+        </AppShell.Main>
+        <AppShell.Aside p="md" pt={0}>
+          <RightSidebar onClose={handleRightSidebarToggle} />
+        </AppShell.Aside>
+      </AppShell>
+    </Box>
+  );
+}
 export default App;

@@ -58,21 +58,19 @@ class SystemDatabase(BaseDatabase):
             f"Table 'user_databases' created or already exists in '{self.db_path}'."
         )
 
-    def add_user_database(self, name: str, path: str | None = None) -> None:
+    def add_user_database(self, name: str) -> None:
         """
         Add a new UserDatabase entry.
 
         Args:
             name: The name of the user database
-            path: The file path to the user database (will be sanitized and made relative to databases dir if not absolute)
 
         Raises:
             UserDatabaseAlreadyExistsError: If the database name already exists.
         """
         # TODO: maybe allow full paths later?
         try:
-            if path is None:
-                path = "_".join(name.split())  # remove spaces from name
+            path = name.lower().replace(" ", "_") + ".db"
             sanitized_path = (
                 path.lower().replace("/", "_").replace("\\", "_").replace("..", "_")
             )
