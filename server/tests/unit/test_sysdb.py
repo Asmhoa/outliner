@@ -15,7 +15,7 @@ def sys_db():
 
 def test_add_and_load_user_database(sys_db):
     """Test that a new user database can be added and loaded."""
-    sys_db.add_user_database("test_db", "test_db.sqlite")
+    sys_db.add_user_database("test_db")
     db_info = sys_db.get_user_database_by_name("test_db")
     user_db = UserDatabase(db_info.path)
 

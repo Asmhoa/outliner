@@ -34,7 +34,7 @@ def sys_db(setup_test_data_dir):
 
 @pytest.fixture(scope="module")
 def test_db(sys_db):
-    sys_db.add_user_database(TEST_DB_NAME, TEST_USER_DB_PATH)
+    sys_db.add_user_database(TEST_DB_NAME)
     db = UserDatabase(TEST_USER_DB_PATH)
     db.initialize_tables()
     yield db
