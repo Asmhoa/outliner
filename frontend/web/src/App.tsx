@@ -212,8 +212,9 @@ function App() {
     // Switch to the newly created page
     if (data && data.page_id) {
       setCurrentPageId(data.page_id);
+      // Returning page_id for testing purposes
+      return data.page_id;
     }
-    return { data, error, response };
   };
 
   useEffect(() => {

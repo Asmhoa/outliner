@@ -75,7 +75,7 @@ test: ## Run tests
 	@echo "Running tests..."
 	@cd $(SERVER_DIR) && uv run pytest --cov
 	@cd ../
-	@cd $(WEB_FRONTEND_DIR) && npx playwright test
+	@cd $(WEB_FRONTEND_DIR) && npm test
 
 # Clean temporary files
 .PHONY: clean

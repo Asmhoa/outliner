@@ -97,44 +97,29 @@ def get_pages(db_name: str, db: UserDatabase = Depends(get_db)):
 
 ### Running Playwright Tests
 
-The frontend includes Playwright tests for end-to-end testing. To run these tests:
+The frontend includes Playwright tests for end-to-end testing. To run these tests, use the `npm test` command from the `frontend/web` directory.
 
-1. Navigate to the frontend web directory:
-   ```bash
-   cd frontend/web
-   ```
+```bash
+cd frontend/web
+npm test
+```
 
-2. Install Playwright browsers (needed for first run):
-   ```bash
-   npm install playwright/tests --with-deps
-   ```
+The `npm test` command handles the setup and teardown of the test database. To pass arguments to Playwright, you can edit the `test` script in `package.json`.
 
-3. Run all Playwright tests:
-   ```bash
-   npx playwright test
-   ```
+For example, to run tests in headed mode, you could change the `test` script to:
+`"test": "npm run test:setup && npx playwright test --headed && npm run test:cleanup"`
 
-4. To run tests in headed mode (to see the browser):
-   ```bash
-   npx playwright test --headed
-   ```
+Alternatively, you can run the setup, test, and cleanup scripts separately:
+```bash
+npm run test:setup
+npx playwright test
+npm run test:cleanup
+```
 
-5. To run tests for a specific browser:
-   ```bash
-   npx playwright test --project=chromium
-   npx playwright test --project=firefox
-   npx playwright test --project=webkit
-   ```
-
-6. To run a specific test file:
-   ```bash
-   npx playwright test tests/basic.spec.ts
-   ```
-
-7. To view the HTML test report after running tests:
-   ```bash
-   npx playwright show-report
-   ```
+To view the HTML test report after running tests:
+```bash
+npx playwright show-report
+```
 
 The Playwright configuration is set up to:
 - Run tests in parallel

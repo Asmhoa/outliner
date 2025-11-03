@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Left Sidebar", () => {
   test("should be visible on large screens", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto("/");
+    await page.goto("/db/playwright_test_db");
     const leftSidebar = page.locator("nav");
     await expect(leftSidebar).toBeVisible();
   });
@@ -12,7 +12,7 @@ test.describe("Left Sidebar", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto("/");
+    await page.goto("/db/playwright_test_db");
 
     const leftSidebarToggle = page.getByTestId("left-sidebar-toggle");
     const leftSidebar = page.getByTestId("left-sidebar");

@@ -6,7 +6,7 @@ const test = base.extend<{
   workspaceWithLongName: async ({ page }, use) => {
     // Set up
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('/');
+    await page.goto('/db/playwright_test_db');
     const uniqueId = `WS${Date.now().toString().slice(-5)}`;
     const longWorkspaceName = `${uniqueId} This is a very long workspace name that should overflow`;
     await page.getByTestId('add-workspace-button').click();
@@ -31,7 +31,7 @@ const test = base.extend<{
 test.describe('Workspace Sidebar', () => {
   test('should be hidden when left sidebar is collapsed', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('/');
+    await page.goto('/db/playwright_test_db');
 
     const leftSidebarToggle = page.getByTestId('left-sidebar-toggle');
     const workspaceSidebar = page.getByTestId('workspace-sidebar');
@@ -47,7 +47,7 @@ test.describe('Workspace Sidebar', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('/');
+    await page.goto('/db/playwright_test_db');
 
     const workspaceTabs = page.getByRole('tab');
     await expect(workspaceTabs.first()).toBeVisible();
@@ -57,7 +57,7 @@ test.describe('Workspace Sidebar', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('/');
+    await page.goto('/db/playwright_test_db');
 
     const workspaceName = `WS${Date.now().toString().slice(-5)}`;
     let updatedWorkspaceName = ' ';
