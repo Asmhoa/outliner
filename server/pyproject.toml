@@ -40,6 +40,7 @@ outliner-start-api = "outliner_api_server.main:start_api"
 [tool.coverage.run]
 branch = true
 source = ["src/"]
+omit = ["src/outliner_api_server/__main__.py"]
 
 [tool.coverage.report]
 fail_under = 90
@@ -60,7 +61,7 @@ exclude_also = [
 
     # Don't complain about abstract methods, they aren't run:
     "@(abc\\.)?abstractmethod",
-    ]
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -167,7 +167,7 @@ class SystemDatabase(BaseDatabase):
         if new_name is not None:
             try:
                 existing = self.get_user_database_by_name(new_name)
-                if existing["name"] != name:
+                if existing.name != name:
                     raise UserDatabaseAlreadyExistsError(
                         f"Cannot update database '{name}' to '{new_name}': name already exists"
                     )
