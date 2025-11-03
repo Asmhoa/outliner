@@ -73,7 +73,7 @@ format:
 .PHONY: test
 test: ## Run tests
 	@echo "Running tests..."
-	@cd $(SERVER_DIR) && uv run pytest tests/
+	@cd $(SERVER_DIR) && uv run pytest
 	@cd ../
 	@cd $(WEB_FRONTEND_DIR) && npx playwright test
 

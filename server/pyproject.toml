@@ -31,7 +31,36 @@ module-root = "src"
 dev = [
     "httpx>=0.28.1",
     "pytest>=8.4.2",
+    "pytest-cov>=5.0.0",
 ]
 
 [project.scripts]
-start-api = "outliner_api_server.main:start_api"
+outliner-start-api = "outliner_api_server.main:start_api"
+
+[tool.coverage.run]
+branch = true
+source = ["src/"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_empty = true
+exclude_also = [
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self\\.debug",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstractmethod",
+    ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -38,6 +38,10 @@ cd server && uv run python -m outliner_api_server
 cd server && uv run pytest
 ```
 
+To check coverage, use
+```bash
+cd server && uv run pytest --cov
+```
 ## Frontend (Web)
 
 The frontend is a React+TypeScript application located in `frontend/web/`.
