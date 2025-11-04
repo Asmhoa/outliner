@@ -9,7 +9,7 @@ class UserDatabaseModel(BaseModel):
     Pydantic model for user database entries in the system database.
     """
 
-    id: int
+    id: str
     name: str
     path: str
     created_at: datetime

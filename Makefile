@@ -86,5 +86,4 @@ clean: ## Clean temporary files and cache
 	@find . -type f -name ".DS_Store" -delete
 	@rm -rf $(SERVER_DIR)/.pytest_cache
 	@rm -f $(SERVER_DIR)/server.log
-	@rm -f $(SERVER_DIR)/*.db
-	@rm -f $(SERVER_DIR)/src/**/*.db
+	@rm -f $(SERVER_DIR)/src/outliner_api_server/databases/*.db

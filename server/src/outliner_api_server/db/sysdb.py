@@ -46,7 +46,7 @@ class SystemDatabase(BaseDatabase):
             cursor.execute(
                 """
                 CREATE TABLE IF NOT EXISTS user_databases (
-                    id INTEGER PRIMARY KEY,
+                    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
                     name TEXT UNIQUE NOT NULL,
                     path TEXT UNIQUE NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
