@@ -5,8 +5,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<App />} />
-      <Route path="/db/:dbName" element={<App />} />
-      <Route path="/db/:dbName/pages/:pageId" element={<App />} />
+      <Route path="/db/:dbId" element={<App />} />
+      <Route path="/db/:dbId/pages/:pageId" element={<App />} />
     </Routes>
   );
 }

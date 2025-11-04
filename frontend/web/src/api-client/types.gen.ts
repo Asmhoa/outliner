@@ -221,50 +221,50 @@ export type WorkspaceUpdate = {
     new_color: string;
 };
 
-export type GetPagesDbDbNamePagesGetData = {
+export type GetPagesDbDbIdPagesGetData = {
     body?: never;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/pages';
+    url: '/db/{db_id}/pages';
 };
 
-export type GetPagesDbDbNamePagesGetErrors = {
+export type GetPagesDbDbIdPagesGetErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type GetPagesDbDbNamePagesGetError = GetPagesDbDbNamePagesGetErrors[keyof GetPagesDbDbNamePagesGetErrors];
+export type GetPagesDbDbIdPagesGetError = GetPagesDbDbIdPagesGetErrors[keyof GetPagesDbDbIdPagesGetErrors];
 
-export type GetPagesDbDbNamePagesGetResponses = {
+export type GetPagesDbDbIdPagesGetResponses = {
     /**
-     * Response Get Pages Db  Db Name  Pages Get
+     * Response Get Pages Db  Db Id  Pages Get
      * List of pages retrieved successfully
      */
     200: Array<PageModel>;
 };
 
-export type GetPagesDbDbNamePagesGetResponse = GetPagesDbDbNamePagesGetResponses[keyof GetPagesDbDbNamePagesGetResponses];
+export type GetPagesDbDbIdPagesGetResponse = GetPagesDbDbIdPagesGetResponses[keyof GetPagesDbDbIdPagesGetResponses];
 
-export type AddPageDbDbNamePagesPostData = {
+export type AddPageDbDbIdPagesPostData = {
     body: PageCreate;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/pages';
+    url: '/db/{db_id}/pages';
 };
 
-export type AddPageDbDbNamePagesPostErrors = {
+export type AddPageDbDbIdPagesPostErrors = {
     /**
      * Conflict - Page with this title already exists
      */
@@ -275,28 +275,28 @@ export type AddPageDbDbNamePagesPostErrors = {
     422: HttpValidationError;
 };
 
-export type AddPageDbDbNamePagesPostError = AddPageDbDbNamePagesPostErrors[keyof AddPageDbDbNamePagesPostErrors];
+export type AddPageDbDbIdPagesPostError = AddPageDbDbIdPagesPostErrors[keyof AddPageDbDbIdPagesPostErrors];
 
-export type AddPageDbDbNamePagesPostResponses = {
+export type AddPageDbDbIdPagesPostResponses = {
     /**
      * Page created successfully
      */
     200: unknown;
 };
 
-export type RenamePageDbDbNamePagesPutData = {
+export type RenamePageDbDbIdPagesPutData = {
     body: PageRename;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/pages';
+    url: '/db/{db_id}/pages';
 };
 
-export type RenamePageDbDbNamePagesPutErrors = {
+export type RenamePageDbDbIdPagesPutErrors = {
     /**
      * Page not found
      */
@@ -311,32 +311,32 @@ export type RenamePageDbDbNamePagesPutErrors = {
     422: HttpValidationError;
 };
 
-export type RenamePageDbDbNamePagesPutError = RenamePageDbDbNamePagesPutErrors[keyof RenamePageDbDbNamePagesPutErrors];
+export type RenamePageDbDbIdPagesPutError = RenamePageDbDbIdPagesPutErrors[keyof RenamePageDbDbIdPagesPutErrors];
 
-export type RenamePageDbDbNamePagesPutResponses = {
+export type RenamePageDbDbIdPagesPutResponses = {
     /**
      * Page renamed successfully
      */
     200: unknown;
 };
 
-export type DeletePageDbDbNamePagesPageIdDeleteData = {
+export type DeletePageDbDbIdPagesPageIdDeleteData = {
     body?: never;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
         /**
          * Page Id
          */
         page_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/pages/{page_id}';
+    url: '/db/{db_id}/pages/{page_id}';
 };
 
-export type DeletePageDbDbNamePagesPageIdDeleteErrors = {
+export type DeletePageDbDbIdPagesPageIdDeleteErrors = {
     /**
      * Page not found
      */
@@ -347,32 +347,32 @@ export type DeletePageDbDbNamePagesPageIdDeleteErrors = {
     422: HttpValidationError;
 };
 
-export type DeletePageDbDbNamePagesPageIdDeleteError = DeletePageDbDbNamePagesPageIdDeleteErrors[keyof DeletePageDbDbNamePagesPageIdDeleteErrors];
+export type DeletePageDbDbIdPagesPageIdDeleteError = DeletePageDbDbIdPagesPageIdDeleteErrors[keyof DeletePageDbDbIdPagesPageIdDeleteErrors];
 
-export type DeletePageDbDbNamePagesPageIdDeleteResponses = {
+export type DeletePageDbDbIdPagesPageIdDeleteResponses = {
     /**
      * Page deleted successfully
      */
     200: unknown;
 };
 
-export type GetPageDbDbNamePagesPageIdGetData = {
+export type GetPageDbDbIdPagesPageIdGetData = {
     body?: never;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
         /**
          * Page Id
          */
         page_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/pages/{page_id}';
+    url: '/db/{db_id}/pages/{page_id}';
 };
 
-export type GetPageDbDbNamePagesPageIdGetErrors = {
+export type GetPageDbDbIdPagesPageIdGetErrors = {
     /**
      * Page not found
      */
@@ -383,30 +383,30 @@ export type GetPageDbDbNamePagesPageIdGetErrors = {
     422: HttpValidationError;
 };
 
-export type GetPageDbDbNamePagesPageIdGetError = GetPageDbDbNamePagesPageIdGetErrors[keyof GetPageDbDbNamePagesPageIdGetErrors];
+export type GetPageDbDbIdPagesPageIdGetError = GetPageDbDbIdPagesPageIdGetErrors[keyof GetPageDbDbIdPagesPageIdGetErrors];
 
-export type GetPageDbDbNamePagesPageIdGetResponses = {
+export type GetPageDbDbIdPagesPageIdGetResponses = {
     /**
      * Page retrieved successfully
      */
     200: PageModel;
 };
 
-export type GetPageDbDbNamePagesPageIdGetResponse = GetPageDbDbNamePagesPageIdGetResponses[keyof GetPageDbDbNamePagesPageIdGetResponses];
+export type GetPageDbDbIdPagesPageIdGetResponse = GetPageDbDbIdPagesPageIdGetResponses[keyof GetPageDbDbIdPagesPageIdGetResponses];
 
-export type AddBlockDbDbNameBlocksPostData = {
+export type AddBlockDbDbIdBlocksPostData = {
     body: BlockCreate;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/blocks';
+    url: '/db/{db_id}/blocks';
 };
 
-export type AddBlockDbDbNameBlocksPostErrors = {
+export type AddBlockDbDbIdBlocksPostErrors = {
     /**
      * Block not found
      */
@@ -417,34 +417,34 @@ export type AddBlockDbDbNameBlocksPostErrors = {
     422: HttpValidationError;
 };
 
-export type AddBlockDbDbNameBlocksPostError = AddBlockDbDbNameBlocksPostErrors[keyof AddBlockDbDbNameBlocksPostErrors];
+export type AddBlockDbDbIdBlocksPostError = AddBlockDbDbIdBlocksPostErrors[keyof AddBlockDbDbIdBlocksPostErrors];
 
-export type AddBlockDbDbNameBlocksPostResponses = {
+export type AddBlockDbDbIdBlocksPostResponses = {
     /**
      * Block created successfully
      */
     200: BlockModel;
 };
 
-export type AddBlockDbDbNameBlocksPostResponse = AddBlockDbDbNameBlocksPostResponses[keyof AddBlockDbDbNameBlocksPostResponses];
+export type AddBlockDbDbIdBlocksPostResponse = AddBlockDbDbIdBlocksPostResponses[keyof AddBlockDbDbIdBlocksPostResponses];
 
-export type GetBlockDbDbNameBlockBlockIdGetData = {
+export type GetBlockDbDbIdBlockBlockIdGetData = {
     body?: never;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
         /**
          * Block Id
          */
         block_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/block/{block_id}';
+    url: '/db/{db_id}/block/{block_id}';
 };
 
-export type GetBlockDbDbNameBlockBlockIdGetErrors = {
+export type GetBlockDbDbIdBlockBlockIdGetErrors = {
     /**
      * Block not found
      */
@@ -455,34 +455,34 @@ export type GetBlockDbDbNameBlockBlockIdGetErrors = {
     422: HttpValidationError;
 };
 
-export type GetBlockDbDbNameBlockBlockIdGetError = GetBlockDbDbNameBlockBlockIdGetErrors[keyof GetBlockDbDbNameBlockBlockIdGetErrors];
+export type GetBlockDbDbIdBlockBlockIdGetError = GetBlockDbDbIdBlockBlockIdGetErrors[keyof GetBlockDbDbIdBlockBlockIdGetErrors];
 
-export type GetBlockDbDbNameBlockBlockIdGetResponses = {
+export type GetBlockDbDbIdBlockBlockIdGetResponses = {
     /**
      * Block retrieved successfully
      */
     200: BlockModel;
 };
 
-export type GetBlockDbDbNameBlockBlockIdGetResponse = GetBlockDbDbNameBlockBlockIdGetResponses[keyof GetBlockDbDbNameBlockBlockIdGetResponses];
+export type GetBlockDbDbIdBlockBlockIdGetResponse = GetBlockDbDbIdBlockBlockIdGetResponses[keyof GetBlockDbDbIdBlockBlockIdGetResponses];
 
-export type GetBlocksDbDbNameBlocksPageIdGetData = {
+export type GetBlocksDbDbIdBlocksPageIdGetData = {
     body?: never;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
         /**
          * Page Id
          */
         page_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/blocks/{page_id}';
+    url: '/db/{db_id}/blocks/{page_id}';
 };
 
-export type GetBlocksDbDbNameBlocksPageIdGetErrors = {
+export type GetBlocksDbDbIdBlocksPageIdGetErrors = {
     /**
      * Page not found
      */
@@ -493,31 +493,31 @@ export type GetBlocksDbDbNameBlocksPageIdGetErrors = {
     422: HttpValidationError;
 };
 
-export type GetBlocksDbDbNameBlocksPageIdGetError = GetBlocksDbDbNameBlocksPageIdGetErrors[keyof GetBlocksDbDbNameBlocksPageIdGetErrors];
+export type GetBlocksDbDbIdBlocksPageIdGetError = GetBlocksDbDbIdBlocksPageIdGetErrors[keyof GetBlocksDbDbIdBlocksPageIdGetErrors];
 
-export type GetBlocksDbDbNameBlocksPageIdGetResponses = {
+export type GetBlocksDbDbIdBlocksPageIdGetResponses = {
     /**
-     * Response Get Blocks Db  Db Name  Blocks  Page Id  Get
+     * Response Get Blocks Db  Db Id  Blocks  Page Id  Get
      * List of blocks retrieved successfully
      */
     200: Array<BlockModel>;
 };
 
-export type GetBlocksDbDbNameBlocksPageIdGetResponse = GetBlocksDbDbNameBlocksPageIdGetResponses[keyof GetBlocksDbDbNameBlocksPageIdGetResponses];
+export type GetBlocksDbDbIdBlocksPageIdGetResponse = GetBlocksDbDbIdBlocksPageIdGetResponses[keyof GetBlocksDbDbIdBlocksPageIdGetResponses];
 
-export type UpdateBlockContentDbDbNameBlocksContentPutData = {
+export type UpdateBlockContentDbDbIdBlocksContentPutData = {
     body: BlockUpdateContent;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/blocks/content';
+    url: '/db/{db_id}/blocks/content';
 };
 
-export type UpdateBlockContentDbDbNameBlocksContentPutErrors = {
+export type UpdateBlockContentDbDbIdBlocksContentPutErrors = {
     /**
      * Block not found
      */
@@ -528,28 +528,28 @@ export type UpdateBlockContentDbDbNameBlocksContentPutErrors = {
     422: HttpValidationError;
 };
 
-export type UpdateBlockContentDbDbNameBlocksContentPutError = UpdateBlockContentDbDbNameBlocksContentPutErrors[keyof UpdateBlockContentDbDbNameBlocksContentPutErrors];
+export type UpdateBlockContentDbDbIdBlocksContentPutError = UpdateBlockContentDbDbIdBlocksContentPutErrors[keyof UpdateBlockContentDbDbIdBlocksContentPutErrors];
 
-export type UpdateBlockContentDbDbNameBlocksContentPutResponses = {
+export type UpdateBlockContentDbDbIdBlocksContentPutResponses = {
     /**
      * Block content updated successfully
      */
     200: unknown;
 };
 
-export type UpdateBlockParentDbDbNameBlocksParentPutData = {
+export type UpdateBlockParentDbDbIdBlocksParentPutData = {
     body: BlockUpdateParent;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/blocks/parent';
+    url: '/db/{db_id}/blocks/parent';
 };
 
-export type UpdateBlockParentDbDbNameBlocksParentPutErrors = {
+export type UpdateBlockParentDbDbIdBlocksParentPutErrors = {
     /**
      * Bad request - Invalid parent relationship
      */
@@ -564,32 +564,32 @@ export type UpdateBlockParentDbDbNameBlocksParentPutErrors = {
     422: HttpValidationError;
 };
 
-export type UpdateBlockParentDbDbNameBlocksParentPutError = UpdateBlockParentDbDbNameBlocksParentPutErrors[keyof UpdateBlockParentDbDbNameBlocksParentPutErrors];
+export type UpdateBlockParentDbDbIdBlocksParentPutError = UpdateBlockParentDbDbIdBlocksParentPutErrors[keyof UpdateBlockParentDbDbIdBlocksParentPutErrors];
 
-export type UpdateBlockParentDbDbNameBlocksParentPutResponses = {
+export type UpdateBlockParentDbDbIdBlocksParentPutResponses = {
     /**
      * Block parent updated successfully
      */
     200: unknown;
 };
 
-export type DeleteBlockDbDbNameBlocksBlockIdDeleteData = {
+export type DeleteBlockDbDbIdBlocksBlockIdDeleteData = {
     body?: never;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
         /**
          * Block Id
          */
         block_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/blocks/{block_id}';
+    url: '/db/{db_id}/blocks/{block_id}';
 };
 
-export type DeleteBlockDbDbNameBlocksBlockIdDeleteErrors = {
+export type DeleteBlockDbDbIdBlocksBlockIdDeleteErrors = {
     /**
      * Block not found
      */
@@ -600,59 +600,59 @@ export type DeleteBlockDbDbNameBlocksBlockIdDeleteErrors = {
     422: HttpValidationError;
 };
 
-export type DeleteBlockDbDbNameBlocksBlockIdDeleteError = DeleteBlockDbDbNameBlocksBlockIdDeleteErrors[keyof DeleteBlockDbDbNameBlocksBlockIdDeleteErrors];
+export type DeleteBlockDbDbIdBlocksBlockIdDeleteError = DeleteBlockDbDbIdBlocksBlockIdDeleteErrors[keyof DeleteBlockDbDbIdBlocksBlockIdDeleteErrors];
 
-export type DeleteBlockDbDbNameBlocksBlockIdDeleteResponses = {
+export type DeleteBlockDbDbIdBlocksBlockIdDeleteResponses = {
     /**
      * Block deleted successfully
      */
     200: unknown;
 };
 
-export type GetWorkspacesDbDbNameWorkspacesGetData = {
+export type GetWorkspacesDbDbIdWorkspacesGetData = {
     body?: never;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/workspaces';
+    url: '/db/{db_id}/workspaces';
 };
 
-export type GetWorkspacesDbDbNameWorkspacesGetErrors = {
+export type GetWorkspacesDbDbIdWorkspacesGetErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type GetWorkspacesDbDbNameWorkspacesGetError = GetWorkspacesDbDbNameWorkspacesGetErrors[keyof GetWorkspacesDbDbNameWorkspacesGetErrors];
+export type GetWorkspacesDbDbIdWorkspacesGetError = GetWorkspacesDbDbIdWorkspacesGetErrors[keyof GetWorkspacesDbDbIdWorkspacesGetErrors];
 
-export type GetWorkspacesDbDbNameWorkspacesGetResponses = {
+export type GetWorkspacesDbDbIdWorkspacesGetResponses = {
     /**
-     * Response Get Workspaces Db  Db Name  Workspaces Get
+     * Response Get Workspaces Db  Db Id  Workspaces Get
      * List of workspaces retrieved successfully
      */
     200: Array<WorkspaceModel>;
 };
 
-export type GetWorkspacesDbDbNameWorkspacesGetResponse = GetWorkspacesDbDbNameWorkspacesGetResponses[keyof GetWorkspacesDbDbNameWorkspacesGetResponses];
+export type GetWorkspacesDbDbIdWorkspacesGetResponse = GetWorkspacesDbDbIdWorkspacesGetResponses[keyof GetWorkspacesDbDbIdWorkspacesGetResponses];
 
-export type AddWorkspaceDbDbNameWorkspacesPostData = {
+export type AddWorkspaceDbDbIdWorkspacesPostData = {
     body: WorkspaceCreate;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/workspaces';
+    url: '/db/{db_id}/workspaces';
 };
 
-export type AddWorkspaceDbDbNameWorkspacesPostErrors = {
+export type AddWorkspaceDbDbIdWorkspacesPostErrors = {
     /**
      * Workspace not found
      */
@@ -663,30 +663,30 @@ export type AddWorkspaceDbDbNameWorkspacesPostErrors = {
     422: HttpValidationError;
 };
 
-export type AddWorkspaceDbDbNameWorkspacesPostError = AddWorkspaceDbDbNameWorkspacesPostErrors[keyof AddWorkspaceDbDbNameWorkspacesPostErrors];
+export type AddWorkspaceDbDbIdWorkspacesPostError = AddWorkspaceDbDbIdWorkspacesPostErrors[keyof AddWorkspaceDbDbIdWorkspacesPostErrors];
 
-export type AddWorkspaceDbDbNameWorkspacesPostResponses = {
+export type AddWorkspaceDbDbIdWorkspacesPostResponses = {
     /**
      * Workspace created successfully
      */
     200: WorkspaceModel;
 };
 
-export type AddWorkspaceDbDbNameWorkspacesPostResponse = AddWorkspaceDbDbNameWorkspacesPostResponses[keyof AddWorkspaceDbDbNameWorkspacesPostResponses];
+export type AddWorkspaceDbDbIdWorkspacesPostResponse = AddWorkspaceDbDbIdWorkspacesPostResponses[keyof AddWorkspaceDbDbIdWorkspacesPostResponses];
 
-export type UpdateWorkspaceDbDbNameWorkspacesPutData = {
+export type UpdateWorkspaceDbDbIdWorkspacesPutData = {
     body: WorkspaceUpdate;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
     };
     query?: never;
-    url: '/db/{db_name}/workspaces';
+    url: '/db/{db_id}/workspaces';
 };
 
-export type UpdateWorkspaceDbDbNameWorkspacesPutErrors = {
+export type UpdateWorkspaceDbDbIdWorkspacesPutErrors = {
     /**
      * Workspace not found
      */
@@ -697,32 +697,32 @@ export type UpdateWorkspaceDbDbNameWorkspacesPutErrors = {
     422: HttpValidationError;
 };
 
-export type UpdateWorkspaceDbDbNameWorkspacesPutError = UpdateWorkspaceDbDbNameWorkspacesPutErrors[keyof UpdateWorkspaceDbDbNameWorkspacesPutErrors];
+export type UpdateWorkspaceDbDbIdWorkspacesPutError = UpdateWorkspaceDbDbIdWorkspacesPutErrors[keyof UpdateWorkspaceDbDbIdWorkspacesPutErrors];
 
-export type UpdateWorkspaceDbDbNameWorkspacesPutResponses = {
+export type UpdateWorkspaceDbDbIdWorkspacesPutResponses = {
     /**
      * Workspace updated successfully
      */
     200: unknown;
 };
 
-export type DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteData = {
+export type DeleteWorkspaceDbDbIdWorkspacesWorkspaceIdDeleteData = {
     body?: never;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
         /**
          * Workspace Id
          */
         workspace_id: number;
     };
     query?: never;
-    url: '/db/{db_name}/workspaces/{workspace_id}';
+    url: '/db/{db_id}/workspaces/{workspace_id}';
 };
 
-export type DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteErrors = {
+export type DeleteWorkspaceDbDbIdWorkspacesWorkspaceIdDeleteErrors = {
     /**
      * Workspace not found
      */
@@ -733,32 +733,32 @@ export type DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteErrors = {
     422: HttpValidationError;
 };
 
-export type DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteError = DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteErrors[keyof DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteErrors];
+export type DeleteWorkspaceDbDbIdWorkspacesWorkspaceIdDeleteError = DeleteWorkspaceDbDbIdWorkspacesWorkspaceIdDeleteErrors[keyof DeleteWorkspaceDbDbIdWorkspacesWorkspaceIdDeleteErrors];
 
-export type DeleteWorkspaceDbDbNameWorkspacesWorkspaceIdDeleteResponses = {
+export type DeleteWorkspaceDbDbIdWorkspacesWorkspaceIdDeleteResponses = {
     /**
      * Workspace deleted successfully
      */
     200: unknown;
 };
 
-export type GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetData = {
+export type GetWorkspaceDbDbIdWorkspacesWorkspaceIdGetData = {
     body?: never;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
         /**
          * Workspace Id
          */
         workspace_id: number;
     };
     query?: never;
-    url: '/db/{db_name}/workspaces/{workspace_id}';
+    url: '/db/{db_id}/workspaces/{workspace_id}';
 };
 
-export type GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetErrors = {
+export type GetWorkspaceDbDbIdWorkspacesWorkspaceIdGetErrors = {
     /**
      * Workspace not found
      */
@@ -769,16 +769,16 @@ export type GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetErrors = {
     422: HttpValidationError;
 };
 
-export type GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetError = GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetErrors[keyof GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetErrors];
+export type GetWorkspaceDbDbIdWorkspacesWorkspaceIdGetError = GetWorkspaceDbDbIdWorkspacesWorkspaceIdGetErrors[keyof GetWorkspaceDbDbIdWorkspacesWorkspaceIdGetErrors];
 
-export type GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetResponses = {
+export type GetWorkspaceDbDbIdWorkspacesWorkspaceIdGetResponses = {
     /**
      * Workspace retrieved successfully
      */
     200: WorkspaceModel;
 };
 
-export type GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetResponse = GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetResponses[keyof GetWorkspaceDbDbNameWorkspacesWorkspaceIdGetResponses];
+export type GetWorkspaceDbDbIdWorkspacesWorkspaceIdGetResponse = GetWorkspaceDbDbIdWorkspacesWorkspaceIdGetResponses[keyof GetWorkspaceDbDbIdWorkspacesWorkspaceIdGetResponses];
 
 export type GetDatabasesDatabasesGetData = {
     body?: never;
@@ -824,19 +824,19 @@ export type CreateDatabaseDatabasesPostResponses = {
     200: unknown;
 };
 
-export type DeleteDatabaseDatabasesDbNameDeleteData = {
+export type DeleteDatabaseDatabasesDbIdDeleteData = {
     body?: never;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
     };
     query?: never;
-    url: '/databases/{db_name}';
+    url: '/databases/{db_id}';
 };
 
-export type DeleteDatabaseDatabasesDbNameDeleteErrors = {
+export type DeleteDatabaseDatabasesDbIdDeleteErrors = {
     /**
      * Database not found
      */
@@ -847,28 +847,28 @@ export type DeleteDatabaseDatabasesDbNameDeleteErrors = {
     422: HttpValidationError;
 };
 
-export type DeleteDatabaseDatabasesDbNameDeleteError = DeleteDatabaseDatabasesDbNameDeleteErrors[keyof DeleteDatabaseDatabasesDbNameDeleteErrors];
+export type DeleteDatabaseDatabasesDbIdDeleteError = DeleteDatabaseDatabasesDbIdDeleteErrors[keyof DeleteDatabaseDatabasesDbIdDeleteErrors];
 
-export type DeleteDatabaseDatabasesDbNameDeleteResponses = {
+export type DeleteDatabaseDatabasesDbIdDeleteResponses = {
     /**
      * Database deleted successfully
      */
     200: unknown;
 };
 
-export type GetDatabaseDatabasesDbNameGetData = {
+export type GetDatabaseDatabasesDbIdGetData = {
     body?: never;
     path: {
         /**
-         * Db Name
+         * Db Id
          */
-        db_name: string;
+        db_id: string;
     };
     query?: never;
-    url: '/databases/{db_name}';
+    url: '/databases/{db_id}';
 };
 
-export type GetDatabaseDatabasesDbNameGetErrors = {
+export type GetDatabaseDatabasesDbIdGetErrors = {
     /**
      * Database not found
      */
@@ -879,11 +879,11 @@ export type GetDatabaseDatabasesDbNameGetErrors = {
     422: HttpValidationError;
 };
 
-export type GetDatabaseDatabasesDbNameGetError = GetDatabaseDatabasesDbNameGetErrors[keyof GetDatabaseDatabasesDbNameGetErrors];
+export type GetDatabaseDatabasesDbIdGetError = GetDatabaseDatabasesDbIdGetErrors[keyof GetDatabaseDatabasesDbIdGetErrors];
 
-export type GetDatabaseDatabasesDbNameGetResponses = {
+export type GetDatabaseDatabasesDbIdGetResponses = {
     /**
-     * Response Get Database Databases  Db Name  Get
+     * Response Get Database Databases  Db Id  Get
      * Database retrieved successfully
      */
     200: {
@@ -891,4 +891,4 @@ export type GetDatabaseDatabasesDbNameGetResponses = {
     };
 };
 
-export type GetDatabaseDatabasesDbNameGetResponse = GetDatabaseDatabasesDbNameGetResponses[keyof GetDatabaseDatabasesDbNameGetResponses];
+export type GetDatabaseDatabasesDbIdGetResponse = GetDatabaseDatabasesDbIdGetResponses[keyof GetDatabaseDatabasesDbIdGetResponses];

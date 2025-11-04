@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { showNotification } from "@mantine/notifications";
 import Block from "./Block";
 import {
-  renamePageDbDbNamePagesPut,
-  addBlockDbDbNameBlocksPost,
-  deleteBlockDbDbNameBlocksBlockIdDelete,
+  renamePageDbDbIdPagesPut,
+  addBlockDbDbIdBlocksPost,
+  deleteBlockDbDbIdBlocksBlockIdDelete,
 } from "../api-client/sdk.gen";
 import log from "../utils/logger";
 import { Group } from "@mantine/core";
@@ -32,7 +32,7 @@ const Page: React.FC<PageProps> = ({
   handleDeletePage,
   handleRenamePage,
 }) => {
-  const { dbName } = useDatabase();
+  const { dbId } = useDatabase();
   const [pageTitle, setPageTitle] = useState(title);
   const [blocks, setBlocks] = useState<BlockType[]>(initialBlocks);
   const blockRefs = useRef<{
@@ -72,13 +72,13 @@ const Page: React.FC<PageProps> = ({
   const handleTitleBlur = async (
     event: React.FocusEvent<HTMLHeadingElement>,
   ) => {
-    if (!dbName) return;
+    if (!dbId) return;
     const newTitle = event.currentTarget.textContent || "";
     setPageTitle(newTitle);
     log.debug(`[Page] Updating page title`, { page_id, new_title: newTitle });
 
-    const { error, response } = await renamePageDbDbNamePagesPut({
-      path: { db_name: dbName },
+    const { error, response } = await renamePageDbDbIdPagesPut({
+      path: { db_id: dbId },
       body: {
         page_id: page_id,
         new_title: newTitle,
@@ -106,13 +106,13 @@ const Page: React.FC<PageProps> = ({
   };
 
   const handleNewBlock = async (currentBlockId: string) => {
-    if (!dbName) return;
+    if (!dbId) return;
     log.debug(`[Page] Adding new block`, {
       page_id,
       current_block_id: currentBlockId,
     });
-    const { data: newBlock, error } = await addBlockDbDbNameBlocksPost({
-      path: { db_name: dbName },
+    const { data: newBlock, error } = await addBlockDbDbIdBlocksPost({
+      path: { db_id: dbId },
       body: { page_id: page_id, content: "", position: 0 },
     });
 
@@ -133,11 +133,11 @@ const Page: React.FC<PageProps> = ({
   };
 
   const handleDeleteBlock = async (currentBlockId: string) => {
-    if (blocks.length <= 1 || !dbName) return;
+    if (blocks.length <= 1 || !dbId) return;
 
     log.debug(`[Page] Deleting block`, { block_id: currentBlockId, page_id });
-    const { error } = await deleteBlockDbDbNameBlocksBlockIdDelete({
-      path: { db_name: dbName, block_id: currentBlockId },
+    const { error } = await deleteBlockDbDbIdBlocksBlockIdDelete({
+      path: { db_id: dbId, block_id: currentBlockId },
     });
 
     if (error) {

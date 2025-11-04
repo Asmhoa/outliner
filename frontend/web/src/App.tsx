@@ -10,13 +10,13 @@ import "./App.css";
 import Page from "./components/Page";
 import RightSidebar from "./components/sidebar/RightSidebar";
 import {
-  getPageDbDbNamePagesPageIdGet,
-  getBlocksDbDbNameBlocksPageIdGet,
-  addPageDbDbNamePagesPost,
-  getPagesDbDbNamePagesGet,
-  deletePageDbDbNamePagesPageIdDelete,
-  addBlockDbDbNameBlocksPost,
-  getWorkspacesDbDbNameWorkspacesGet,
+  getPageDbDbIdPagesPageIdGet,
+  getBlocksDbDbIdBlocksPageIdGet,
+  addPageDbDbIdPagesPost,
+  getPagesDbDbIdPagesGet,
+  deletePageDbDbIdPagesPageIdDelete,
+  addBlockDbDbIdBlocksPost,
+  getWorkspacesDbDbIdWorkspacesGet,
   getDatabasesDatabasesGet,
   type Block,
   type Page as PageType,
@@ -31,11 +31,11 @@ import { CreateDatabaseModal } from "./components/CreateDatabaseModal";
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
 function App() {
-  const { dbName: dbNameParam, pageId } = useParams<{
-    dbName: string;
+  const { dbId: dbIdParam, pageId } = useParams<{
+    dbId: string;
     pageId: string;
   }>(); // get page_id from URL
-  const { dbName, setDbName } = useDatabase();
+  const { dbId, setDbId } = useDatabase();
 
   const [currentPageId, setCurrentPageId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -55,10 +55,10 @@ function App() {
   );
 
   const getAllWorkspaces = useCallback(async () => {
-    if (!dbName) return;
+    if (!dbId) return;
     const { data: all_workspaces, error } =
-      await getWorkspacesDbDbNameWorkspacesGet({
-        path: { db_name: dbName },
+      await getWorkspacesDbDbIdWorkspacesGet({
+        path: { db_id: dbId },
       });
     if (error) {
       log.error("[App] Failed to fetch workspaces:", error);
@@ -76,7 +76,7 @@ function App() {
         setActiveWorkspaceId(0);
       }
     }
-  }, [dbName, activeWorkspaceId]);
+  }, [dbId, activeWorkspaceId]);
 
   useEffect(() => {
     getAllWorkspaces();
@@ -98,25 +98,25 @@ function App() {
         setCreateDbModalOpened(true);
       } else {
         setDatabases(data.map((db) => ({ value: db.name, label: db.name })));
-        if (!dbName && dbNameParam) {
-          setDbName(dbNameParam);
-        } else if (!dbName) {
-          setDbName(data[0].name);
+        if (!dbId && dbIdParam) {
+          setDbId(dbIdParam);
+        } else if (!dbId) {
+          setDbId(data[0].name);
         }
       }
     }
-  }, [setDbName, dbNameParam]);
+  }, [setDbId, dbIdParam]);
 
   useEffect(() => {
-    if (dbNameParam) {
-      if (dbNameParam !== dbName) {
+    if (dbIdParam) {
+      if (dbIdParam !== dbId) {
         setPages([]);
         setCurrentPageId(null);
         setIsSwitchingDatabase(true);
       }
-      setDbName(dbNameParam);
+      setDbId(dbIdParam);
     }
-  }, [dbNameParam, dbName, setDbName]);
+  }, [dbIdParam, dbId, setDbId]);
 
   useEffect(() => {
     getAllDatabases();
@@ -144,10 +144,10 @@ function App() {
   };
 
   const fetchPages = useCallback(async () => {
-    if (!dbName) return;
+    if (!dbId) return;
     log.debug("[App] Fetching pages...");
-    const { data, error } = await getPagesDbDbNamePagesGet({
-      path: { db_name: dbName },
+    const { data, error } = await getPagesDbDbIdPagesGet({
+      path: { db_id: dbId },
     });
     if (error) {
       log.error("[App] Failed to fetch pages:", error);
@@ -157,13 +157,13 @@ function App() {
       log.debug(`[App] Fetched ${data.length} pages`);
       setPages(data);
     }
-  }, [dbName]);
+  }, [dbId]);
 
   const handleDeletePage = async (page_id: string) => {
-    if (!dbName) return;
+    if (!dbId) return;
     log.debug(`[App] Deleting page`, { page_id });
-    const { error } = await deletePageDbDbNamePagesPageIdDelete({
-      path: { db_name: dbName, page_id },
+    const { error } = await deletePageDbDbIdPagesPageIdDelete({
+      path: { db_id: dbId, page_id },
     });
 
     if (error) {
@@ -182,10 +182,10 @@ function App() {
   };
 
   const handleAddPage = async (title: string) => {
-    if (!dbName) return;
+    if (!dbId) return;
     log.debug(`[App] Adding new page`, { title });
-    const { data, error, response } = await addPageDbDbNamePagesPost({
-      path: { db_name: dbName },
+    const { data, error, response } = await addPageDbDbIdPagesPost({
+      path: { db_id: dbId },
       body: { title },
     });
 
@@ -218,13 +218,13 @@ function App() {
   };
 
   useEffect(() => {
-    if (!dbName) return;
+    if (!dbId) return;
     log.debug(`[App] Current page ID changed`, { currentPageId });
     const fetchTitle = async () => {
       if (!currentPageId) return;
       log.debug(`[App] Fetching title`, { page_id: currentPageId });
-      const { data, error } = await getPageDbDbNamePagesPageIdGet({
-        path: { db_name: dbName, page_id: currentPageId },
+      const { data, error } = await getPageDbDbIdPagesPageIdGet({
+        path: { db_id: dbId, page_id: currentPageId },
       });
 
       if (error) {
@@ -240,8 +240,8 @@ function App() {
     const fetchBlocks = async () => {
       if (!currentPageId) return;
       log.debug(`[App] Fetching blocks`, { page_id: currentPageId });
-      const { data, error } = await getBlocksDbDbNameBlocksPageIdGet({
-        path: { db_name: dbName, page_id: currentPageId },
+      const { data, error } = await getBlocksDbDbIdBlocksPageIdGet({
+        path: { db_id: dbId, page_id: currentPageId },
       });
 
       if (error) {
@@ -255,8 +255,8 @@ function App() {
             page_id: currentPageId,
           });
           const { data: newBlock, error: newBlockError } =
-            await addBlockDbDbNameBlocksPost({
-              path: { db_name: dbName },
+            await addBlockDbDbIdBlocksPost({
+              path: { db_id: dbId },
               body: { page_id: currentPageId, content: "", position: 0 },
             });
 
@@ -280,7 +280,7 @@ function App() {
 
     fetchTitle();
     fetchBlocks();
-  }, [currentPageId, dbName]);
+  }, [currentPageId, dbId]);
 
   useEffect(() => {
     fetchPages();
@@ -288,8 +288,8 @@ function App() {
 
   useEffect(() => {
     // Update everything on DB change
-    if (dbName) {
-      log.debug(`[App] dbName changed to ${dbName}, re-fetching data`);
+    if (dbId) {
+      log.debug(`[App] dbId changed to ${dbId}, re-fetching data`);
       const fetchData = async () => {
         await getAllWorkspaces();
         await fetchPages();
@@ -297,7 +297,7 @@ function App() {
       };
       fetchData();
     }
-  }, [dbName, getAllWorkspaces, fetchPages]);
+  }, [dbId, getAllWorkspaces, fetchPages]);
 
   // Update current page ID based on URL parameter
   useEffect(() => {
@@ -319,7 +319,7 @@ function App() {
     }
   }, [pageId, pages]);
 
-  if (!dbName) {
+  if (!dbId) {
     return (
       <CreateDatabaseModal
         opened={createDbModalOpened}

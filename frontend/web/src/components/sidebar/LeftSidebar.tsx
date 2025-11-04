@@ -64,7 +64,7 @@ const LeftSidebar = ({
   // const backgroundColor = activeWorkspace ? activeWorkspace.color : "white";
   //
   const navigate = useNavigate();
-  const { dbName } = useDatabase();
+  const { dbId } = useDatabase();
   const theme = useMantineTheme();
   const [
     createDbModalOpened,
@@ -101,9 +101,9 @@ const LeftSidebar = ({
                     key={db.value}
                     onClick={() => navigate(`/db/${db.value}`)}
                     bg={
-                      db.value === dbName ? theme.primaryColor : "transparent"
+                      db.value === dbId ? theme.primaryColor : "transparent"
                     }
-                    c={db.value === dbName ? "white" : theme.colors.dark[9]}
+                    c={db.value === dbId ? "white" : theme.colors.dark[9]}
                   >
                     {db.label}
                   </Menu.Item>
@@ -211,7 +211,7 @@ const LeftSidebar = ({
                 key={page.page_id}
                 // active={page.page_id === currentPageId}
                 onClick={() => {
-                  navigate("/db/" + dbName + "/pages/" + page.page_id);
+                  navigate("/db/" + dbId + "/pages/" + page.page_id);
                   // setCurrentPageId(page.page_id);
                 }}
               >

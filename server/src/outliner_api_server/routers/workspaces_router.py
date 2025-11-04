@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/db/{db_name}/workspaces",
+    "/db/{db_id}/workspaces",
     response_model=WorkspaceModel,
     responses={
         200: {
@@ -37,7 +37,7 @@ router = APIRouter()
     },
 )
 def add_workspace(
-    db_name: str, workspace: WorkspaceCreate, db: UserDatabase = Depends(get_db)
+    db_id: str, workspace: WorkspaceCreate, db: UserDatabase = Depends(get_db)
 ):
     try:
         workspace_id = db.add_workspace(workspace.name, workspace.color)
@@ -52,7 +52,7 @@ def add_workspace(
 
 
 @router.get(
-    "/db/{db_name}/workspaces/{workspace_id}",
+    "/db/{db_id}/workspaces/{workspace_id}",
     response_model=WorkspaceModel,
     responses={
         200: {
@@ -75,7 +75,7 @@ def add_workspace(
         },
     },
 )
-def get_workspace(db_name: str, workspace_id: int, db: UserDatabase = Depends(get_db)):
+def get_workspace(db_id: str, workspace_id: int, db: UserDatabase = Depends(get_db)):
     try:
         workspace_data = db.get_workspace_by_id(workspace_id)
         return WorkspaceModel(
@@ -88,7 +88,7 @@ def get_workspace(db_name: str, workspace_id: int, db: UserDatabase = Depends(ge
 
 
 @router.get(
-    "/db/{db_name}/workspaces",
+    "/db/{db_id}/workspaces",
     response_model=list[WorkspaceModel],
     responses={
         200: {
@@ -107,7 +107,7 @@ def get_workspace(db_name: str, workspace_id: int, db: UserDatabase = Depends(ge
         }
     },
 )
-def get_workspaces(db_name: str, db: UserDatabase = Depends(get_db)):
+def get_workspaces(db_id: str, db: UserDatabase = Depends(get_db)):
     workspaces_data = db.get_workspaces()
     return [
         WorkspaceModel(workspace_id=w.workspace_id, name=w.name, color=w.color)
@@ -116,7 +116,7 @@ def get_workspaces(db_name: str, db: UserDatabase = Depends(get_db)):
 
 
 @router.put(
-    "/db/{db_name}/workspaces",
+    "/db/{db_id}/workspaces",
     responses={
         200: {
             "description": "Workspace updated successfully",
@@ -131,7 +131,7 @@ def get_workspaces(db_name: str, db: UserDatabase = Depends(get_db)):
     },
 )
 def update_workspace(
-    db_name: str, workspace: WorkspaceUpdate, db: UserDatabase = Depends(get_db)
+    db_id: str, workspace: WorkspaceUpdate, db: UserDatabase = Depends(get_db)
 ):
     try:
         db.update_workspace(
@@ -143,7 +143,7 @@ def update_workspace(
 
 
 @router.delete(
-    "/db/{db_name}/workspaces/{workspace_id}",
+    "/db/{db_id}/workspaces/{workspace_id}",
     responses={
         200: {
             "description": "Workspace deleted successfully",
@@ -158,7 +158,7 @@ def update_workspace(
     },
 )
 def delete_workspace(
-    db_name: str, workspace_id: int, db: UserDatabase = Depends(get_db)
+    db_id: str, workspace_id: int, db: UserDatabase = Depends(get_db)
 ):
     try:
         db.delete_workspace(workspace_id)

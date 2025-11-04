@@ -21,6 +21,9 @@ def test_add_and_load_user_database(sys_db):
     with tempfile.NamedTemporaryFile(suffix=".db") as tmp:
         sys_db.add_user_database("test_db")
         db_info = sys_db.get_user_database_by_name("test_db")
+        db_info_by_id = sys_db.get_user_database_by_id(db_info.id)
+        assert db_info_by_id.name == "test_db"
+
         # The path is sanitized, so we need to get the path from the db_info
         user_db = UserDatabase(tmp.name)
 
@@ -51,10 +54,10 @@ def test_add_user_database_already_exists(sys_db):
         sys_db.add_user_database("test_db")
 
 
-def test_get_user_database_by_name_not_found(sys_db):
+def test_get_user_database_by_id_not_found(sys_db):
     """Test that getting a database that doesn't exist raises an error."""
     with pytest.raises(UserDatabaseNotFoundError):
-        sys_db.get_user_database_by_name("non_existent_db")
+        sys_db.get_user_database_by_id("non_existent_db")
 
 
 def test_get_user_database_by_path(sys_db):
@@ -88,53 +91,69 @@ def test_update_user_database(sys_db):
     db_info = sys_db.get_user_database_by_name("test_db")
 
     # Test updating the name
-    sys_db.update_user_database("test_db", new_name="new_test_db")
-    updated_db_info = sys_db.get_user_database_by_name("new_test_db")
+    sys_db.update_user_database(db_info.id, new_name="new_test_db")
+    updated_db_info = sys_db.get_user_database_by_id(db_info.id)
+    assert updated_db_info.name == "new_test_db"
     assert updated_db_info.path == db_info.path
 
     # Test updating the path
-    sys_db.update_user_database("new_test_db", new_path="/new/path.db")
-    updated_db_info = sys_db.get_user_database_by_name("new_test_db")
+    sys_db.update_user_database(db_info.id, new_path="/new/path.db")
+    updated_db_info = sys_db.get_user_database_by_id(db_info.id)
     assert updated_db_info.path == "/new/path.db"
 
     # Test updating both
-    sys_db.update_user_database("new_test_db", new_name="another_db", new_path="/another/path.db")
-    updated_db_info = sys_db.get_user_database_by_name("another_db")
+    sys_db.update_user_database(db_info.id, new_name="another_db", new_path="/another/path.db")
+    updated_db_info = sys_db.get_user_database_by_id(db_info.id)
+    assert updated_db_info.name == "another_db"
     assert updated_db_info.path == "/another/path.db"
 
 
 def test_update_user_database_not_found(sys_db):
     """Test that updating a database that doesn't exist raises an error."""
     with pytest.raises(UserDatabaseNotFoundError):
-        sys_db.update_user_database("non_existent_db", new_name="new_name")
+        sys_db.update_user_database("non_existent_db_id", new_name="new_name")
 
 
 def test_update_user_database_already_exists(sys_db):
     """Test that updating a database to a name that already exists raises an error."""
     sys_db.add_user_database("test_db1")
     sys_db.add_user_database("test_db2")
+    db1_info = sys_db.get_user_database_by_name("test_db1")
     with pytest.raises(UserDatabaseAlreadyExistsError):
-        sys_db.update_user_database("test_db1", new_name="test_db2")
+        sys_db.update_user_database(db1_info.id, new_name="test_db2")
     
 
 def test_update_user_database_no_changes(sys_db):
     """Test that nothing happens when updating a database with no new data."""
     sys_db.add_user_database("test_db")
     db_info = sys_db.get_user_database_by_name("test_db")
-    sys_db.update_user_database("test_db")
-    updated_db_info = sys_db.get_user_database_by_name("test_db")
+    sys_db.update_user_database(db_info.id)
+    updated_db_info = sys_db.get_user_database_by_id(db_info.id)
     assert db_info.path == updated_db_info.path
 
 
 def test_delete_user_database(sys_db):
+
+
     """Test that a user database can be deleted."""
+
+
     sys_db.add_user_database("test_db")
-    sys_db.delete_user_database("test_db")
+
+
+    db_info = sys_db.get_user_database_by_name("test_db")
+
+
+    sys_db.delete_user_database(db_info.id)
+
+
     with pytest.raises(UserDatabaseNotFoundError):
-        sys_db.get_user_database_by_name("test_db")
+
+
+        sys_db.get_user_database_by_id(db_info.id)
 
 
 def test_delete_user_database_not_found(sys_db):
     """Test that deleting a database that doesn't exist raises an error."""
     with pytest.raises(UserDatabaseNotFoundError):
-        sys_db.delete_user_database("non_existent_db")
+        sys_db.delete_user_database("non_existent_db_id")

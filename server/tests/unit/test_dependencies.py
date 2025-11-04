@@ -34,18 +34,18 @@ def test_get_db_success():
     Test the get_db dependency for a successful database lookup.
     """
     mock_sys_db = MagicMock(spec=SystemDatabase)
-    db_info = UserDatabaseModel(id="1", name="test_db", path="/test/db.sqlite", created_at=datetime.now())
-    mock_sys_db.get_user_database_by_name.return_value = db_info
+    db_info = UserDatabaseModel(id="a1b2c3d4-e5f6-7890-abcd-ef1234567890", name="test_db", path="/test/db.sqlite", created_at=datetime.now())
+    mock_sys_db.get_user_database_by_id.return_value = db_info
 
     with patch("outliner_api_server.routers.dependencies.UserDatabase") as mock_user_db_class:
         mock_user_db_instance = MagicMock()
         mock_user_db_class.return_value = mock_user_db_instance
 
-        dep = get_db("test_db", mock_sys_db)
+        dep = get_db("1", mock_sys_db)
         db_instance = next(dep)
 
         assert db_instance == mock_user_db_instance
-        mock_sys_db.get_user_database_by_name.assert_called_once_with("test_db")
+        mock_sys_db.get_user_database_by_id.assert_called_once_with("1")
         mock_user_db_class.assert_called_once_with("/test/db.sqlite")
 
         # Ensure the connection is closed
@@ -59,12 +59,12 @@ def test_get_db_not_found():
     Test the get_db dependency for a database that is not found.
     """
     mock_sys_db = MagicMock(spec=SystemDatabase)
-    mock_sys_db.get_user_database_by_name.side_effect = UserDatabaseNotFoundError
+    mock_sys_db.get_user_database_by_id.side_effect = UserDatabaseNotFoundError
 
     with pytest.raises(HTTPException) as exc_info:
-        dep = get_db("non_existent_db", mock_sys_db)
+        dep = get_db("non_existent_db_id", mock_sys_db)
         next(dep)
 
     assert exc_info.value.status_code == 404
-    assert "Database 'non_existent_db' not found" in exc_info.value.detail
-    mock_sys_db.get_user_database_by_name.assert_called_once_with("non_existent_db")
+    assert "Database with id 'non_existent_db_id' not found" in exc_info.value.detail
+    mock_sys_db.get_user_database_by_id.assert_called_once_with("non_existent_db_id")

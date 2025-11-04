@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { showNotification } from "@mantine/notifications";
 import {
-  updateBlockContentDbDbNameBlocksContentPut,
+  updateBlockContentDbDbIdBlocksContentPut,
   type BlockUpdateContent,
 } from "../api-client";
 import log from "../utils/logger";
@@ -18,7 +18,7 @@ interface BlockProps {
 const Block = forwardRef<HTMLDivElement, BlockProps>(({ id, content, onNewBlock, onDeleteBlock, isDeletable }, ref) => {
   const [blockContent, setBlockContent] = useState(content);
   const editableDivRef = useRef<HTMLDivElement>(null);
-  const { dbName } = useDatabase();
+  const { dbId } = useDatabase();
 
   useImperativeHandle(ref, () => editableDivRef.current as HTMLDivElement);
 
@@ -28,8 +28,8 @@ const Block = forwardRef<HTMLDivElement, BlockProps>(({ id, content, onNewBlock,
   }, [id, content]);
 
   const handleContentBlur = async (event: React.FocusEvent<HTMLDivElement>) => {
-    if (!dbName) {
-      log.error("[Block] No database name available");
+    if (!dbId) {
+      log.error("[Block] No database ID available");
       return;
     }
     
@@ -40,8 +40,8 @@ const Block = forwardRef<HTMLDivElement, BlockProps>(({ id, content, onNewBlock,
       block_id: id,
       new_content: newContent,
     };
-    const { error } = await updateBlockContentDbDbNameBlocksContentPut({ 
-      path: { db_name: dbName }, 
+    const { error } = await updateBlockContentDbDbIdBlocksContentPut({ 
+      path: { db_id: dbId }, 
       body: updatedBlock 
     });
     if (error) {

@@ -21,7 +21,7 @@ router = APIRouter()
                 "application/json": {
                     "example": [
                         {
-                            "id": 1,
+                            "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
                             "name": "my_database",
                             "path": "/path/to/database.db",
                             "created_at": "2023-01-01T00:00:00",
@@ -68,7 +68,7 @@ def create_database(
 
 
 @router.get(
-    "/databases/{db_name}",
+    "/databases/{db_id}",
     response_model=dict,
     responses={
         200: {
@@ -76,7 +76,7 @@ def create_database(
             "content": {
                 "application/json": {
                     "example": {
-                        "id": 1,
+                        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
                         "name": "my_database",
                         "path": "/path/to/database.db",
                         "created_at": "2023-01-01T00:00:00",
@@ -92,16 +92,16 @@ def create_database(
         },
     },
 )
-def get_database(db_name: str, sys_db: SystemDatabase = Depends(get_sys_db)):
+def get_database(db_id: str, sys_db: SystemDatabase = Depends(get_sys_db)):
     try:
-        db = sys_db.get_user_database_by_name(db_name)
+        db = sys_db.get_user_database_by_id(db_id)
         return db
     except UserDatabaseNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.delete(
-    "/databases/{db_name}",
+    "/databases/{db_id}",
     responses={
         200: {
             "description": "Database deleted successfully",
@@ -115,9 +115,9 @@ def get_database(db_name: str, sys_db: SystemDatabase = Depends(get_sys_db)):
         },
     },
 )
-def delete_database(db_name: str, sys_db: SystemDatabase = Depends(get_sys_db)):
+def delete_database(db_id: str, sys_db: SystemDatabase = Depends(get_sys_db)):
     try:
-        sys_db.delete_user_database(db_name)
+        sys_db.delete_user_database(db_id)
         return {"status": "success"}
     except UserDatabaseNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))

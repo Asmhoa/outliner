@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/db/{db_name}/blocks",
+    "/db/{db_id}/blocks",
     response_model=BlockModel,
     responses={
         200: {
@@ -38,7 +38,7 @@ router = APIRouter()
         },
     },
 )
-def add_block(db_name: str, block: BlockCreate, db: UserDatabase = Depends(get_db)):
+def add_block(db_id: str, block: BlockCreate, db: UserDatabase = Depends(get_db)):
     try:
         block_id = db.add_block(
             block.content, block.position, block.page_id, block.parent_block_id
@@ -59,7 +59,7 @@ def add_block(db_name: str, block: BlockCreate, db: UserDatabase = Depends(get_d
 
 
 @router.get(
-    "/db/{db_name}/block/{block_id}",
+    "/db/{db_id}/block/{block_id}",
     response_model=BlockModel,
     responses={
         200: {
@@ -83,7 +83,7 @@ def add_block(db_name: str, block: BlockCreate, db: UserDatabase = Depends(get_d
         },
     },
 )
-def get_block(db_name: str, block_id: str, db: UserDatabase = Depends(get_db)):
+def get_block(db_id: str, block_id: str, db: UserDatabase = Depends(get_db)):
     try:
         block_data = db.get_block_content_by_id(block_id)
         return BlockModel(
@@ -99,7 +99,7 @@ def get_block(db_name: str, block_id: str, db: UserDatabase = Depends(get_db)):
 
 
 @router.get(
-    "/db/{db_name}/blocks/{page_id}",
+    "/db/{db_id}/blocks/{page_id}",
     response_model=list[BlockModel],
     responses={
         200: {
@@ -125,7 +125,7 @@ def get_block(db_name: str, block_id: str, db: UserDatabase = Depends(get_db)):
         },
     },
 )
-def get_blocks(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
+def get_blocks(db_id: str, page_id: str, db: UserDatabase = Depends(get_db)):
     blocks_data = db.get_blocks_by_page(page_id)
     return [
         BlockModel(
@@ -141,7 +141,7 @@ def get_blocks(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
 
 
 @router.put(
-    "/db/{db_name}/blocks/content",
+    "/db/{db_id}/blocks/content",
     responses={
         200: {
             "description": "Block content updated successfully",
@@ -154,7 +154,7 @@ def get_blocks(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
     },
 )
 def update_block_content(
-    db_name: str, block: BlockUpdateContent, db: UserDatabase = Depends(get_db)
+    db_id: str, block: BlockUpdateContent, db: UserDatabase = Depends(get_db)
 ):
     try:
         db.update_block_content(block.block_id, block.new_content)
@@ -164,7 +164,7 @@ def update_block_content(
 
 
 @router.put(
-    "/db/{db_name}/blocks/parent",
+    "/db/{db_id}/blocks/parent",
     responses={
         200: {
             "description": "Block parent updated successfully",
@@ -185,7 +185,7 @@ def update_block_content(
     },
 )
 def update_block_parent(
-    db_name: str, block: BlockUpdateParent, db: UserDatabase = Depends(get_db)
+    db_id: str, block: BlockUpdateParent, db: UserDatabase = Depends(get_db)
 ):
     try:
         db.update_block_parent(
@@ -199,7 +199,7 @@ def update_block_parent(
 
 
 @router.delete(
-    "/db/{db_name}/blocks/{block_id}",
+    "/db/{db_id}/blocks/{block_id}",
     responses={
         200: {
             "description": "Block deleted successfully",
@@ -211,7 +211,7 @@ def update_block_parent(
         },
     },
 )
-def delete_block(db_name: str, block_id: str, db: UserDatabase = Depends(get_db)):
+def delete_block(db_id: str, block_id: str, db: UserDatabase = Depends(get_db)):
     try:
         db.delete_block(block_id)
         return {"status": "success"}

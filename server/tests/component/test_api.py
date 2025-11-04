@@ -10,7 +10,7 @@ import os
 TEST_DB_DIR = os.path.join(os.path.dirname(__file__), "test_data")
 TEST_USER_DB_PATH = os.path.join(TEST_DB_DIR, "test.db")
 TEST_SYS_DB_PATH = os.path.join(TEST_DB_DIR, "test_sys.db")
-TEST_DB_NAME = "test_db"
+TEST_DB_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -32,21 +32,29 @@ def sys_db(setup_test_data_dir):
     del os.environ["OUTLINER_SYS_DB_PATH"]
 
 
+# Global variable to store the generated test database ID
+test_database_id = None
+
 @pytest.fixture(scope="module")
 def test_db(sys_db):
-    sys_db.add_user_database(TEST_DB_NAME)
+    global test_database_id
+    # Add the database and capture its generated ID
+    sys_db.add_user_database("test_db")  # Add with name "test_db"
+    db_info = sys_db.get_user_database_by_name("test_db")
+    test_database_id = db_info.id  # Store the generated UUID
+    
     db = UserDatabase(TEST_USER_DB_PATH)
     db.initialize_tables()
     yield db
     db.close_conn()
-    sys_db.delete_user_database(TEST_DB_NAME)
+    sys_db.delete_user_database(test_database_id)
     os.remove(TEST_USER_DB_PATH)
 
 
 @pytest.fixture(scope="module")
 def client(test_db):
-    def override_get_db(db_name: str):
-        if db_name == TEST_DB_NAME:
+    def override_get_db(db_id: str):
+        if db_id == test_database_id:
             try:
                 yield test_db
             finally:
@@ -60,7 +68,7 @@ def client(test_db):
 def test_add_and_get_workspace(client):
     # Add a workspace
     response = client.post(
-        f"/db/{TEST_DB_NAME}/workspaces",
+        f"/db/{test_database_id}/workspaces",
         json={"name": "Test Workspace", "color": "#FF5733"},
     )
     assert response.status_code == 200
@@ -71,7 +79,7 @@ def test_add_and_get_workspace(client):
 
     # Get the workspace back
     workspace_id = new_workspace["workspace_id"]
-    response = client.get(f"/db/{TEST_DB_NAME}/workspaces/{workspace_id}")
+    response = client.get(f"/db/{test_database_id}/workspaces/{workspace_id}")
     assert response.status_code == 200
     workspace = response.json()
     assert workspace["name"] == "Test Workspace"
@@ -86,16 +94,16 @@ def test_get_all_workspaces(client, test_db):
 
     # Add a couple of workspaces
     client.post(
-        f"/db/{TEST_DB_NAME}/workspaces",
+        f"/db/{test_database_id}/workspaces",
         json={"name": "Workspace 1", "color": "#111111"},
     )
     client.post(
-        f"/db/{TEST_DB_NAME}/workspaces",
+        f"/db/{test_database_id}/workspaces",
         json={"name": "Workspace 2", "color": "#222222"},
     )
 
     # Get all workspaces
-    response = client.get(f"/db/{TEST_DB_NAME}/workspaces")
+    response = client.get(f"/db/{test_database_id}/workspaces")
     assert response.status_code == 200
     workspaces = response.json()
     assert len(workspaces) >= 2  # >= because of default workspace

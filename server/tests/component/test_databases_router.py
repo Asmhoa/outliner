@@ -30,8 +30,8 @@ def test_get_databases_empty(client, mock_sys_db):
 def test_get_databases_with_data(client, mock_sys_db):
     """Test that GET /databases returns a list of databases."""
     mock_sys_db.get_all_user_databases.return_value = [
-        {"id": 1, "name": "db1", "path": "/db1.sqlite", "created_at": "2023-01-01T00:00:00"},
-        {"id": 2, "name": "db2", "path": "/db2.sqlite", "created_at": "2023-01-01T00:00:00"},
+        {"id": "uuid1", "name": "db1", "path": "/db1.sqlite", "created_at": "2023-01-01T00:00:00"},
+        {"id": "uuid2", "name": "db2", "path": "/db2.sqlite", "created_at": "2023-01-01T00:00:00"},
     ]
     response = client.get("/databases")
     assert response.status_code == 200
@@ -55,11 +55,11 @@ def test_create_database_already_exists(client, mock_sys_db):
 
 
 def test_get_database(client, mock_sys_db):
-    """Test that a database can be retrieved by name."""
-    mock_sys_db.get_user_database_by_name.return_value = {
-        "id": 1, "name": "test_db", "path": "/test.sqlite", "created_at": "2023-01-01T00:00:00"
+    """Test that a database can be retrieved by ID."""
+    mock_sys_db.get_user_database_by_id.return_value = {
+        "id": "uuid1", "name": "test_db", "path": "/test.sqlite", "created_at": "2023-01-01T00:00:00"
     }
-    response = client.get("/databases/test_db")
+    response = client.get("/databases/uuid1")
     assert response.status_code == 200
     assert response.json()["name"] == "test_db"
 
@@ -67,22 +67,22 @@ def test_get_database(client, mock_sys_db):
 def test_get_database_not_found(client, mock_sys_db):
     """Test that getting a database that doesn't exist returns a 404 error."""
     from outliner_api_server.db.errors import UserDatabaseNotFoundError
-    mock_sys_db.get_user_database_by_name.side_effect = UserDatabaseNotFoundError
-    response = client.get("/databases/non_existent_db")
+    mock_sys_db.get_user_database_by_id.side_effect = UserDatabaseNotFoundError("Database with id 'non_existent_id' not found.")
+    response = client.get("/databases/non_existent_id")
     assert response.status_code == 404
 
 
 def test_delete_database(client, mock_sys_db):
     """Test that a database can be deleted successfully."""
-    response = client.delete("/databases/test_db")
+    response = client.delete("/databases/uuid1")
     assert response.status_code == 200
     assert response.json() == {"status": "success"}
-    mock_sys_db.delete_user_database.assert_called_once_with("test_db")
+    mock_sys_db.delete_user_database.assert_called_once_with("uuid1")
 
 
 def test_delete_database_not_found(client, mock_sys_db):
     """Test that deleting a database that doesn't exist returns a 404 error."""
     from outliner_api_server.db.errors import UserDatabaseNotFoundError
-    mock_sys_db.delete_user_database.side_effect = UserDatabaseNotFoundError
-    response = client.delete("/databases/non_existent_db")
+    mock_sys_db.delete_user_database.side_effect = UserDatabaseNotFoundError("Database with id 'non_existent_id' not found.")
+    response = client.delete("/databases/non_existent_id")
     assert response.status_code == 404

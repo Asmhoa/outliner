@@ -111,6 +111,29 @@ class SystemDatabase(BaseDatabase):
             return UserDatabaseModel(**row)
         raise UserDatabaseNotFoundError(f"Database '{name}' not found.")
 
+    def get_user_database_by_id(self, db_id: str) -> UserDatabaseModel:
+        """
+        Get a UserDatabase by id.
+
+        Args:
+            db_id: The id of the user database
+
+        Returns:
+            Dictionary with 'id', 'name', 'path', 'created_at' if found
+
+        Raises:
+            UserDatabaseNotFoundError: If the database is not found.
+        """
+        with self.single_use_cursor() as cursor:
+            cursor.execute(
+                "SELECT id, name, path, created_at FROM user_databases WHERE id = ?",
+                (db_id,),
+            )
+            row = cursor.fetchone()
+        if row:
+            return UserDatabaseModel(**row)
+        raise UserDatabaseNotFoundError(f"Database with id '{db_id}' not found.")
+
     def get_user_database_by_path(self, path: str) -> UserDatabaseModel:
         """
         Get a UserDatabase by path.
@@ -147,13 +170,13 @@ class SystemDatabase(BaseDatabase):
         return [UserDatabaseModel(**row) for row in rows]
 
     def update_user_database(
-        self, name: str, new_path: str = None, new_name: str = None
+        self, db_id: str, new_path: str = None, new_name: str = None
     ) -> None:
         """
         Update a UserDatabase.
 
         Args:
-            name: The current name of the user database
+            db_id: The current id of the user database
             new_path: The new path (optional)
             new_name: The new name (optional)
 
@@ -167,9 +190,9 @@ class SystemDatabase(BaseDatabase):
         if new_name is not None:
             try:
                 existing = self.get_user_database_by_name(new_name)
-                if existing.name != name:
+                if existing.id != db_id:
                     raise UserDatabaseAlreadyExistsError(
-                        f"Cannot update database '{name}' to '{new_name}': name already exists"
+                        f"Cannot update database with id '{db_id}' to '{new_name}': name already exists"
                     )
             except UserDatabaseNotFoundError:
                 pass  # New name doesn't exist, which is good
@@ -188,41 +211,41 @@ class SystemDatabase(BaseDatabase):
         if not update_fields:
             return
 
-        params.append(name)
+        params.append(db_id)
 
         try:
             rows_affected = 0
             with self.single_use_cursor() as cursor:
                 cursor.execute(
-                    f"UPDATE user_databases SET {', '.join(update_fields)} WHERE name = ?",
+                    f"UPDATE user_databases SET {', '.join(update_fields)} WHERE id = ?",
                     params,
                 )
                 rows_affected = cursor.rowcount
             self.conn.commit()
             if rows_affected == 0:
-                raise UserDatabaseNotFoundError(f"User database '{name}' not found.")
-            logger.debug(f"User database '{name}' updated.")
+                raise UserDatabaseNotFoundError(f"User database with id '{db_id}' not found.")
+            logger.debug(f"User database with id '{db_id}' updated.")
         except IntegrityError as e:
-            logger.error(f"Failed to update user database '{name}': {str(e)}")
+            logger.error(f"Failed to update user database with id '{db_id}': {str(e)}")
             raise UserDatabaseAlreadyExistsError(
-                f"Database '{new_name or name}' already exists."
+                f"Database '{new_name}' already exists."
             )
 
-    def delete_user_database(self, name: str) -> None:
+    def delete_user_database(self, db_id: str) -> None:
         """
         Delete a UserDatabase.
 
         Args:
-            name: The name of the user database to delete
+            db_id: The id of the user database to delete
 
         Raises:
             UserDatabaseNotFoundError: If the database to delete is not found.
         """
         rows_affected = 0
         with self.single_use_cursor() as cursor:
-            cursor.execute("DELETE FROM user_databases WHERE name = ?", (name,))
+            cursor.execute("DELETE FROM user_databases WHERE id = ?", (db_id,))
             rows_affected = cursor.rowcount
         self.conn.commit()
         if rows_affected == 0:
-            raise UserDatabaseNotFoundError(f"User database '{name}' not found.")
-        logger.debug(f"User database '{name}' deleted successfully.")
+            raise UserDatabaseNotFoundError(f"User database with id '{db_id}' not found.")
+        logger.debug(f"User database with id '{db_id}' deleted successfully.")

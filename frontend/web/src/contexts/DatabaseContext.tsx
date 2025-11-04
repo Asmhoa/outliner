@@ -2,25 +2,25 @@ import { createContext, useState, ReactNode, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
 export const DatabaseContext = createContext<{
-  dbName: string | null;
-  setDbName: (dbName: string) => void;
+  dbId: string | null;
+  setDbId: (dbId: string) => void;
 }>({
-  dbName: null,
-  setDbName: () => {},
+  dbId: null,
+  setDbId: () => {},
 });
 
 export const DatabaseProvider = ({ children }: { children: ReactNode }) => {
-  const { dbName: dbNameParam } = useParams<{ dbName: string }>();
-  const [dbName, setDbName] = useState<string | null>(null);
+  const { dbId: dbIdParam } = useParams<{ dbId: string }>();
+  const [dbId, setDbId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (dbNameParam && dbNameParam !== dbName) {
-      setDbName(dbNameParam);
+    if (dbIdParam && dbIdParam !== dbId) {
+      setDbId(dbIdParam);
     }
-  }, [dbNameParam, dbName]);
+  }, [dbIdParam, dbId]);
 
   return (
-    <DatabaseContext.Provider value={{ dbName, setDbName }}>
+    <DatabaseContext.Provider value={{ dbId, setDbId }}>
       {children}
     </DatabaseContext.Provider>
   );

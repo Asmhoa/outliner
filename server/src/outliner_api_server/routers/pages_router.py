@@ -10,7 +10,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/db/{db_name}/pages",
+    "/db/{db_id}/pages",
     responses={
         200: {
             "description": "Page created successfully",
@@ -26,7 +26,7 @@ router = APIRouter()
         },
     },
 )
-def add_page(db_name: str, page: PageCreate, db: UserDatabase = Depends(get_db)):
+def add_page(db_id: str, page: PageCreate, db: UserDatabase = Depends(get_db)):
     try:
         page_id = db.add_page(page.title)
         return {"page_id": page_id}
@@ -35,7 +35,7 @@ def add_page(db_name: str, page: PageCreate, db: UserDatabase = Depends(get_db))
 
 
 @router.get(
-    "/db/{db_name}/pages/{page_id}",
+    "/db/{db_id}/pages/{page_id}",
     response_model=PageModel,
     responses={
         200: {
@@ -56,7 +56,7 @@ def add_page(db_name: str, page: PageCreate, db: UserDatabase = Depends(get_db))
         },
     },
 )
-def get_page(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
+def get_page(db_id: str, page_id: str, db: UserDatabase = Depends(get_db)):
     try:
         page_data = db.get_page_by_id(page_id)
         return PageModel(
@@ -69,7 +69,7 @@ def get_page(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
 
 
 @router.get(
-    "/db/{db_name}/pages",
+    "/db/{db_id}/pages",
     response_model=list[PageModel],
     responses={
         200: {
@@ -88,7 +88,7 @@ def get_page(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
         }
     },
 )
-def get_pages(db_name: str, db: UserDatabase = Depends(get_db)):
+def get_pages(db_id: str, db: UserDatabase = Depends(get_db)):
     pages_data = db.get_pages()
     return [
         PageModel(page_id=p.page_id, title=p.title, created_at=p.created_at)
@@ -97,7 +97,7 @@ def get_pages(db_name: str, db: UserDatabase = Depends(get_db)):
 
 
 @router.put(
-    "/db/{db_name}/pages",
+    "/db/{db_id}/pages",
     responses={
         200: {
             "description": "Page renamed successfully",
@@ -117,7 +117,7 @@ def get_pages(db_name: str, db: UserDatabase = Depends(get_db)):
         },
     },
 )
-def rename_page(db_name: str, page: PageRename, db: UserDatabase = Depends(get_db)):
+def rename_page(db_id: str, page: PageRename, db: UserDatabase = Depends(get_db)):
     try:
         db.rename_page(page.page_id, page.new_title)
         return {"status": "success"}
@@ -128,7 +128,7 @@ def rename_page(db_name: str, page: PageRename, db: UserDatabase = Depends(get_d
 
 
 @router.delete(
-    "/db/{db_name}/pages/{page_id}",
+    "/db/{db_id}/pages/{page_id}",
     responses={
         200: {
             "description": "Page deleted successfully",
@@ -140,7 +140,7 @@ def rename_page(db_name: str, page: PageRename, db: UserDatabase = Depends(get_d
         },
     },
 )
-def delete_page(db_name: str, page_id: str, db: UserDatabase = Depends(get_db)):
+def delete_page(db_id: str, page_id: str, db: UserDatabase = Depends(get_db)):
     try:
         db.delete_page(page_id)
         return {"status": "success"}

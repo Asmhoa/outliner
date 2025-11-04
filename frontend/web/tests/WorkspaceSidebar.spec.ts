@@ -1,12 +1,12 @@
-import { test as base, expect, Locator } from '@playwright/test';
+import { test as base, expect, Locator } from './test-fixtures';
 
 const test = base.extend<{
   workspaceWithLongName: { name: string; locator: Locator };
 }>({
-  workspaceWithLongName: async ({ page }, use) => {
+  workspaceWithLongName: async ({ page, dbId }, use) => {
     // Set up
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('/db/playwright_test_db');
+    await page.goto(`/db/${dbId}`);
     const uniqueId = `WS${Date.now().toString().slice(-5)}`;
     const longWorkspaceName = `${uniqueId} This is a very long workspace name that should overflow`;
     await page.getByTestId('add-workspace-button').click();
@@ -29,9 +29,9 @@ const test = base.extend<{
 });
 
 test.describe('Workspace Sidebar', () => {
-  test('should be hidden when left sidebar is collapsed', async ({ page }) => {
+  test('should be hidden when left sidebar is collapsed', async ({ page, dbId }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('/db/playwright_test_db');
+    await page.goto(`/db/${dbId}`);
 
     const leftSidebarToggle = page.getByTestId('left-sidebar-toggle');
     const workspaceSidebar = page.getByTestId('workspace-sidebar');
@@ -45,9 +45,10 @@ test.describe('Workspace Sidebar', () => {
 
   test('should have at least one workspace tab visible on load', async ({
     page,
+    dbId,
   }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('/db/playwright_test_db');
+    await page.goto(`/db/${dbId}`);
 
     const workspaceTabs = page.getByRole('tab');
     await expect(workspaceTabs.first()).toBeVisible();
@@ -55,9 +56,10 @@ test.describe('Workspace Sidebar', () => {
 
   test('should add, edit, and delete a workspace', async ({
     page,
+    dbId,
   }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('/db/playwright_test_db');
+    await page.goto(`/db/${dbId}`);
 
     const workspaceName = `WS${Date.now().toString().slice(-5)}`;
     let updatedWorkspaceName = ' ';
