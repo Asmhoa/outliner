@@ -6,7 +6,11 @@
 # Function to read constants from outliner_api_server.constants
 # Hacky, but bypasses installing the package
 define get_constant
-$(shell python3 -c 'import server.src.outliner_api_server.constants as c; print(c.$1)')
+$(shell uv run python -c 'import server.src.outliner_api_server.constants as c; print(c.$1)')
+endef
+
+define get_is_testing
+$(shell uv run python -c 'from server.src.outliner_api_server.utils import is_test_env; print(int(is_test_env()))')
 endef
 
 SERVER_PORT := $(call get_constant,SERVER_PORT)
@@ -14,6 +18,9 @@ TESTING_PORT := $(call get_constant,TESTING_PORT)
 TESTING_SYSTEM_DB_NAME := $(call get_constant,TESTING_SYSTEM_DB_NAME)
 SERVER_DIR := server
 WEB_FRONTEND_DIR := frontend/web
+
+# 0 or 1
+IS_TEST_ENV := $(call get_is_testing)
 
 # Help target
 .PHONY: help
@@ -44,23 +51,25 @@ run-frontend:
 	@echo "Starting backend API server..."
 	@cd $(WEB_FRONTEND_DIR) && npm run dev
 
+ifeq ($(IS_TEST_ENV),1)
+API_GEN_PORT := $(TESTING_PORT)
+else
+API_GEN_PORT := $(SERVER_PORT)
+endif
 .PHONY: gen-api
 gen-api: ## Regenerate the OpenAPI typespec used by the frontend
-	@if ! curl --output /dev/null --silent --head --fail http://localhost:$(SERVER_PORT)/docs; then \
-		echo "Backend server not detected. Starting backend server..."; \
-		cd $(SERVER_DIR) && uv run src/outliner_api_server/__main__.py & \
-		sleep 3; \
-		{ cd $(WEB_FRONTEND_DIR) && npm run generate-api-client; } && \
-		SERVER_PID=$$(lsof -ti:$(SERVER_PORT)); \
-		if [ -n "$$SERVER_PID" ]; then \
-			echo "Stopping backend server with PID $$SERVER_PID..."; \
-			kill $$SERVER_PID 2>/dev/null || true; \
-		fi; \
+
+	@if ! curl --output /dev/null --silent --head --fail http://localhost:$(API_GEN_PORT)/docs; then \
+		echo "\nBackend server not detected. Please start the backend server first."; \
+		echo "For testing, use OUTLINER_TEST_MODE=1 with both 'make run-backend' and 'make gen-api'\n"; \
+		exit 1; \
+	fi;
+
+	@if [ $$IS_TEST_ENV ]; then \
+		cd $(WEB_FRONTEND_DIR) && npm run generate-api-client-test-port-8001; \
 	else \
-		echo "Backend server running. Generating API client..."; \
 		cd $(WEB_FRONTEND_DIR) && npm run generate-api-client; \
 	fi
-	@sleep 1;
 
 # Format Python code
 .PHONY: format
@@ -89,18 +98,6 @@ format:
 # 		$(VENV_PATH)/bin/ruff check $(SERVER_DIR)/src $(SERVER_DIR)/tests; \
 # 	fi
 
-# Backup original API client
-.PHONY: .backup-api-client
-.backup-api-client:
-	@echo "Backing up original API client..."
-	@cd $(WEB_FRONTEND_DIR) && [ -d src/api-client ] && mv src/api-client src/api-client-original || echo "No API client to backup"
-
-# Restore original API client
-.PHONY: .restore-api-client
-.restore-api-client:
-	@echo "Restoring original API client..."
-	@cd $(WEB_FRONTEND_DIR) && [ -d src/api-client-original ] && rm -rf src/api-client && mv src/api-client-original src/api-client || echo "No backup to restore"
-
 .PHONY: pytests
 pytests:
 	@cd $(SERVER_DIR) && uv run pytest --cov
@@ -111,18 +108,15 @@ pytests:
 test:
 	@echo "Running pytests..."
 	@$(MAKE) pytests
-	@echo "Running playwright tests..."
-	@$(MAKE) .backup-api-client
-	@cd $(SERVER_DIR) && OUTLINER_TEST_MODE=1 uv run src/outliner_api_server/__main__.py &
-	@sleep 3
-	@cd $(WEB_FRONTEND_DIR) && npm run generate-test-api-client;
-	@cd $(WEB_FRONTEND_DIR) && npm run test
-	SERVER_PID=$$(lsof -ti:$$SERVER_PORT)
-	if [ -n "$$SERVER_PID" ]; then \
-		echo "Stopping backend server with PID $$SERVER_PID..."; \
-		kill $$SERVER_PID 2>/dev/null || true; \
+
+	@if ! curl --output /dev/null --silent --head --fail http://localhost:$(TESTING_PORT)/docs; then \
+		echo "\nFor playwright tests, first run OUTLINER_TEST_MODE=1 make clean && make run-backend"; \
+		echo "In another terminal, run OUTLINER_TEST_MODE=1 make gen-api && make test\n"; \
+		exit 1; \
 	fi;
-	@sleep 1;
+
+	@echo "Running playwright tests..."
+	@cd $(WEB_FRONTEND_DIR) && npm run test
 
 # Clean temporary files
 .PHONY: clean
