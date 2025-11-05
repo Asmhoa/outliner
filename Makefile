@@ -73,9 +73,9 @@ format:
 .PHONY: test
 test: ## Run tests
 	@echo "Running tests..."
-	@cd $(SERVER_DIR) && uv run pytest tests/
+	@cd $(SERVER_DIR) && uv run pytest --cov
 	@cd ../
-	@cd $(WEB_FRONTEND_DIR) && npx playwright test
+	@cd $(WEB_FRONTEND_DIR) && npm test
 
 # Clean temporary files
 .PHONY: clean
@@ -86,5 +86,4 @@ clean: ## Clean temporary files and cache
 	@find . -type f -name ".DS_Store" -delete
 	@rm -rf $(SERVER_DIR)/.pytest_cache
 	@rm -f $(SERVER_DIR)/server.log
-	@rm -f $(SERVER_DIR)/*.db
-	@rm -f $(SERVER_DIR)/src/**/*.db
+	@rm -f $(SERVER_DIR)/src/outliner_api_server/databases/*.db

@@ -8,6 +8,7 @@ import {
   Menu,
   Button,
   Text,
+  useMantineTheme,
 } from "@mantine/core";
 import {
   IconDatabase,
@@ -24,6 +25,9 @@ import WorkspaceSidebar from "./WorkspaceSidebar";
 import type { Page as PageType } from "../../api-client";
 import log from "../../utils/logger";
 import { useNavigate } from "react-router-dom";
+import { useDisclosure } from "@mantine/hooks";
+import { CreateDatabaseModal } from "../CreateDatabaseModal";
+import { useDatabase } from "../../hooks/useDatabase";
 
 interface Workspace {
   workspace_id: number;
@@ -41,6 +45,7 @@ interface LeftSidebarProps {
   activeWorkspaceId: number | null;
   setActiveWorkspaceId: (id: number) => void;
   databases: { value: string; label: string }[];
+  onDatabaseCreated: () => void;
 }
 
 const LeftSidebar = ({
@@ -53,15 +58,22 @@ const LeftSidebar = ({
   activeWorkspaceId,
   setActiveWorkspaceId,
   databases,
+  onDatabaseCreated,
 }: LeftSidebarProps) => {
   // const activeWorkspace = workspaces.find((ws) => ws.id === activeWorkspaceId);
   // const backgroundColor = activeWorkspace ? activeWorkspace.color : "white";
   //
   const navigate = useNavigate();
+  const { dbId } = useDatabase();
+  const theme = useMantineTheme();
+  const [
+    createDbModalOpened,
+    { open: openCreateDbModal, close: closeCreateDbModal },
+  ] = useDisclosure(false);
 
   return (
     // <AppShell.Navbar pt="sm" pb="sm" style={{ backgroundColor }}>
-    <AppShell.Navbar pt="sm" pb="sm" data-testid="left-sidebar">
+    <AppShell.Navbar data-testid="left-sidebar">
       <Group align="flex-start" gap={0}>
         {navbarVisibility === "visible" && (
           <WorkspaceSidebar
@@ -85,11 +97,35 @@ const LeftSidebar = ({
               </Menu.Target>
               <Menu.Dropdown>
                 {databases.map((db) => (
-                  <Menu.Item key={db.value}>{db.label}</Menu.Item>
+                  <Menu.Item
+                    key={db.value}
+                    onClick={() => navigate(`/db/${db.value}`)}
+                    bg={
+                      db.value === dbId ? theme.primaryColor : "transparent"
+                    }
+                    c={db.value === dbId ? "white" : theme.colors.dark[9]}
+                  >
+                    {db.label}
+                  </Menu.Item>
                 ))}
+                <Menu.Divider />
+                <Menu.Item
+                  leftSection={<IconPlus size={14} />}
+                  onClick={openCreateDbModal}
+                >
+                  Create New Database
+                </Menu.Item>
               </Menu.Dropdown>
             </Menu>
           </AppShell.Section>
+          <CreateDatabaseModal
+            opened={createDbModalOpened}
+            onClose={closeCreateDbModal}
+            onDatabaseCreated={() => {
+              onDatabaseCreated();
+              closeCreateDbModal();
+            }}
+          />
           <Divider />
           <AppShell.Section>
             <NavLink
@@ -175,7 +211,7 @@ const LeftSidebar = ({
                 key={page.page_id}
                 // active={page.page_id === currentPageId}
                 onClick={() => {
-                  navigate("/" + page.page_id);
+                  navigate("/db/" + dbId + "/pages/" + page.page_id);
                   // setCurrentPageId(page.page_id);
                 }}
               >

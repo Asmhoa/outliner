@@ -39,3 +39,11 @@ For development, make sure you have `uv` installed and run:
 ```bash
 make setup
 ```
+
+## Testing
+
+To run all tests for the server, use:
+
+```bash
+cd server && uv run pytest --cov=src/outliner_api_server
+```

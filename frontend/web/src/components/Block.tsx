@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { showNotification } from "@mantine/notifications";
 import {
-  updateBlockContentBlocksContentPut,
+  updateBlockContentDbDbIdBlocksContentPut,
   type BlockUpdateContent,
 } from "../api-client";
 import log from "../utils/logger";
+import { useDatabase } from "../hooks/useDatabase";
 
 interface BlockProps {
   id: string;
@@ -17,6 +18,7 @@ interface BlockProps {
 const Block = forwardRef<HTMLDivElement, BlockProps>(({ id, content, onNewBlock, onDeleteBlock, isDeletable }, ref) => {
   const [blockContent, setBlockContent] = useState(content);
   const editableDivRef = useRef<HTMLDivElement>(null);
+  const { dbId } = useDatabase();
 
   useImperativeHandle(ref, () => editableDivRef.current as HTMLDivElement);
 
@@ -26,6 +28,11 @@ const Block = forwardRef<HTMLDivElement, BlockProps>(({ id, content, onNewBlock,
   }, [id, content]);
 
   const handleContentBlur = async (event: React.FocusEvent<HTMLDivElement>) => {
+    if (!dbId) {
+      log.error("[Block] No database ID available");
+      return;
+    }
+    
     const newContent = event.currentTarget.textContent || "";
     setBlockContent(newContent);
     log.debug(`[Block] Updating content`, { block_id: id, new_content: newContent });
@@ -33,7 +40,10 @@ const Block = forwardRef<HTMLDivElement, BlockProps>(({ id, content, onNewBlock,
       block_id: id,
       new_content: newContent,
     };
-    const { error } = await updateBlockContentBlocksContentPut({ body: updatedBlock });
+    const { error } = await updateBlockContentDbDbIdBlocksContentPut({ 
+      path: { db_id: dbId }, 
+      body: updatedBlock 
+    });
     if (error) {
       log.error("[Block] Failed to update block content:", error);
       setBlockContent(content); // Revert on error

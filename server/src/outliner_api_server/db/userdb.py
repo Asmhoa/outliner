@@ -1,65 +1,49 @@
 import logging
-from sqlite3 import connect, Cursor, Connection
+from datetime import datetime
+
+from outliner_api_server.db.base_db import BaseDatabase
+from outliner_api_server.db.errors import (
+    BlockNotFoundError,
+    PageAlreadyExistsError,
+    PageNotFoundError,
+    WorkspaceNotFoundError,
+)
+from outliner_api_server.db.models import PageModel, BlockModel, WorkspaceModel
 
 logger = logging.getLogger(__name__)
 
 
-class PageAlreadyExistsError(Exception):
-    """Raised when trying to create a page with a title that already exists."""
-    pass
-
-
-class PageNotFoundError(Exception):
-    """Raised when a page is not found."""
-    pass
-
-
-class WorkspaceNotFoundError(Exception):
-    """Raised when a workspace is not found."""
-    pass
-
-
-class BlockNotFoundError(Exception):
-    """Raised when a block is not found."""
-    pass
-
-
-class Database:
-    def __init__(self, db_name: str) -> None:
-        self.db_name: str = db_name
-        # NOTE: in api.py, we use a separate Database() object for each request
+class UserDatabase(BaseDatabase):
+    def __init__(self, db_path: str) -> None:
+        # NOTE: in api.py, we use a separate UserDatabase() object for each request
         # So one conn is used by only 1 request, making it safe to not check same thread
-        # This is required since the api server thread that creates a Database object
+        # This is required since the api server thread that creates a UserDatabase object
         # is a different one from the one that executes a query.
         # TODO: add a pytest to ensure each api function has its own Depends()
-        self.conn: Connection = connect(self.db_name, check_same_thread=False)
-        self.cursor: Cursor = self.conn.cursor()
-        self.cursor.execute("PRAGMA foreign_keys = ON")
+        super().__init__(db_path, init_singleton_cursor=True)
+        # shared singleton cursor is fine since this entire object is recreated for each api call
 
         # Handle exits gracefully
         # atexit.register(self._close_conn)
         # signal.signal(signal.SIGINT, kill_handler)
         # signal.signal(signal.SIGTERM, kill_handler)
-        logger.debug(f"Database connection established to '{self.db_name}'.")
-
-    def close_conn(self) -> None:
-        self.conn.close()
-        logger.debug(f"Database connection to '{self.db_name}' closed.")
 
     def _create_table_workspaces(self) -> None:
         """
         Creates the 'workspaces' table in the specified sqlite3 database.
         """
-        self.cursor.execute("""
+        self.cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS workspaces (
                 workspace_id INTEGER PRIMARY KEY,
                 name VARCHAR(255),
                 color BLOB(3) NOT NULL
             );
-        """)
+        """
+        )
         self.conn.commit()
         logger.debug(
-            f"Table 'workspaces' created or already exists in '{self.db_name}'."
+            f"Table 'workspaces' created or already exists in '{self.db_path}'."
         )
         # Create default workspace if it doesn't exist
         self.cursor.execute("SELECT 1 FROM workspaces WHERE workspace_id = 0")
@@ -78,21 +62,24 @@ class Database:
         """
         Creates the 'pages' table in the specified sqlite3 database.
         """
-        self.cursor.execute("""
+        self.cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS pages (
                 page_id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
                 title VARCHAR(255) NOT NULL UNIQUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
-        """)
+        """
+        )
         self.conn.commit()
-        logger.debug(f"Table 'pages' created or already exists in '{self.db_name}'.")
+        logger.debug(f"Table 'pages' created or already exists in '{self.db_path}'.")
 
     def _create_table_blocks(self) -> None:
         """
         Creates the 'blocks' table in the specified sqlite3 database.
         """
-        self.cursor.execute("""
+        self.cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS blocks (
                 block_id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
                 content TEXT NOT NULL,
@@ -108,11 +95,12 @@ class Database:
                     (page_id IS NULL AND parent_block_id IS NOT NULL)
                 )
             );
-        """)
+        """
+        )
         self.conn.commit()
-        logger.debug(f"Table 'blocks' created or already exists in '{self.db_name}'.")
+        logger.debug(f"Table 'blocks' created or already exists in '{self.db_path}'.")
 
-    def create_new_database(self) -> None:
+    def initialize_tables(self) -> None:
         """
         Initializes the database by creating necessary tables.
         """
@@ -138,7 +126,7 @@ class Database:
         )
         return new_workspace_id
 
-    def get_workspace_by_id(self, workspace_id: int):
+    def get_workspace_by_id(self, workspace_id: int) -> WorkspaceModel:
         """
         Retrieves a workspace by its ID.
         """
@@ -148,20 +136,20 @@ class Database:
         )
         row = self.cursor.fetchone()
         if row:
-            return row[0], row[1], f"#{row[2].hex().upper()}"
-        return None
+            return WorkspaceModel(**row)
+        raise WorkspaceNotFoundError(f"Workspace with ID {workspace_id} not found")
 
-    def get_workspaces(self):
+    def get_workspaces(self) -> list[WorkspaceModel]:
         """
         Retrieves all workspaces from the database.
         """
         self.cursor.execute("SELECT workspace_id, name, color FROM workspaces")
         rows = self.cursor.fetchall()
-        return [(row[0], row[1], f"#{row[2].hex().upper()}") for row in rows]
+        return [WorkspaceModel(**row) for row in rows]
 
     def update_workspace(
         self, workspace_id: int, new_name: str, new_color: str
-    ):
+    ) -> None:
         """
         Updates an existing workspace.
         Raises WorkspaceNotFoundError if workspace is not found.
@@ -177,7 +165,7 @@ class Database:
             raise WorkspaceNotFoundError(f"Workspace with ID {workspace_id} not found")
         logger.debug(f"Workspace ID {workspace_id} updated.")
 
-    def delete_workspace(self, workspace_id: int):
+    def delete_workspace(self, workspace_id: int) -> None:
         """
         Deletes a workspace.
         Raises WorkspaceNotFoundError if workspace is not found.
@@ -204,29 +192,37 @@ class Database:
         if existing_page:
             raise PageAlreadyExistsError(f"Page with title '{title}' already exists")
 
-        self.cursor.execute(
+        # Create a temporary cursor without row_factory to handle RETURNING values
+        temp_cursor = self.conn.cursor()
+        temp_cursor.execute(
             "INSERT INTO pages (title) VALUES (?) RETURNING page_id", (title,)
         )
-        new_page_id = self.cursor.fetchone()[0]
+        new_page_id = temp_cursor.fetchone()[0]
         self.conn.commit()
         logger.debug(f"Page '{title}' added successfully with ID: {new_page_id}")
         return new_page_id
 
-    def get_page_by_id(self, page_id: str):
+    def get_page_by_id(self, page_id: str) -> PageModel:
         """
         Retrieves a page by its ID.
         """
-        self.cursor.execute("SELECT * FROM pages WHERE page_id = ?", (page_id,))
-        return self.cursor.fetchone()
+        self.cursor.execute(
+            "SELECT page_id, title, created_at FROM pages WHERE page_id = ?", (page_id,)
+        )
+        row = self.cursor.fetchone()
+        if row:
+            return PageModel(**row)
+        raise PageNotFoundError(f"Page with ID {page_id} not found")
 
-    def get_pages(self):
+    def get_pages(self) -> list[PageModel]:
         """
         Retrieves all pages from the database.
         """
-        self.cursor.execute("SELECT * FROM pages")
-        return self.cursor.fetchall()
+        self.cursor.execute("SELECT page_id, title, created_at FROM pages")
+        rows = self.cursor.fetchall()
+        return [PageModel(**row) for row in rows]
 
-    def rename_page(self, page_id: str, new_title: str):
+    def rename_page(self, page_id: str, new_title: str) -> None:
         """
         Renames an existing page.
         Raises PageNotFoundError if page is not found.
@@ -252,7 +248,7 @@ class Database:
             raise PageNotFoundError(f"Page with ID {page_id} not found")
         logger.debug(f"Page ID {page_id} renamed to '{new_title}'.")
 
-    def delete_page(self, page_id: str):
+    def delete_page(self, page_id: str) -> None:
         """
         Deletes a page and all its associated blocks.
         Raises PageNotFoundError if page is not found.
@@ -278,18 +274,20 @@ class Database:
         Returns the ID of the newly created block.
         """
         if page_id is not None and parent_block_id is None:
-            self.cursor.execute(
+            temp_cursor = self.conn.cursor()
+            temp_cursor.execute(
                 "INSERT INTO blocks (content, page_id, position) VALUES (?, ?, ?) RETURNING block_id",
                 (content, page_id, position),
             )
-            new_block_id = self.cursor.fetchone()[0]
+            new_block_id = temp_cursor.fetchone()[0]
             logger.debug(f"Block added to page ID {page_id}: '{content[:50]}...'")
         elif parent_block_id is not None and page_id is None:
-            self.cursor.execute(
+            temp_cursor = self.conn.cursor()
+            temp_cursor.execute(
                 "INSERT INTO blocks (content, parent_block_id, position) VALUES (?, ?, ?) RETURNING block_id",
                 (content, parent_block_id, position),
             )
-            new_block_id = self.cursor.fetchone()[0]
+            new_block_id = temp_cursor.fetchone()[0]
             logger.debug(
                 f"Block added under parent block ID {parent_block_id}: '{content[:50]}...'"
             )
@@ -297,7 +295,9 @@ class Database:
             logger.error(
                 "A block must be associated with either a page_id or a parent_block_id, but not both."
             )
-            return None  # Or raise an exception
+            raise ValueError(
+                "A block must be associated with either a page_id or a parent_block_id, but not both."
+            )
 
         self.conn.commit()
         logger.debug(
@@ -305,21 +305,31 @@ class Database:
         )
         return new_block_id
 
-    def get_blocks_by_page(self, page_id: str):
+    def get_blocks_by_page(self, page_id: str) -> list[BlockModel]:
         """
         Retrieves all blocks for a given page ID.
         """
-        self.cursor.execute("SELECT * FROM blocks WHERE page_id = ?", (page_id,))
-        return self.cursor.fetchall()
+        self.cursor.execute(
+            "SELECT block_id, content, page_id, parent_block_id, position, created_at FROM blocks WHERE page_id = ?",
+            (page_id,),
+        )
+        rows = self.cursor.fetchall()
+        return [BlockModel(**row) for row in rows]
 
-    def get_block_content_by_id(self, block_id: str):
+    def get_block_content_by_id(self, block_id: str) -> BlockModel:
         """
         Retrieves a block by its ID.
         """
-        self.cursor.execute("SELECT * FROM blocks WHERE block_id = ?", (block_id,))
-        return self.cursor.fetchone()
+        self.cursor.execute(
+            "SELECT block_id, content, page_id, parent_block_id, position, created_at FROM blocks WHERE block_id = ?",
+            (block_id,),
+        )
+        row = self.cursor.fetchone()
+        if row:
+            return BlockModel(**row)
+        raise BlockNotFoundError(f"Block with ID {block_id} not found")
 
-    def update_block_content(self, block_id: str, new_content: str):
+    def update_block_content(self, block_id: str, new_content: str) -> None:
         """
         Updates the content of an existing block.
         Raises BlockNotFoundError if block is not found.
@@ -335,7 +345,7 @@ class Database:
 
     def update_block_parent(
         self, block_id: str, new_page_id: str = None, new_parent_block_id: str = None
-    ):
+    ) -> None:
         """
         Updates the parent of an existing block. A block can either have a page_id or a parent_block_id, but not both.
         Raises BlockNotFoundError if block is not found.
@@ -369,7 +379,7 @@ class Database:
             logger.debug(f"Block ID {block_id} not found or no change in parent.")
             raise BlockNotFoundError(f"Block with ID {block_id} not found")
 
-    def delete_block(self, block_id: str):
+    def delete_block(self, block_id: str) -> None:
         """
         Deletes a block and all its nested child blocks.
         Raises BlockNotFoundError if block is not found.

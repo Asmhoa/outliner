@@ -10,7 +10,7 @@ const PageMenu: React.FC<PageMenuProps> = ({ onDelete, onRename }) => {
   return (
     <Menu shadow="md" width={200}>
       <Menu.Target>
-        <ActionIcon variant="subtle">
+        <ActionIcon variant="subtle" data-testid="page-menu-button">
           <IconDots />
         </ActionIcon>
       </Menu.Target>

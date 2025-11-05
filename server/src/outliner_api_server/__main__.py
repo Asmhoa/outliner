@@ -4,7 +4,7 @@ from outliner_api_server.api import app
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s",
     filename="server.log",
 )
