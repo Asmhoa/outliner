@@ -2,7 +2,6 @@ import pytest
 from outliner_api_server.db.sysdb import SystemDatabase
 from outliner_api_server.db.userdb import UserDatabase
 from outliner_api_server.db.errors import UserDatabaseAlreadyExistsError, UserDatabaseNotFoundError
-import os
 import tempfile
 
 @pytest.fixture

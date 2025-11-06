@@ -97,36 +97,31 @@ def get_pages(db_name: str, db: UserDatabase = Depends(get_db)):
 
 ### Running Playwright Tests
 
-The frontend includes Playwright tests for end-to-end testing. To run these tests, use the `npm test` command from the `frontend/web` directory.
+The frontend includes Playwright tests for end-to-end testing. To run these tests properly, you must follow the test mode requirements:
 
-```bash
-cd frontend/web
-npm test
-```
+1. **For running tests:**
+   - Terminal 1: `OUTLINER_TEST_MODE=1 make clean && make run-backend`
+   - Terminal 2: `OUTLINER_TEST_MODE=1 make gen-api && make test`
 
-The `npm test` command handles the setup and teardown of the test database. To pass arguments to Playwright, you can edit the `test` script in `package.json`.
+2. **For re-running tests:**
+   - You must repeat step 1, starting with: `OUTLINER_TEST_MODE=1 make clean && make run-backend` before running `make test` again.
 
-For example, to run tests in headed mode, you could change the `test` script to:
-`"test": "npm run test:setup && npx playwright test --headed && npm run test:cleanup"`
+3. **After testing is complete, restore the original API client:**
+   - Terminal 1: `OUTLINER_TEST_MODE=0 make clean && make run-backend`
+   - Terminal 2: `OUTLINER_TEST_MODE=0 make gen-api`
 
-Alternatively, you can run the setup, test, and cleanup scripts separately:
-```bash
-npm run test:setup
-npx playwright test
-npm run test:cleanup
-```
+To run the tests, use the `make test` command after following the setup above.
+
+The Playwright configuration is set up to:
+- Run tests in parallel
+- Use http://localhost:5173 as the base URL
+- Generate an HTML reporter
+- Retry failed tests on CI environments
 
 To view the HTML test report after running tests:
 ```bash
 npx playwright show-report
 ```
-
-The Playwright configuration is set up to:
-- Run tests in parallel
-- Use http://localhost:5173 as the base URL
-- Automatically start the dev server with `npm run dev` before running tests
-- Generate an HTML reporter
-- Retry failed tests on CI environments
 
 ### Frontend Component Structure
 

@@ -1,7 +1,6 @@
 from datetime import datetime
-from typing import Union, Dict, Any
+from typing import Any
 from pydantic import BaseModel, model_validator
-from typing_extensions import Self
 
 
 class UserDatabaseModel(BaseModel):

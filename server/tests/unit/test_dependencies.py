@@ -4,7 +4,6 @@ from datetime import datetime
 from fastapi import HTTPException
 from outliner_api_server.routers.dependencies import get_sys_db, get_db
 from outliner_api_server.db.sysdb import SystemDatabase
-from outliner_api_server.db.userdb import UserDatabase
 from outliner_api_server.db.errors import UserDatabaseNotFoundError
 from outliner_api_server.db.models import UserDatabaseModel
 

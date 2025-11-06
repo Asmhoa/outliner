@@ -2,12 +2,14 @@ import os
 import logging
 from sqlite3 import IntegrityError
 
+from outliner_api_server.constants import SYSTEM_DB_NAME, TESTING_SYSTEM_DB_NAME
 from outliner_api_server.db.base_db import BaseDatabase
 from outliner_api_server.db.errors import (
     UserDatabaseAlreadyExistsError,
     UserDatabaseNotFoundError,
 )
 from outliner_api_server.db.models import UserDatabaseModel
+from outliner_api_server.utils import is_test_env
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,8 @@ class SystemDatabase(BaseDatabase):
 
         The path to the system database file is determined in the following order:
         1. OUTLINER_SYS_DB_PATH environment variable
-        2. A 'system.db' file in the same directory as this module.
+        2. If OUTLINER_TEST_MODE is true, use a test database path
+        3. A 'system.db' file in the same directory as this module.
         """
         current_dir = os.path.dirname(os.path.realpath(__file__))
         parent_dir = os.path.dirname(current_dir)
@@ -34,7 +37,11 @@ class SystemDatabase(BaseDatabase):
 
         db_path = os.environ.get("OUTLINER_SYS_DB_PATH")
         if db_path is None:
-            db_path = os.path.join(self.databases_dir, "system.db")
+            # Check if running in test mode to use different system.db path
+            if is_test_env():
+                db_path = os.path.join(self.databases_dir, TESTING_SYSTEM_DB_NAME)
+            else:
+                db_path = os.path.join(self.databases_dir, SYSTEM_DB_NAME)
 
         os.makedirs(self.databases_dir, exist_ok=True)
 
@@ -223,7 +230,9 @@ class SystemDatabase(BaseDatabase):
                 rows_affected = cursor.rowcount
             self.conn.commit()
             if rows_affected == 0:
-                raise UserDatabaseNotFoundError(f"User database with id '{db_id}' not found.")
+                raise UserDatabaseNotFoundError(
+                    f"User database with id '{db_id}' not found."
+                )
             logger.debug(f"User database with id '{db_id}' updated.")
         except IntegrityError as e:
             logger.error(f"Failed to update user database with id '{db_id}': {str(e)}")
@@ -247,5 +256,7 @@ class SystemDatabase(BaseDatabase):
             rows_affected = cursor.rowcount
         self.conn.commit()
         if rows_affected == 0:
-            raise UserDatabaseNotFoundError(f"User database with id '{db_id}' not found.")
+            raise UserDatabaseNotFoundError(
+                f"User database with id '{db_id}' not found."
+            )
         logger.debug(f"User database with id '{db_id}' deleted successfully.")
