@@ -5,13 +5,19 @@
 __pycache__/
 env/
 venv/
-.python_version
+.python-version
+.Coverage
 
 # MacOS
 .DS_Store
 
 # Vim swap files
 */*.swp
+
+# AI Agents
+.qwen/
+.claude/
+.gemini/
 
 # Logs
 logs

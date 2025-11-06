@@ -58,10 +58,8 @@ clean:
 	@find . -type d -name "__pycache__" -delete
 	@find . -type f -name ".DS_Store" -delete
 	@rm -rf $(SERVER_DIR)/.pytest_cache
-	@rm -f $(SERVER_DIR)/server.log
 	@rm -f $(SERVER_DIR)/src/outliner_api_server/databases/playwright_test_db.db
 	@rm -f $(SERVER_DIR)/src/outliner_api_server/databases/$(TESTING_SYSTEM_DB_NAME)
-
 
 
 # Testing specific targets
