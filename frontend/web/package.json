@@ -9,10 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "generate-api-client": "openapi-ts -i http://127.0.0.1:8000/openapi.json -o src/api-client",
-    "generate-api-client-test-port-8001": "openapi-ts -i http://127.0.0.1:8001/openapi.json -o src/api-client",
+    "generate-api-client-test-port": "openapi-ts -i http://127.0.0.1:8001/openapi.json -o src/api-client",
     "test:comment": "To isolate db changes, tests are run on a different server on port 8001. Use make test from root to run.",
     "test:setup": "curl -X POST http://127.0.0.1:8001/databases -H \"Content-Type: application/json\" -d '{\"name\": \"playwright_test_db\"}'",
-    "test": "npm run test:setup && npx playwright test --reporter=list"
+    "test": "npm run test:setup && npx playwright test --workers 1 --reporter=list --project='chromium'"
   },
   "dependencies": {
     "@mantine/core": "^8.3.4",

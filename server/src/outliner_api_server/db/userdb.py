@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 
 from outliner_api_server.db.base_db import BaseDatabase
 from outliner_api_server.db.errors import (

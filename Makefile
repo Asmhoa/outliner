@@ -9,20 +9,13 @@ define get_constant
 $(shell uv run python -c 'import server.src.outliner_api_server.constants as c; print(c.$1)')
 endef
 
-define get_is_testing
-$(shell uv run python -c 'from server.src.outliner_api_server.utils import is_test_env; print(int(is_test_env()))')
-endef
-
 SERVER_PORT := $(call get_constant,SERVER_PORT)
-TESTING_PORT := $(call get_constant,TESTING_PORT)
+TESTING_SERVER_PORT := $(call get_constant,TESTING_PORT)
 TESTING_SYSTEM_DB_NAME := $(call get_constant,TESTING_SYSTEM_DB_NAME)
 SERVER_DIR := server
 WEB_FRONTEND_DIR := frontend/web
 
-# 0 or 1
-IS_TEST_ENV := $(call get_is_testing)
 
-# Help target
 .PHONY: help
 help: ## Show this help message
 	@echo "Outliner Project Makefile"
@@ -31,45 +24,24 @@ help: ## Show this help message
 	@echo ""
 	@grep -E '^[a-zA-Z_0-9%-]+:.*?## .*$$' $(word 1,$(MAKEFILE_LIST)) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "%-30s %s\n", $$1, $$2}'
 
-# # Setup the development environment
-# .PHONY: setup
-# setup: ## Install dependencies using uv
-# 	@echo "Setting up development environment..."
-# 	@if ! command -v uv &> /dev/null; then \
-# 		echo "Error: uv is not installed. Please install uv by following the instructions at https://github.com/astral-sh/uv?tab=readme-ov-file#installation"; \
-# 		exit 1; \
-# 	fi
-# 	## TODO: add setup npm
-
 .PHONY: run-backend
-run-backend:
+run-backend: ## Run backend and occupy the process
 	@echo "Starting backend API server..."
-	@cd $(SERVER_DIR) && OUTLINER_TEST_MODE=${OUTLINER_TEST_MODE} uv run src/outliner_api_server/__main__.py
+	@cd $(SERVER_DIR) && uv run src/outliner_api_server/__main__.py
 
-.PHONY: run-frontend
-run-frontend:
-	@echo "Starting backend API server..."
-	@cd $(WEB_FRONTEND_DIR) && npm run dev
-
-ifeq ($(IS_TEST_ENV),1)
-API_GEN_PORT := $(TESTING_PORT)
-else
-API_GEN_PORT := $(SERVER_PORT)
-endif
 .PHONY: gen-api
 gen-api: ## Regenerate the OpenAPI typespec used by the frontend
-
-	@if ! curl --output /dev/null --silent --head --fail http://localhost:$(API_GEN_PORT)/docs; then \
+	@if ! curl --output /dev/null --silent --head --fail http://localhost:$(SERVER_PORT)/docs; then \
 		echo "\nBackend server not detected. Please start the backend server first."; \
-		echo "For testing, use OUTLINER_TEST_MODE=1 with both 'make run-backend' and 'make gen-api'\n"; \
 		exit 1; \
-	fi;
+	fi; \
+	cd $(WEB_FRONTEND_DIR) && npm run generate-api-client;
 
-	@if [ $$IS_TEST_ENV ]; then \
-		cd $(WEB_FRONTEND_DIR) && npm run generate-api-client-test-port-8001; \
-	else \
-		cd $(WEB_FRONTEND_DIR) && npm run generate-api-client; \
-	fi
+.PHONY: run-frontend
+run-frontend: ## Run after run-backend (in a different terminal)
+	@$(MAKE) gen-api
+	@echo "Starting backend API server..."
+	@cd $(WEB_FRONTEND_DIR) && npm run dev
 
 # Format Python code
 .PHONY: format
@@ -77,50 +49,10 @@ format:
 	@echo "Formatting Python code..."
 	@cd $(SERVER_DIR) && uv run --with ruff ruff check --fix src tests
 	@cd $(SERVER_DIR) && uv run --with ruff ruff format src tests
+	@cd $(WEB_FRONTEND_DIR) && npm run lint
 
-# @cd $(SERVER_DIR) && uv run pytest --cov
-# # Check code formatting
-# .PHONY: check-format
-# check-format: ## Check if the code is properly formatted
-# 	@echo "Checking code formatting..."
-# 	@if [ -f "$(VENV_PATH)/bin/black" ]; then \
-# 		$(VENV_PATH)/bin/black --check $(SERVER_DIR)/src $(SERVER_DIR)/tests; \
-# 	else \
-# 		echo "black not found, installing with pip..."; \
-# 		$(PIP) install black; \
-# 		$(VENV_PATH)/bin/black --check $(SERVER_DIR)/src $(SERVER_DIR)/tests; \
-# 	fi
-# 	@if [ -f "$(VENV_PATH)/bin/ruff" ]; then \
-# 		$(VENV_PATH)/bin/ruff check $(SERVER_DIR)/src $(SERVER_DIR)/tests; \
-# 	else \
-# 		echo "ruff not found, installing with pip..."; \
-# 		$(PIP) install ruff; \
-# 		$(VENV_PATH)/bin/ruff check $(SERVER_DIR)/src $(SERVER_DIR)/tests; \
-# 	fi
-
-.PHONY: pytests
-pytests:
-	@cd $(SERVER_DIR) && uv run pytest --cov
-	@cd ../
-
-# Run tests with test-specific API client
-.PHONY: test
-test:
-	@echo "Running pytests..."
-	@$(MAKE) pytests
-
-	@if ! curl --output /dev/null --silent --head --fail http://localhost:$(TESTING_PORT)/docs; then \
-		echo "\nFor playwright tests, first run OUTLINER_TEST_MODE=1 make clean && make run-backend"; \
-		echo "In another terminal, run OUTLINER_TEST_MODE=1 make gen-api && make test\n"; \
-		exit 1; \
-	fi;
-
-	@echo "Running playwright tests..."
-	@cd $(WEB_FRONTEND_DIR) && npm run test
-
-# Clean temporary files
 .PHONY: clean
-clean: ## Clean temporary files and cache
+clean:
 	@echo "Cleaning temporary files..."
 	@find . -type f -name "*.pyc" -delete
 	@find . -type d -name "__pycache__" -delete
@@ -129,3 +61,57 @@ clean: ## Clean temporary files and cache
 	@rm -f $(SERVER_DIR)/server.log
 	@rm -f $(SERVER_DIR)/src/outliner_api_server/databases/playwright_test_db.db
 	@rm -f $(SERVER_DIR)/src/outliner_api_server/databases/$(TESTING_SYSTEM_DB_NAME)
+
+
+
+# Testing specific targets
+.PHONY: pytests
+pytests:
+	@cd $(SERVER_DIR) && uv run pytest --cov
+
+.PHONY: .run-backend-for-tests
+.run-backend-for-tests: ## Run backend and move it to background process
+		@echo "Starting backend API server..."
+		@cd $(SERVER_DIR) && OUTLINER_TEST_MODE=${OUTLINER_TEST_MODE} LOG_LEVEL=error uv run src/outliner_api_server/__main__.py &
+		@sleep 5
+
+.PHONY: .gen-api-for-tests
+.gen-api-for-tests: ## Regenerate the OpenAPI typespec from TESTING_SERVER_PORT, used by tests
+	@if ! curl --output /dev/null --silent --head --fail http://localhost:$(TESTING_SERVER_PORT)/docs; then \
+		echo "\nBackend server not detected. Please start the backend server first."; \
+		exit 1; \
+	fi; \
+	cd $(WEB_FRONTEND_DIR) && npm run generate-api-client-test-port;
+
+.PHONY: .kill-test-server
+.kill-test-server: ## Kill outliner process on TESTING_SERVER_PORT. Inform user of other process on port.
+	@echo "Killing running test server (ignore any [make error 137] errors) ..."
+	@SERVER_PID=$$(lsof -ti:$(TESTING_SERVER_PORT)); \
+	if [ -n "$$SERVER_PID" ]; then \
+		PROCESS=`ps | grep "$$SERVER_PID" | grep "outliner_api_server"`; \
+    	if [ -n "$$PROCESS" ]; then \
+    		kill -9 $$SERVER_PID; \
+    	else \
+    		echo "A process is already running on testing port $(TESTING_SERVER_PORT)."; \
+            echo "Stop it to continue: \"kill -9 $$SERVER_PID && make test\"\n"; \
+            exit 2; \
+    	fi; \
+    fi
+
+
+.PHONY: test
+test:
+	@$(MAKE) clean
+	@$(MAKE) .kill-test-server
+
+	@echo "Running pytests..."
+	@$(MAKE) pytests
+
+	@$(MAKE) OUTLINER_TEST_MODE=1 .run-backend-for-tests
+	@$(MAKE) .gen-api-for-tests
+
+	@echo "Running playwright tests..."
+	@cd $(WEB_FRONTEND_DIR) && npm run test
+
+	@$(MAKE) .kill-test-server
+	@$(MAKE) clean

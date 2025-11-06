@@ -1,7 +1,5 @@
-from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from outliner_api_server.db.sysdb import SystemDatabase
 from outliner_api_server.routers import (
     pages_router,
     blocks_router,

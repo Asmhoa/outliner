@@ -1,4 +1,3 @@
-from outliner_api_server.db.models import PageModel
 import pytest
 from fastapi.testclient import TestClient
 from outliner_api_server.api import app
