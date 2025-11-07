@@ -105,7 +105,7 @@ export function WelcomeScreen({ onDatabaseCreated }: WelcomeScreenProps) {
                 size="sm"
                 variant="subtle"
                 component="a"
-                href="https://github.com/amolinasalazar/outliner"
+                href="https://github.com/asmhoa/outliner"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: "var(--mantine-color-dimmed)" }}

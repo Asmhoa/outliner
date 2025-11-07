@@ -48,6 +48,9 @@ function App() {
   const [isRenaming, setIsRenaming] = useState(false);
   const [createDbModalOpened, setCreateDbModalOpened] = useState(false);
 
+  // Check if no databases exist to show welcome screen
+  const [showWelcomeScreen, setShowWelcomeScreen] = useState(false);
+
   // Load things from the DB
   // Workspaces
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -97,13 +100,12 @@ function App() {
     if (data) {
       if (data.length === 0) {
         setShowWelcomeScreen(true);
-        setCreateDbModalOpened(false);
       } else {
-        setDatabases(data.map((db) => ({ value: db.name, label: db.name })));
+        setDatabases(data.map((db) => ({ value: db.id, label: db.name })));
         if (!dbId && dbIdParam) {
           setDbId(dbIdParam);
         } else if (!dbId) {
-          setDbId(data[0].name);
+          setDbId(data[0].id);
         }
         setShowWelcomeScreen(false);
       }
@@ -124,9 +126,6 @@ function App() {
   useEffect(() => {
     getAllDatabases();
   }, [getAllDatabases]);
-
-  // Check if no databases exist to show welcome screen
-  const [showWelcomeScreen, setShowWelcomeScreen] = useState(false);
 
   // UI elements visibility
   const [navbarVisibility, setNavbarVisibility] =

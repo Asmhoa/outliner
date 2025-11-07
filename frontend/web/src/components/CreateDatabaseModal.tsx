@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, TextInput, Button, Group } from "@mantine/core";
 import { createDatabaseDatabasesPost } from "../api-client";
 import log from "../utils/logger";
@@ -18,10 +18,13 @@ export function CreateDatabaseModal({
   const [loading, setLoading] = useState(false);
 
   const handleCreateDatabase = async () => {
+    const trimmedDbName = dbName.trim();
+    if (!trimmedDbName) return; // Prevent creating database with empty name
+    
     setLoading(true);
 
     const { data, error } = await createDatabaseDatabasesPost({
-      body: { name: dbName },
+      body: { name: trimmedDbName },
     });
     setLoading(false);
 
@@ -35,6 +38,25 @@ export function CreateDatabaseModal({
     }
   };
 
+  const isCreateDisabled = !dbName.trim() || loading;
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Enter" && !isCreateDisabled) {
+      handleCreateDatabase();
+    } else if (event.key === "Escape") {
+      onClose();
+    }
+  };
+
+  useEffect(() => {
+    if (opened) {
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }
+  }, [opened, isCreateDisabled]); // Include isCreateDisabled in dependency array
+
   return (
     <Modal
       opened={opened}
@@ -43,6 +65,7 @@ export function CreateDatabaseModal({
       styles={{
         inner: {
           left: 0,
+          alignItems: "center",
         },
       }}
     >
@@ -51,13 +74,20 @@ export function CreateDatabaseModal({
         placeholder="Enter a name for your new database"
         value={dbName}
         onChange={(event) => setDbName(event.currentTarget.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !isCreateDisabled) {
+            event.preventDefault(); // Prevent form submission if there's a form
+            handleCreateDatabase();
+          }
+        }}
         required
+        autoFocus
       />
       <Group justify="flex-end" mt="md">
         <Button onClick={onClose} variant="default">
           Cancel
         </Button>
-        <Button onClick={handleCreateDatabase} loading={loading}>
+        <Button onClick={handleCreateDatabase} loading={loading} disabled={isCreateDisabled}>
           Create
         </Button>
       </Group>
