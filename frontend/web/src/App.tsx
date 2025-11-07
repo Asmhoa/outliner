@@ -27,7 +27,6 @@ import SearchBox from "./components/sidebar/SearchBox";
 import LeftSidebar from "./components/sidebar/LeftSidebar";
 import { useDatabase } from "./hooks/useDatabase";
 import { CreateDatabaseModal } from "./components/CreateDatabaseModal";
-import { WelcomeScreen } from "./components/WelcomeScreen";
 
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
@@ -95,17 +94,11 @@ function App() {
       return;
     }
     if (data) {
-      if (data.length === 0) {
-        setShowWelcomeScreen(true);
-        setCreateDbModalOpened(false);
-      } else {
-        setDatabases(data.map((db) => ({ value: db.name, label: db.name })));
-        if (!dbId && dbIdParam) {
-          setDbId(dbIdParam);
-        } else if (!dbId) {
-          setDbId(data[0].name);
-        }
-        setShowWelcomeScreen(false);
+      setDatabases(data.map((db) => ({ value: db.name, label: db.name })));
+      if (!dbId && dbIdParam) {
+        setDbId(dbIdParam);
+      } else if (!dbId) {
+        setDbId(data[0].name);
       }
     }
   }, [setDbId, dbIdParam]);
@@ -124,9 +117,6 @@ function App() {
   useEffect(() => {
     getAllDatabases();
   }, [getAllDatabases]);
-
-  // Check if no databases exist to show welcome screen
-  const [showWelcomeScreen, setShowWelcomeScreen] = useState(false);
 
   // UI elements visibility
   const [navbarVisibility, setNavbarVisibility] =
@@ -324,14 +314,6 @@ function App() {
       setCurrentPageId(null);
     }
   }, [pageId, pages]);
-
-  if (showWelcomeScreen) {
-    return (
-      <WelcomeScreen
-        onDatabaseCreated={getAllDatabases}
-      />
-    );
-  }
 
   if (!dbId) {
     return (

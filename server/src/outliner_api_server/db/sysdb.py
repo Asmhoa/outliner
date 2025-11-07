@@ -261,41 +261,4 @@ class SystemDatabase(BaseDatabase):
             )
         logger.debug(f"User database with id '{db_id}' deleted successfully.")
 
-    def add_user_database_from_file(self, name: str, file_path: str) -> None:
-        """
-        Add a new UserDatabase from an existing file.
 
-        Args:
-            name: The name of the user database
-            file_path: The path to the source database file
-
-        Raises:
-            UserDatabaseAlreadyExistsError: If the database name already exists.
-        """
-        # Sanitize the name to create a valid file path
-        path = name.lower().replace(" ", "_") + ".db"
-        sanitized_path = (
-            path.lower().replace("/", "_").replace("\\", "_").replace("..", "_")
-        )
-        full_path = os.path.join(self.databases_dir, sanitized_path)
-        
-        # Copy the file to the databases directory
-        import shutil
-        shutil.copy2(file_path, full_path)
-        
-        try:
-            with self.single_use_cursor() as cursor:
-                cursor.execute(
-                    "INSERT INTO user_databases (name, path) VALUES (?, ?)",
-                    (name, full_path),
-                )
-            self.conn.commit()
-            logger.debug(
-                f"User database '{name}' with path '{full_path}' imported successfully."
-            )
-        except IntegrityError as e:
-            logger.warning(f"Failed to import user database '{name}': {str(e)}")
-            # Remove the copied file if DB insertion fails
-            if os.path.exists(full_path):
-                os.remove(full_path)
-            raise UserDatabaseAlreadyExistsError(f"Database '{name}' already exists.")
