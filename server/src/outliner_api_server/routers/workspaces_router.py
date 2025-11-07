@@ -76,12 +76,6 @@ def add_workspace(
     },
 )
 def get_workspace(db_id: str, workspace_id: int, db: UserDatabase = Depends(get_db)):
-    import logging
-
-    logger = logging.getLogger("uvicorn.error")
-    logger.setLevel(logging.DEBUG)
-    logger.debug(db_id)
-    logger.debug(db)
     try:
         workspace_data = db.get_workspace_by_id(workspace_id)
         return WorkspaceModel(
@@ -163,7 +157,9 @@ def update_workspace(
         },
     },
 )
-def delete_workspace(db_id: str, workspace_id: int, db: UserDatabase = Depends(get_db)):
+def delete_workspace(
+    db_id: str, workspace_id: int, db: UserDatabase = Depends(get_db)
+):
     try:
         db.delete_workspace(workspace_id)
         return {"status": "success"}

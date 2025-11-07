@@ -25,12 +25,6 @@ def get_db(db_id: str, sys_db: SystemDatabase = Depends(get_sys_db)):
             detail=f"Database with id '{db_id}' not found. Please create it first.",
         )
 
-    import logging
-
-    logger = logging.getLogger("uvicorn.error")
-    logger.setLevel(logging.DEBUG)
-
-    logger.info(db_info)
     db = UserDatabase(db_info.path)
     try:
         yield db
