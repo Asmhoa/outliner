@@ -326,11 +326,7 @@ function App() {
   }, [pageId, pages]);
 
   if (showWelcomeScreen) {
-    return (
-      <WelcomeScreen
-        onDatabaseCreated={getAllDatabases}
-      />
-    );
+    return <WelcomeScreen onDatabaseCreated={getAllDatabases} />;
   }
 
   if (!dbId) {
