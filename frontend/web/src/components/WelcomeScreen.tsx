@@ -12,6 +12,7 @@ import {
 import { IconDatabase, IconDownload, IconBook } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import { CreateDatabaseModal } from "./CreateDatabaseModal";
+import { ImportDatabaseModal } from "./ImportDatabaseModal";
 
 interface WelcomeScreenProps {
   onDatabaseCreated: () => void;
@@ -21,6 +22,10 @@ export function WelcomeScreen({ onDatabaseCreated }: WelcomeScreenProps) {
   const [
     createModalOpened,
     { open: openCreateModal, close: closeCreateModal },
+  ] = useDisclosure(false);
+  const [
+    importModalOpened,
+    { open: openImportModal, close: closeImportModal },
   ] = useDisclosure(false);
 
   const handleDatabaseCreated = () => {
@@ -90,7 +95,7 @@ export function WelcomeScreen({ onDatabaseCreated }: WelcomeScreenProps) {
                 leftSection={<IconDownload size={20} />}
                 size="lg"
                 variant="outline"
-                disabled
+                onClick={openImportModal}
                 style={{ flex: 1, maxWidth: 250 }}
               >
                 Import Database
@@ -121,6 +126,12 @@ export function WelcomeScreen({ onDatabaseCreated }: WelcomeScreenProps) {
         opened={createModalOpened}
         onClose={closeCreateModal}
         onDatabaseCreated={handleDatabaseCreated}
+      />
+
+      <ImportDatabaseModal
+        opened={importModalOpened}
+        onClose={closeImportModal}
+        onDatabaseImported={onDatabaseCreated}
       />
     </>
   );
