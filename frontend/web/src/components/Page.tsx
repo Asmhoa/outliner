@@ -2,14 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { showNotification } from "@mantine/notifications";
 import Block from "./Block";
 import {
-  renamePageDbDbIdPagesPut,
   addBlockDbDbIdBlocksPost,
   deleteBlockDbDbIdBlocksBlockIdDelete,
-} from "../api-client/sdk.gen";
+} from "../api-client";
 import log from "../utils/logger";
 import { Group } from "@mantine/core";
 import PageMenu from "./PageMenu";
 import { useDatabase } from "../hooks/useDatabase";
+import { usePageData } from "../hooks/usePageData";
 
 import { type Block as BlockType, type HTTPError } from "../api-client";
 
@@ -33,6 +33,7 @@ const Page: React.FC<PageProps> = ({
   handleRenamePage,
 }) => {
   const { dbId } = useDatabase();
+  const { handleRenamePage: renamePage } = usePageData();
   const [pageTitle, setPageTitle] = useState(title);
   const [blocks, setBlocks] = useState<BlockType[]>(initialBlocks);
   const blockRefs = useRef<{
@@ -77,30 +78,13 @@ const Page: React.FC<PageProps> = ({
     setPageTitle(newTitle);
     log.debug(`[Page] Updating page title`, { page_id, new_title: newTitle });
 
-    const { error, response } = await renamePageDbDbIdPagesPut({
-      path: { db_id: dbId },
-      body: {
-        page_id: page_id,
-        new_title: newTitle,
-      },
-    });
+    const success = await renamePage(page_id, newTitle);
 
-    if (error) {
-      if (response.status === 409) {
-        const httpError = error as HTTPError;
-        const errorMessage =
-          (httpError.body as { detail: string }).detail ||
-          "A page with this title already exists.";
-        log.error(errorMessage);
-        showNotification({
-          title: "Failed to rename page",
-          message: errorMessage,
-          color: "red",
-        });
-      } else {
-        log.error("[Page] Failed to rename page:", error);
-      }
+    if (!success) {
       setPageTitle(title); // Revert to the original title on error
+    } else {
+      // Update the title in the parent component's state
+      // This will happen automatically through the usePageData hook
     }
     setIsRenaming(false);
   };

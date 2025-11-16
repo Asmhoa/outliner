@@ -1,4 +1,5 @@
 import { AppShell, Box, LoadingOverlay } from "@mantine/core";
+import { LoadingOverlayWrapper } from "./components/common/LoadingOverlayWrapper";
 import { showNotification } from "@mantine/notifications";
 
 import { useDisclosure } from "@mantine/hooks";
@@ -10,17 +11,9 @@ import "./App.css";
 import Page from "./components/Page";
 import RightSidebar from "./components/sidebar/RightSidebar";
 import {
-  getPageDbDbIdPagesPageIdGet,
   getBlocksDbDbIdBlocksPageIdGet,
-  addPageDbDbIdPagesPost,
-  getPagesDbDbIdPagesGet,
-  deletePageDbDbIdPagesPageIdDelete,
   addBlockDbDbIdBlocksPost,
-  getWorkspacesDbDbIdWorkspacesGet,
-  getDatabasesDatabasesGet,
   type Block,
-  type Page as PageType,
-  type Workspace,
   type HTTPError,
 } from "./api-client";
 import SearchBox from "./components/sidebar/SearchBox";
@@ -28,6 +21,8 @@ import LeftSidebar from "./components/sidebar/LeftSidebar";
 import { useDatabase } from "./hooks/useDatabase";
 import { CreateDatabaseModal } from "./components/CreateDatabaseModal";
 import { WelcomeScreen } from "./components/WelcomeScreen";
+import { usePageData } from "./hooks/usePageData";
+import { useDatabaseManager } from "./hooks/useDatabaseManager";
 
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
@@ -38,10 +33,32 @@ function App() {
   }>(); // get page_id from URL
   const { dbId, setDbId } = useDatabase();
 
-  const [currentPageId, setCurrentPageId] = useState<string | null>(null);
-  const [title, setTitle] = useState("");
+  // Use the new hooks to get page and database management functionality
+  const {
+    pages,
+    currentPageId,
+    currentPageTitle,
+    setCurrentPageId,
+    fetchPages,
+    handleAddPage: addPage,
+    handleDeletePage,
+    handleRenamePage: renamePage
+  } = usePageData();
+
+  const {
+    databases,
+    workspaces,
+    setWorkspaces,
+    activeWorkspaceId,
+    setActiveWorkspaceId,
+    fetchDatabases,
+    fetchWorkspaces,
+    createDatabase,
+    isDatabasesLoading
+  } = useDatabaseManager();
+
+  // Blocks still need to be managed at app level for now
   const [blocks, setBlocks] = useState<Block[]>([]);
-  const [pages, setPages] = useState<PageType[]>([]);
   const [opened, { toggle }] = useDisclosure();
   const [isSwitchingDatabase, setIsSwitchingDatabase] = useState(false);
 
@@ -50,82 +67,6 @@ function App() {
 
   // Check if no databases exist to show welcome screen
   const [showWelcomeScreen, setShowWelcomeScreen] = useState(false);
-
-  // Load things from the DB
-  // Workspaces
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<number | null>(
-    null,
-  );
-
-  const getAllWorkspaces = useCallback(async () => {
-    if (!dbId) return;
-    const { data: all_workspaces, error } =
-      await getWorkspacesDbDbIdWorkspacesGet({
-        path: { db_id: dbId },
-      });
-    if (error) {
-      log.error("[App] Failed to fetch workspaces:", error);
-      return;
-    }
-
-    if (all_workspaces) {
-      const sorted_workspaces = [
-        // Structure default first then most recent
-        all_workspaces[0],
-        ...all_workspaces.slice(1).reverse(),
-      ];
-      setWorkspaces(sorted_workspaces as Workspace[]);
-      if (activeWorkspaceId === null) {
-        setActiveWorkspaceId(0);
-      }
-    }
-  }, [dbId, activeWorkspaceId]);
-
-  useEffect(() => {
-    getAllWorkspaces();
-  }, [getAllWorkspaces]);
-
-  // Other
-  const [databases, setDatabases] = useState<
-    { value: string; label: string }[]
-  >([]);
-
-  const getAllDatabases = useCallback(async () => {
-    const { data, error } = await getDatabasesDatabasesGet();
-    if (error) {
-      log.error("[App] Failed to fetch databases:", error);
-      return;
-    }
-    if (data) {
-      if (data.length === 0) {
-        setShowWelcomeScreen(true);
-      } else {
-        setDatabases(data.map((db) => ({ value: db.id, label: db.name })));
-        if (!dbId && dbIdParam) {
-          setDbId(dbIdParam);
-        } else if (!dbId) {
-          setDbId(data[0].id);
-        }
-        setShowWelcomeScreen(false);
-      }
-    }
-  }, [setDbId, dbIdParam]);
-
-  useEffect(() => {
-    if (dbIdParam) {
-      if (dbIdParam !== dbId) {
-        setPages([]);
-        setCurrentPageId(null);
-        setIsSwitchingDatabase(true);
-      }
-      setDbId(dbIdParam);
-    }
-  }, [dbIdParam, dbId, setDbId]);
-
-  useEffect(() => {
-    getAllDatabases();
-  }, [getAllDatabases]);
 
   // UI elements visibility
   const [navbarVisibility, setNavbarVisibility] =
@@ -148,103 +89,12 @@ function App() {
     });
   };
 
-  const fetchPages = useCallback(async () => {
-    if (!dbId) return;
-    log.debug("[App] Fetching pages...");
-    const { data, error } = await getPagesDbDbIdPagesGet({
-      path: { db_id: dbId },
-    });
-    if (error) {
-      log.error("[App] Failed to fetch pages:", error);
-      return;
-    }
-    if (data) {
-      log.debug(`[App] Fetched ${data.length} pages`);
-      setPages(data);
-    }
-  }, [dbId]);
-
-  const handleDeletePage = async (page_id: string) => {
-    if (!dbId) return;
-    log.debug(`[App] Deleting page`, { page_id });
-    const { error } = await deletePageDbDbIdPagesPageIdDelete({
-      path: { db_id: dbId, page_id },
-    });
-
-    if (error) {
-      log.error("[App] Failed to delete page:", error);
-      return;
-    }
-
-    fetchPages();
-    setCurrentPageId(null);
-    setTitle("");
-    setBlocks([]);
-  };
-
-  const handleRenamePage = () => {
-    setIsRenaming(true);
-  };
-
-  const handleAddPage = async (title: string) => {
-    if (!dbId) return;
-    log.debug(`[App] Adding new page`, { title });
-    const { data, error, response } = await addPageDbDbIdPagesPost({
-      path: { db_id: dbId },
-      body: { title },
-    });
-
-    if (error) {
-      if (response.status === 409) {
-        const httpError = error as HTTPError;
-        const errorMessage =
-          (httpError.body as { detail: string }).detail ||
-          "A page with this title already exists.";
-        log.error(errorMessage);
-        showNotification({
-          title: "Failed to add page",
-          message: errorMessage,
-          color: "red",
-          autoClose: false,
-        });
-      } else {
-        log.error("[App] Failed to add page:", error);
-      }
-      return;
-    }
-
-    fetchPages();
-    // Switch to the newly created page
-    if (data && data.page_id) {
-      setCurrentPageId(data.page_id);
-      // Returning page_id for testing purposes
-      return data.page_id;
-    }
-  };
-
+  // Fetch blocks when current page changes
   useEffect(() => {
-    if (!dbId) return;
-    log.debug(`[App] Current page ID changed`, { currentPageId });
-    const fetchTitle = async () => {
-      if (!currentPageId) return;
-      log.debug(`[App] Fetching title`, { page_id: currentPageId });
-      const { data, error } = await getPageDbDbIdPagesPageIdGet({
-        path: { db_id: dbId, page_id: currentPageId },
-      });
-
-      if (error) {
-        log.error("[App] Failed to fetch page title:", error);
-        return;
-      }
-
-      if (data?.title) {
-        setTitle(data.title);
-      }
-    };
+    if (!dbId || !currentPageId) return;
 
     const fetchBlocks = async () => {
-      if (!currentPageId) return;
-      log.debug(`[App] Fetching blocks`, { page_id: currentPageId });
+      log.debug(`[App] Fetching blocks for page`, { page_id: currentPageId });
       const { data, error } = await getBlocksDbDbIdBlocksPageIdGet({
         path: { db_id: dbId, page_id: currentPageId },
       });
@@ -256,7 +106,7 @@ function App() {
 
       if (data) {
         if (data.length === 0) {
-          log.debug(`[App] No blocks found, creating new block`, {
+          log.debug(`[App] No blocks found, creating new block for page`, {
             page_id: currentPageId,
           });
           const { data: newBlock, error: newBlockError } =
@@ -283,26 +133,45 @@ function App() {
       }
     };
 
-    fetchTitle();
     fetchBlocks();
   }, [currentPageId, dbId]);
 
+  // Handle database parameter changes
   useEffect(() => {
-    fetchPages();
-  }, [fetchPages]);
+    if (dbIdParam) {
+      if (dbIdParam !== dbId) {
+        setIsSwitchingDatabase(true);
+      }
+      setDbId(dbIdParam);
+    }
+  }, [dbIdParam, dbId, setDbId]);
 
+  // Update everything on DB change
   useEffect(() => {
-    // Update everything on DB change
     if (dbId) {
       log.debug(`[App] dbId changed to ${dbId}, re-fetching data`);
       const fetchData = async () => {
-        await getAllWorkspaces();
+        await fetchWorkspaces();
         await fetchPages();
         setIsSwitchingDatabase(false);
       };
       fetchData();
     }
-  }, [dbId, getAllWorkspaces, fetchPages]);
+  }, [dbId, fetchWorkspaces, fetchPages]);
+
+  // Check database status for welcome screen
+  useEffect(() => {
+    if (databases.length === 0 && !isDatabasesLoading) {
+      setShowWelcomeScreen(true);
+    } else if (databases.length > 0) {
+      setShowWelcomeScreen(false);
+      if (!dbId && dbIdParam) {
+        setDbId(dbIdParam);
+      } else if (!dbId) {
+        setDbId(databases[0].value);
+      }
+    }
+  }, [databases, dbId, dbIdParam, setDbId, isDatabasesLoading]);
 
   // Update current page ID based on URL parameter
   useEffect(() => {
@@ -316,16 +185,26 @@ function App() {
         log.error(`Page with ID ${pageId} does not exist`);
         // Leave currentPageId as null, so nothing is displayed
       }
-    } else if (pages.length > 0) {
-      // If no pageId in URL, but pages exist, set to first page
-      setCurrentPageId(pages[0].page_id);
     } else {
+      // Don't automatically select the first page when switching databases
+      // Show no pages until the user explicitly selects one
       setCurrentPageId(null);
     }
-  }, [pageId, pages]);
+  }, [pageId, pages, setCurrentPageId]);
+
+  // Show loading overlay while checking databases initially
+  if (isDatabasesLoading) {
+    return (
+      <LoadingOverlayWrapper
+        visible={true}
+        overlayProps={{ radius: "sm", blur: 2, zIndex: 1000 }}
+        boxProps={{ pos: "relative" }}
+      />
+    );
+  }
 
   if (showWelcomeScreen) {
-    return <WelcomeScreen onDatabaseCreated={getAllDatabases} />;
+    return <WelcomeScreen onDatabaseCreated={fetchDatabases} />;
   }
 
   if (!dbId) {
@@ -333,18 +212,17 @@ function App() {
       <CreateDatabaseModal
         opened={createDbModalOpened}
         onClose={() => setCreateDbModalOpened(false)}
-        onDatabaseCreated={getAllDatabases}
+        onDatabaseCreated={fetchDatabases}
       />
     );
   }
 
   return (
-    <Box pos="relative">
-      <LoadingOverlay
-        visible={isSwitchingDatabase}
-        zIndex={1000}
-        overlayProps={{ radius: "sm", blur: 2 }}
-      />
+    <LoadingOverlayWrapper
+      visible={isSwitchingDatabase}
+      overlayProps={{ radius: "sm", blur: 2, zIndex: 1000 }}
+      boxProps={{ pos: "relative" }}
+    >
       <AppShell
         header={{
           height: 30 + 2 * 10, // div + top and bottom padding
@@ -369,7 +247,7 @@ function App() {
       >
         <AppShell.Header bd={"none"}>
           <SearchBox
-            onAddPage={handleAddPage}
+            onAddPage={addPage}
             navbarVisibility={navbarVisibility}
             onLeftSidebarToggle={handleLeftSidebarToggle}
             rightSidebarCollapsed={rightSidebarCollapsed}
@@ -386,19 +264,19 @@ function App() {
           activeWorkspaceId={activeWorkspaceId}
           setActiveWorkspaceId={setActiveWorkspaceId}
           databases={databases}
-          onDatabaseCreated={getAllDatabases}
+          onDatabaseCreated={fetchDatabases}
         />
         <AppShell.Main>
           {currentPageId && (
             <Page
               key={currentPageId}
               page_id={currentPageId}
-              title={title}
+              title={currentPageTitle}
               blocks={blocks}
               isRenaming={isRenaming}
               setIsRenaming={setIsRenaming}
               handleDeletePage={handleDeletePage}
-              handleRenamePage={handleRenamePage}
+              handleRenamePage={() => setIsRenaming(true)}
             />
           )}
         </AppShell.Main>
@@ -406,7 +284,7 @@ function App() {
           <RightSidebar onClose={handleRightSidebarToggle} />
         </AppShell.Aside>
       </AppShell>
-    </Box>
+    </LoadingOverlayWrapper>
   );
 }
 export default App;

@@ -1,140 +1,53 @@
-# Agent Workflow for API and Client Generation
+# Project Architecture and Development Guidelines
 
-This document outlines the workflow for managing the API and the auto-generated TypeScript client in this project.
+This document outlines the key architectural patterns and development best practices for the Outliner project.
 
-## Makefile
+## Project Structure
 
-The project includes a `Makefile` with several commands to streamline common development tasks.
+The project follows a client-server architecture with a clear separation between frontend and backend:
 
--   `make test`: Runs the test suite.
--   `make run-backend`: Starts the development backend.
--   `make gen-api`: Regenerate the OpenAPI typespec used by the frontend based on the backend.
--   `make run-frontend`: Starts the development frontend.
--   `make clean`: Removes temporary files, such as Python cache files (`.pyc`), test caches, and log files.
--   `make format`: Format the codebase.
+- `server/` - Python FastAPI application implementing the backend API and database management
+- `frontend/web/` - React+TypeScript application for the web interface
+- `frontend/ui/` - Shared UI components (planned for future use)
+- `frontend/desktop/` - Desktop application structure (planned for future use)
 
-## Backend (Server)
+## Backend Architecture
 
-The backend is a Python [FastAPI](https://fastapi.tiangolo.com/) application located in the `server/` directory.
+The backend is built with Python FastAPI and implements a dual database system:
 
-### API Documentation and Specification
+### Database Architecture
+- **SystemDatabase**: Manages the list of UserDatabases, maintains database metadata, and provides path sanitization to prevent directory traversal attacks
+- **UserDatabase**: Individual user databases that store application data (workspaces, pages, and blocks) using SQLite files
 
-FastAPI automatically generates an OpenAPI 3.0 specification for the API.
+### API Design
+- All content management endpoints follow the pattern `/db/{db_id}/resource` where `db_id` specifies the user database
+- The backend uses FastAPI's dependency injection for proper database connection management
+- Custom exception classes are used for error handling rather than boolean flags (e.g., `PageNotFoundError`, `UserDatabaseNotFoundError`)
 
--   **Swagger UI:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
--   **ReDoc:** [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
--   **OpenAPI Spec (JSON):** [http://127.0.0.1:8000/openapi.json](http://127.0.0.1:8000/openapi.json)
+### Code Location Preference
+Prefer implementing logic and data manipulation as low in the stack as possible. For example, path sanitization occurs in the database layer rather than in the frontend, ensuring all API consumers benefit from these implementations.
 
-The server must be running to access these. Use `make dev` to start the frontend and server, or to run only the server:
+## Frontend Architecture
 
-```bash
-cd server && uv run python -m outliner_api_server
-```
+The frontend is a React+TypeScript application using modern tooling:
 
-### Running tests
-`make test` will test all components. To test only the server:
+- **Framework**: React with TypeScript
+- **Build Tool**: Vite
+- **UI Library**: Mantine
+- **State Management**: React Context API for database context and local state management
 
-```bash
-cd server && uv run pytest
-```
+### API Client Generation
+The project uses `@hey-api/openapi-ts` to automatically generate a typed TypeScript client from the backend's OpenAPI specification:
+- Generated code is located in `frontend/web/src/api-client/`
+- The client must be regenerated after backend API changes using `make gen-api` or `npm run generate-api-client`
 
-To check coverage, use
-```bash
-cd server && uv run pytest --cov
-```
-## Frontend (Web)
+## Development Commands
 
-The frontend is a React+TypeScript application located in `frontend/web/`.
+The project includes a Makefile with common development tasks:
 
-### Typed API Client Generation
-
-The project uses [`openapi-ts`](https://github.com/hey-api/openapi-ts) to automatically generate a typed TypeScript client from the backend's OpenAPI specification.
-
--   **Generated Code Location:** `frontend/web/src/api-client/`
--   **Types:** `frontend/web/src/api-client/types.gen.ts`
--   **API Services:** `frontend/web/src/api-client/sdk.gen.ts`
-
-### How to Update the API Client
-
-To update the client after making changes to the FastAPI application:
-
-1.  **Ensure the backend server is running.**
-2.  **Run the generation script**
-
-    ```bash
-    cd frontend/web/ && npm run generate-api-client
-    ```
-
-This script executes the `openapi-ts` command, which fetches the latest `openapi.json` from the running server and regenerates the client code. This ensures the frontend's API client is always in sync with the backend API.
-
-## Database Management
-
-The application supports tracking multiple user databases through a SystemDatabase. Each request can specify which UserDatabase to use via a path parameter:
-
-- `GET /db/{db_name}/pages` - Get all pages from a specific database
-- `GET /db/{db_name}/pages/{page_id}` - Get a specific page from a specific database
-- `POST /db/{db_name}/pages` - Create a page in a specific database
-- And so on for all other endpoints
-
-This allows the same server instance to handle multiple UserDatabases, enabling users to open different databases in different browser windows.
-
-### Technical Implementation
-
-FastAPI automatically passes path parameters to dependency functions. Example:
-
-```python
-def get_db(db_name: str, request: Request):
-    # db_name is automatically injected from the route path
-    sys_db = request.app.state.sys_db
-    # ... get database by name ...
-    yield db
-
-@app.get("/db/{db_name}/pages")
-def get_pages(db_name: str, db: UserDatabase = Depends(get_db)):
-    # db_name is passed to get_db dependency automatically
-    pass
-```
-
-### Running Playwright Tests
-
-The frontend includes Playwright tests for end-to-end testing. To run these tests properly, you must follow the test mode requirements:
-
-1. **For running tests:**
-   - Terminal 1: `OUTLINER_TEST_MODE=1 make clean && make run-backend`
-   - Terminal 2: `OUTLINER_TEST_MODE=1 make gen-api && make test`
-
-2. **For re-running tests:**
-   - You must repeat step 1, starting with: `OUTLINER_TEST_MODE=1 make clean && make run-backend` before running `make test` again.
-
-3. **After testing is complete, restore the original API client:**
-   - Terminal 1: `OUTLINER_TEST_MODE=0 make clean && make run-backend`
-   - Terminal 2: `OUTLINER_TEST_MODE=0 make gen-api`
-
-To run the tests, use the `make test` command after following the setup above.
-
-The Playwright configuration is set up to:
-- Run tests in parallel
-- Use http://localhost:5173 as the base URL
-- Generate an HTML reporter
-- Retry failed tests on CI environments
-
-To view the HTML test report after running tests:
-```bash
-npx playwright show-report
-```
-
-### Frontend Component Structure
-
--   `frontend/ui`: This directory is intended for shared UI components (e.g., React components) that can be used across different frontend applications.
--   `frontend/web`: The web application, which consumes shared components from `frontend/ui`.
--   `frontend/desktop`: The desktop application, which also consumes shared components from `frontend/ui`.
-
-## Code Location Preference
-
-When implementing features or making changes, prefer handling logic and data manipulation as low in the stack as possible. For example, path sanitization should occur in the database code rather than the frontend. This ensures that any consumers of the API or database code directly also benefit from these implementations, promoting consistency and reducing duplication.
-
-## API Error Handling
-
-When making changes to the API, prefer using custom error classes for error handling rather than boolean flags to indicate success/failure.
-
-For example, instead of returning `{"success": false, "error": "Page not found"}`, the API should raise specific exceptions like `PageNotFoundError` which are then caught and converted to properly structured HTTP responses with appropriate status codes. The `api.py` file should be responsible for catching these exceptions and returning the appropriate HTTP status codes and error messages.
+- `make test`: Runs the complete test suite
+- `make run-backend`: Starts the development backend
+- `make gen-api`: Regenerates the OpenAPI typespec used by the frontend
+- `make run-frontend`: Starts the development frontend
+- `make clean`: Removes temporary files
+- `make format`: Formats the codebase

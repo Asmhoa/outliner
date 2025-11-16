@@ -66,6 +66,7 @@ const LeftSidebar = ({
   const navigate = useNavigate();
   const { dbId } = useDatabase();
   const theme = useMantineTheme();
+  const currentDatabase = databases.find((db) => db.value === dbId);
   const [
     createDbModalOpened,
     { open: openCreateDbModal, close: closeCreateDbModal },
@@ -91,8 +92,13 @@ const LeftSidebar = ({
                   rightSection={<IconChevronDown size={16} />}
                   leftSection={<IconDatabase size={16} />}
                   variant="light"
+                  w={210}
                 >
-                  <Text>Switch database</Text>
+                  <Text>
+                    {currentDatabase
+                      ? currentDatabase.label
+                      : "Switch database"}
+                  </Text>
                 </Button>
               </Menu.Target>
               <Menu.Dropdown>
@@ -100,9 +106,7 @@ const LeftSidebar = ({
                   <Menu.Item
                     key={db.value}
                     onClick={() => navigate(`/db/${db.value}`)}
-                    bg={
-                      db.value === dbId ? theme.primaryColor : "transparent"
-                    }
+                    bg={db.value === dbId ? theme.primaryColor : "transparent"}
                     c={db.value === dbId ? "white" : theme.colors.dark[9]}
                   >
                     {db.label}
