@@ -6,7 +6,7 @@ import log from "../utils/logger";
 interface CreateDatabaseModalProps {
   opened: boolean;
   onClose: () => void;
-  onDatabaseCreated: () => void;
+  onDatabaseCreated: (newDbId?: string) => void;
 }
 
 export function CreateDatabaseModal({
@@ -33,7 +33,9 @@ export function CreateDatabaseModal({
       // You might want to show an error message to the user
     } else {
       log.info("Database created successfully:", data);
-      onDatabaseCreated();
+      // Extract the new database ID from the response and pass it to the callback
+      const newDbId = data?.id;
+      onDatabaseCreated(newDbId);
       onClose();
     }
   };

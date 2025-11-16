@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
-import { showNotification } from "@mantine/notifications";
-import Block from "./Block";
 import {
-  renamePageDbDbIdPagesPut,
   addBlockDbDbIdBlocksPost,
   deleteBlockDbDbIdBlocksBlockIdDelete,
-} from "../api-client/sdk.gen";
+} from "../api-client";
 import log from "../utils/logger";
 import { Group } from "@mantine/core";
-import PageMenu from "./PageMenu";
 import { useDatabase } from "../hooks/useDatabase";
+import { usePageData } from "../hooks/usePageData";
+import PageHeader from "./page/PageHeader";
+import PageContent from "./page/PageContent";
+import PageActions from "./page/PageActions";
 
 import { type Block as BlockType, type HTTPError } from "../api-client";
 
@@ -33,21 +33,14 @@ const Page: React.FC<PageProps> = ({
   handleRenamePage,
 }) => {
   const { dbId } = useDatabase();
-  const [pageTitle, setPageTitle] = useState(title);
+  const { handleRenamePage: renamePage } = usePageData();
   const [blocks, setBlocks] = useState<BlockType[]>(initialBlocks);
   const blockRefs = useRef<{
     [key: string]: HTMLDivElement | null;
   }>({});
-  const titleRef = useRef<HTMLHeadingElement>(null);
   const [nextFocusableBlockId, setNextFocusableBlockId] = useState<
     string | null
   >(null);
-
-  useEffect(() => {
-    if (isRenaming) {
-      titleRef.current?.focus();
-    }
-  }, [isRenaming]);
 
   useEffect(() => {
     if (nextFocusableBlockId) {
@@ -60,50 +53,9 @@ const Page: React.FC<PageProps> = ({
   }, [nextFocusableBlockId]);
 
   useEffect(() => {
-    log.debug(`[Page] Setting page title`, { title });
-    setPageTitle(title);
-  }, [title]);
-
-  useEffect(() => {
     log.debug(`[Page] Setting blocks`, { page_id, count: initialBlocks.length });
     setBlocks(initialBlocks);
   }, [initialBlocks, page_id]);
-
-  const handleTitleBlur = async (
-    event: React.FocusEvent<HTMLHeadingElement>,
-  ) => {
-    if (!dbId) return;
-    const newTitle = event.currentTarget.textContent || "";
-    setPageTitle(newTitle);
-    log.debug(`[Page] Updating page title`, { page_id, new_title: newTitle });
-
-    const { error, response } = await renamePageDbDbIdPagesPut({
-      path: { db_id: dbId },
-      body: {
-        page_id: page_id,
-        new_title: newTitle,
-      },
-    });
-
-    if (error) {
-      if (response.status === 409) {
-        const httpError = error as HTTPError;
-        const errorMessage =
-          (httpError.body as { detail: string }).detail ||
-          "A page with this title already exists.";
-        log.error(errorMessage);
-        showNotification({
-          title: "Failed to rename page",
-          message: errorMessage,
-          color: "red",
-        });
-      } else {
-        log.error("[Page] Failed to rename page:", error);
-      }
-      setPageTitle(title); // Revert to the original title on error
-    }
-    setIsRenaming(false);
-  };
 
   const handleNewBlock = async (currentBlockId: string) => {
     if (!dbId) return;
@@ -161,23 +113,15 @@ const Page: React.FC<PageProps> = ({
     <div className="page" style={{ paddingTop: 0 }}>
       <Group justify="space-between">
         <Group>
-          <h1
-            ref={titleRef}
-            contentEditable={isRenaming}
-            onBlur={handleTitleBlur}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                e.currentTarget.blur();
-              }
-            }}
-            suppressContentEditableWarning
-          >
-            {pageTitle}
-          </h1>
+          <PageHeader
+            pageId={page_id}
+            title={title}
+            isRenaming={isRenaming}
+            setIsRenaming={setIsRenaming}
+          />
         </Group>
         <Group>
-          <PageMenu
+          <PageActions
             onDelete={() => {
               if (page_id) {
                 handleDeletePage(page_id);
@@ -187,17 +131,12 @@ const Page: React.FC<PageProps> = ({
           />
         </Group>
       </Group>
-      {blocks.map((block) => (
-        <Block
-          ref={(el) => (blockRefs.current[block.block_id] = el)}
-          key={block.block_id}
-          id={block.block_id}
-          content={block.content}
-          onNewBlock={handleNewBlock}
-          onDeleteBlock={handleDeleteBlock}
-          isDeletable={blocks.length > 1}
-        />
-      ))}
+      <PageContent
+        blocks={blocks}
+        onNewBlock={handleNewBlock}
+        onDeleteBlock={handleDeleteBlock}
+        blockRefs={blockRefs}
+      />
     </div>
   );
 };
