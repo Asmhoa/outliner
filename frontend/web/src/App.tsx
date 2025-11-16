@@ -3,7 +3,7 @@ import { showNotification } from "@mantine/notifications";
 
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import log from "./utils/logger";
 
 import "./App.css";
@@ -18,6 +18,7 @@ import {
   addBlockDbDbIdBlocksPost,
   getWorkspacesDbDbIdWorkspacesGet,
   getDatabasesDatabasesGet,
+  getDatabaseDatabasesDbIdGet,
   type Block,
   type Page as PageType,
   type Workspace,
@@ -32,6 +33,7 @@ import { WelcomeScreen } from "./components/WelcomeScreen";
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
 function App() {
+  const navigate = useNavigate();
   const { dbId: dbIdParam, pageId } = useParams<{
     dbId: string;
     pageId: string;
@@ -112,14 +114,47 @@ function App() {
     }
   }, [setDbId, dbIdParam]);
 
+  // Function to clear all UI state related to a database
+  const clearUIState = useCallback(() => {
+    setPages([]);
+    setCurrentPageId(null);
+    setTitle("");
+    setBlocks([]);
+    setWorkspaces([]);
+    setActiveWorkspaceId(null);
+    setIsSwitchingDatabase(false);
+  }, []);
+
   useEffect(() => {
     if (dbIdParam) {
-      if (dbIdParam !== dbId) {
-        setPages([]);
-        setCurrentPageId(null);
-        setIsSwitchingDatabase(true);
-      }
-      setDbId(dbIdParam);
+      // Check if the database exists
+      const checkDatabaseExists = async () => {
+        const { error } = await getDatabaseDatabasesDbIdGet({
+          path: { db_id: dbIdParam },
+        });
+
+        if (error) {
+          // Database doesn't exist, redirect to home page and clear dbId
+          showNotification({
+            title: "Database Not Found",
+            message: `The database "${dbIdParam}" does not exist.`,
+            color: "red",
+          });
+          setDbId(null); // Clear the database ID to prevent loading issues
+          clearUIState(); // Clear all UI state
+          navigate("/");
+          return;
+        }
+
+        // Database exists, proceed with setting dbId
+        if (dbIdParam !== dbId) {
+          clearUIState();
+          setIsSwitchingDatabase(true);
+        }
+        setDbId(dbIdParam);
+      };
+
+      checkDatabaseExists();
     }
   }, [dbIdParam, dbId, setDbId]);
 
@@ -314,12 +349,16 @@ function App() {
       } else {
         setCurrentPageId(null);
         log.error(`Page with ID ${pageId} does not exist`);
+        showNotification({
+          title: "Page Not Found",
+          message: `The requested page does not exist in this database.`,
+          color: "red",
+        });
+        navigate(`/db/${dbId}`);
         // Leave currentPageId as null, so nothing is displayed
       }
-    } else if (pages.length > 0) {
-      // If no pageId in URL, but pages exist, set to first page
-      setCurrentPageId(pages[0].page_id);
     } else {
+      // Don't automatically select any page on startup
       setCurrentPageId(null);
     }
   }, [pageId, pages]);
