@@ -40,9 +40,14 @@ def test_get_databases_with_data(client, mock_sys_db):
 
 def test_create_database(client, mock_sys_db):
     """Test that a database can be created successfully."""
+    # Mock the return value of get_user_database_by_name
+    mock_sys_db.get_user_database_by_name.return_value = {
+        "id": "uuid_new", "name": "new_db", "path": "/new_db.sqlite", "created_at": "2023-01-01T00:00:00"
+    }
+
     response = client.post("/databases", json={"name": "new_db"})
     assert response.status_code == 200
-    assert response.json() == {"status": "success"}
+    assert response.json()["name"] == "new_db"
     mock_sys_db.add_user_database.assert_called_once_with("new_db")
 
 

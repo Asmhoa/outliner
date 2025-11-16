@@ -20,9 +20,9 @@ interface DatabaseSelectorProps {
   onDatabaseCreated: () => void;
 }
 
-const DatabaseSelector: React.FC<DatabaseSelectorProps> = ({ 
-  databases, 
-  onDatabaseCreated 
+const DatabaseSelector: React.FC<DatabaseSelectorProps> = ({
+  databases,
+  onDatabaseCreated
 }) => {
   const navigate = useNavigate();
   const { dbId } = useDatabase();
@@ -73,7 +73,12 @@ const DatabaseSelector: React.FC<DatabaseSelectorProps> = ({
       <CreateDatabaseModal
         opened={createDbModalOpened}
         onClose={closeCreateDbModal}
-        onDatabaseCreated={() => {
+        onDatabaseCreated={(newDbId) => {
+          // If we get a new database ID, navigate to it; otherwise just call the original callback
+          if (newDbId) {
+            navigate(`/db/${newDbId}`);
+          }
+          // Always call the original callback to allow parent components to refresh their database list
           onDatabaseCreated();
           closeCreateDbModal();
         }}

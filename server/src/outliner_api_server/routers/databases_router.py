@@ -42,7 +42,16 @@ def get_databases(sys_db: SystemDatabase = Depends(get_sys_db)):
     responses={
         200: {
             "description": "Database created successfully",
-            "content": {"application/json": {"example": {"status": "success"}}},
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                        "name": "my_database",
+                        "path": "/path/to/database.db",
+                        "created_at": "2023-01-01T00:00:00",
+                    }
+                }
+            },
         },
         409: {
             "description": "Conflict - Database with this name already exists",
@@ -59,12 +68,14 @@ def create_database(
 ):
     try:
         sys_db.add_user_database(db_create.name)
+        # Get and return the created database info
+        created_db = sys_db.get_user_database_by_name(db_create.name)
+        return created_db
     except UserDatabaseAlreadyExistsError as e:
         raise HTTPException(
             status_code=409,
             detail=str(e),
         )
-    return {"status": "success"}
 
 
 @router.get(

@@ -1,9 +1,10 @@
 import { AppShell, LoadingOverlay } from "@mantine/core";
 import { LoadingOverlayWrapper } from "./components/common/LoadingOverlayWrapper";
+import { showNotification } from "@mantine/notifications";
 
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import log from "./utils/logger";
 
 import "./App.css";
@@ -13,6 +14,7 @@ import {
   getBlocksDbDbIdBlocksPageIdGet,
   addBlockDbDbIdBlocksPost,
   type Block,
+  type HTTPError,
 } from "./api-client";
 import SearchBox from "./components/sidebar/SearchBox";
 import LeftSidebar from "./components/sidebar/LeftSidebar";
@@ -25,6 +27,7 @@ import { useDatabaseManager } from "./hooks/useDatabaseManager";
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
 function App() {
+  const navigate = useNavigate();
   const { dbId: dbIdParam, pageId } = useParams<{
     dbId: string;
     pageId: string;
