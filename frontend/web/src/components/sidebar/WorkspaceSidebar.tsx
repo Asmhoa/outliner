@@ -320,8 +320,8 @@ const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         </Group>
         {deleteConfirmation && (
           <Alert title="Warning" color="yellow" mt="md">
-            This action cannot be undone. All pages and content in this
-            workspace will be permanently deleted.
+            Are you sure you want to remove this group of pages? No pages or
+            content will be deleted.
           </Alert>
         )}
       </Modal>
