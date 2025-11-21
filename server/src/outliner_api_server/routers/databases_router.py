@@ -7,7 +7,6 @@ from outliner_api_server.db.errors import (
     UserDatabaseNotFoundError,
 )
 from outliner_api_server.routers.dependencies import get_sys_db
-import os
 
 
 router = APIRouter()
@@ -191,4 +190,3 @@ def delete_database(db_id: str, sys_db: SystemDatabase = Depends(get_sys_db)):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-import os
