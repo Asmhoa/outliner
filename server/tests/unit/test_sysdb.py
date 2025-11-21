@@ -3,16 +3,22 @@ from outliner_api_server.db.sysdb import SystemDatabase
 from outliner_api_server.db.userdb import UserDatabase
 from outliner_api_server.db.errors import UserDatabaseAlreadyExistsError, UserDatabaseNotFoundError
 import tempfile
+import os
 
 @pytest.fixture
 def sys_db():
     """Set up a new system database for each test."""
-    db = SystemDatabase()
-    db.db_path = ":memory:"
-    db.conn = db.new_connection()
-    db.initialize_tables()
-    yield db
-    db.close_conn()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # We need to explicitly set the databases_dir for the SystemDatabase instance
+        # to the temporary directory, so it creates user dbs there.
+        db = SystemDatabase()
+        db.databases_dir = tmpdir
+        # Also set the path for the system.db itself within the temp directory
+        db.db_path = os.path.join(tmpdir, "system.db")
+        db.conn = db.new_connection()
+        db.initialize_tables()
+        yield db
+        db.close_conn()
 
 
 def test_add_and_load_user_database(sys_db):
@@ -93,18 +99,19 @@ def test_update_user_database(sys_db):
     sys_db.update_user_database(db_info.id, new_name="new_test_db")
     updated_db_info = sys_db.get_user_database_by_id(db_info.id)
     assert updated_db_info.name == "new_test_db"
-    assert updated_db_info.path == db_info.path
+    expected_new_path = "new_test_db.db"
+    assert updated_db_info.path == expected_new_path
 
-    # Test updating the path
-    sys_db.update_user_database(db_info.id, new_path="/new/path.db")
+    # Test updating the relative path
+    sys_db.update_user_database(db_info.id, new_path_relative="custom_path.db")
     updated_db_info = sys_db.get_user_database_by_id(db_info.id)
-    assert updated_db_info.path == "/new/path.db"
+    assert updated_db_info.path == "custom_path.db"
 
-    # Test updating both
-    sys_db.update_user_database(db_info.id, new_name="another_db", new_path="/another/path.db")
+    # Test updating both name and relative path (name takes precedence for path generation)
+    sys_db.update_user_database(db_info.id, new_name="another_db", new_path_relative="should_be_ignored.db")
     updated_db_info = sys_db.get_user_database_by_id(db_info.id)
     assert updated_db_info.name == "another_db"
-    assert updated_db_info.path == "/another/path.db"
+    assert updated_db_info.path == "another_db.db"
 
 
 def test_update_user_database_not_found(sys_db):
@@ -156,3 +163,39 @@ def test_delete_user_database_not_found(sys_db):
     """Test that deleting a database that doesn't exist raises an error."""
     with pytest.raises(UserDatabaseNotFoundError):
         sys_db.delete_user_database("non_existent_db_id")
+
+
+def test_rename_user_database_file(sys_db):
+    """Test that renaming a user database also renames its corresponding file."""
+    original_name = "original_db"
+    new_name = "renamed_db"
+
+    # Add a user database
+    sys_db.add_user_database(original_name)
+    db_info = sys_db.get_user_database_by_name(original_name)
+
+    # Explicitly create the user database file
+    user_db_path = os.path.join(sys_db.databases_dir, db_info.path)
+    user_db = UserDatabase(user_db_path)
+    user_db.initialize_tables()
+    user_db.close_conn()
+
+    # Construct expected original and new file paths
+    original_file_path = os.path.join(sys_db.databases_dir, original_name.lower().replace(" ", "_") + ".db")
+    new_file_path = os.path.join(sys_db.databases_dir, new_name.lower().replace(" ", "_") + ".db")
+
+    # Verify original file exists
+    assert os.path.exists(original_file_path)
+    assert not os.path.exists(new_file_path)
+
+    # Rename the user database
+    sys_db.update_user_database(db_info.id, new_name=new_name)
+
+    # Verify the database entry is updated
+    updated_db_info = sys_db.get_user_database_by_id(db_info.id)
+    assert updated_db_info.name == new_name
+    assert updated_db_info.path == new_name.lower().replace(" ", "_") + ".db"
+
+    # Verify file system changes
+    assert not os.path.exists(original_file_path)
+    assert os.path.exists(new_file_path)

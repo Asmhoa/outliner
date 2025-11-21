@@ -156,14 +156,9 @@ def update_database(
 ):
     try:
         new_name = db_update.name
-        # Calculate new path based on new name
-        path = new_name.lower().replace(" ", "_") + ".db"
-        sanitized_path = (
-            path.lower().replace("/", "_").replace("\\", "_").replace("..", "_")
-        )
-        new_path = os.path.join(sys_db.databases_dir, sanitized_path)
 
-        sys_db.update_user_database(db_id, new_path=new_path, new_name=new_name)
+        # Let the system DB handle the path calculation and file renaming
+        sys_db.update_user_database(db_id, new_name=new_name)
         # Return the updated database info
         updated_db = sys_db.get_user_database_by_id(db_id)
         return updated_db
