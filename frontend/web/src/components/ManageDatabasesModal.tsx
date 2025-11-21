@@ -38,7 +38,8 @@ export function ManageDatabasesModal({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [renamingDbId, setRenamingDbId] = useState<string | null>(null); // Track which db is being renamed
-  const [deletingDbId, setDeletingDbId] = useState<string | null>(null); // Track which db is being deleted
+  const [deletingDbId, setDeletingDbId] = useState<string | null>(null); // Track which db is being deleted (final deletion)
+  const [deletionConfirmDbId, setDeletionConfirmDbId] = useState<string | null>(null); // Track which db is pending confirmation
 
   // Load databases when modal opens
   const loadData = async () => {
@@ -115,8 +116,15 @@ export function ManageDatabasesModal({
     setEditValue("");
   };
 
-  const handleDelete = async (dbId: string) => {
+  const handleDelete = (dbId: string) => {
+    // Set the database ID for confirmation instead of immediate deletion
+    setDeletionConfirmDbId(dbId);
+  };
+
+  // Function to confirm and execute the deletion
+  const confirmDelete = async (dbId: string) => {
     setDeletingDbId(dbId); // Set loading state
+    setDeletionConfirmDbId(null); // Clear the confirmation state
 
     try {
       // Call the backend API to delete the database
@@ -137,6 +145,11 @@ export function ManageDatabasesModal({
     } finally {
       setDeletingDbId(null); // Reset loading state
     }
+  };
+
+  // Function to cancel the deletion confirmation
+  const cancelDelete = () => {
+    setDeletionConfirmDbId(null);
   };
 
   const handleCancelEdit = () => {
@@ -191,28 +204,57 @@ export function ManageDatabasesModal({
                   </ActionIcon>
                 </Group>
               ) : (
-                <Group justify="space-between" align="center">
-                  <Text size="sm" style={{ paddingLeft: "16px", wordBreak: "break-word" }}>
-                    {db.name}
-                  </Text>
+                <Group justify="space-between" align="flex-start">
+                  <div style={{ paddingLeft: "16px", flex: 1 }}>
+                    <Text size="sm" style={{ wordBreak: "break-word" }}>
+                      {db.name}
+                    </Text>
+                    {deletionConfirmDbId === db.id && (
+                      <Text size="xs" c="red" mt={4} style={{ wordBreak: "break-word" }}>
+                        Are you sure you want to delete this database? This action cannot be undone.
+                      </Text>
+                    )}
+                  </div>
                   <Group gap="xs">
-                    <Button
-                      variant="subtle"
-                      size="compact-sm"
-                      onClick={() => handleEditClick(db)}
-                      loading={renamingDbId === db.id}
-                    >
-                      Rename
-                    </Button>
-                    <Button
-                      variant="subtle"
-                      color="red"
-                      size="compact-sm"
-                      onClick={() => handleDelete(db.id)}
-                      loading={deletingDbId === db.id}
-                    >
-                      Delete
-                    </Button>
+                    {deletionConfirmDbId === db.id ? (
+                      <>
+                        <Button
+                          variant="filled"
+                          color="red"
+                          size="compact-xs"
+                          onClick={() => confirmDelete(db.id)}
+                          loading={deletingDbId === db.id}
+                        >
+                          Confirm Delete
+                        </Button>
+                        <Button
+                          variant="subtle"
+                          size="compact-xs"
+                          onClick={cancelDelete}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="subtle"
+                          size="compact-sm"
+                          onClick={() => handleEditClick(db)}
+                          loading={renamingDbId === db.id}
+                        >
+                          Rename
+                        </Button>
+                        <Button
+                          variant="subtle"
+                          color="red"
+                          size="compact-sm"
+                          onClick={() => handleDelete(db.id)}
+                        >
+                          Delete
+                        </Button>
+                      </>
+                    )}
                   </Group>
                 </Group>
               )}
