@@ -98,6 +98,7 @@ const DatabaseSelector: React.FC<DatabaseSelectorProps> = ({
       <ManageDatabasesModal
         opened={manageDbModalOpened}
         onClose={closeManageDbModal}
+        onDatabaseChange={onDatabaseCreated}
       />
     </Group>
   );

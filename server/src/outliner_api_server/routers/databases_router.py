@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from outliner_api_server.db.sysdb import SystemDatabase
 from outliner_api_server.routers.request_models import DatabaseCreate
 from outliner_api_server.db.errors import (
@@ -6,9 +7,14 @@ from outliner_api_server.db.errors import (
     UserDatabaseNotFoundError,
 )
 from outliner_api_server.routers.dependencies import get_sys_db
+import os
 
 
 router = APIRouter()
+
+
+class DatabaseUpdate(BaseModel):
+    name: str
 
 
 @router.get(
@@ -111,6 +117,62 @@ def get_database(db_id: str, sys_db: SystemDatabase = Depends(get_sys_db)):
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.put(
+    "/databases/{db_id}",
+    responses={
+        200: {
+            "description": "Database updated successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                        "name": "updated_database",
+                        "path": "/path/to/updated_database.db",
+                        "created_at": "2023-01-01T00:00:00",
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "Database not found",
+            "content": {
+                "application/json": {"example": {"detail": "Database not found"}}
+            },
+        },
+        409: {
+            "description": "Conflict - Database with this name already exists",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Database with name 'mydb' already exists"}
+                }
+            },
+        },
+    },
+)
+def update_database(
+    db_id: str,
+    db_update: DatabaseUpdate,
+    sys_db: SystemDatabase = Depends(get_sys_db)
+):
+    try:
+        new_name = db_update.name
+        # Calculate new path based on new name
+        path = new_name.lower().replace(" ", "_") + ".db"
+        sanitized_path = (
+            path.lower().replace("/", "_").replace("\\", "_").replace("..", "_")
+        )
+        new_path = os.path.join(sys_db.databases_dir, sanitized_path)
+
+        sys_db.update_user_database(db_id, new_path=new_path, new_name=new_name)
+        # Return the updated database info
+        updated_db = sys_db.get_user_database_by_id(db_id)
+        return updated_db
+    except UserDatabaseNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except UserDatabaseAlreadyExistsError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+
+
 @router.delete(
     "/databases/{db_id}",
     responses={
@@ -132,3 +194,6 @@ def delete_database(db_id: str, sys_db: SystemDatabase = Depends(get_sys_db)):
         return {"status": "success"}
     except UserDatabaseNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+import os
