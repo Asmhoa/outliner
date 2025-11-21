@@ -177,23 +177,47 @@ class SystemDatabase(BaseDatabase):
         return [UserDatabaseModel(**row) for row in rows]
 
     def update_user_database(
-        self, db_id: str, new_path: str = None, new_name: str = None
+        self, db_id: str, new_path_relative: str = None, new_name: str = None
     ) -> None:
         """
         Update a UserDatabase.
 
         Args:
             db_id: The current id of the user database
-            new_path: The new path (optional)
+            new_path_relative: The new relative path of the database file (e.g., 'my_new_db.db').
+                               This path is relative to SystemDatabase.databases_dir.
             new_name: The new name (optional)
 
         Raises:
             UserDatabaseNotFoundError: If the database to update is not found.
             UserDatabaseAlreadyExistsError: If the new name already exists.
         """
-        if new_path is None and new_name is None:
+        if new_path_relative is None and new_name is None:
             return
 
+        current_db = self.get_user_database_by_id(db_id)
+        old_db_entry_path_relative = current_db.path
+        old_file_system_path = os.path.join(self.databases_dir, old_db_entry_path_relative)
+
+        # Determine the new relative path to be stored in the DB
+        new_db_entry_path_relative = old_db_entry_path_relative # Default to current
+        if new_name is not None:
+            # Path derived from new name (always relative)
+            calculated_path_from_name = new_name.lower().replace(" ", "_") + ".db"
+            sanitized_calculated_path = (
+                calculated_path_from_name.lower().replace("/", "_").replace("\\", "_").replace("..", "_")
+            )
+            new_db_entry_path_relative = sanitized_calculated_path
+        elif new_path_relative is not None:
+            # Use the provided new_path_relative directly (must be relative filename)
+            # We should sanitize this to prevent directory traversal attacks if it's user-provided
+            sanitized_provided_path = (
+                new_path_relative.lower().replace("/", "_").replace("\\", "_").replace("..", "_")
+            )
+            new_db_entry_path_relative = sanitized_provided_path
+
+
+        # Check if name already exists
         if new_name is not None:
             try:
                 existing = self.get_user_database_by_name(new_name)
@@ -207,9 +231,10 @@ class SystemDatabase(BaseDatabase):
         update_fields = []
         params = []
 
-        if new_path is not None:
+        # Only update path if it has actually changed
+        if new_db_entry_path_relative != old_db_entry_path_relative:
             update_fields.append("path = ?")
-            params.append(new_path)
+            params.append(new_db_entry_path_relative) # Store relative path in DB
 
         if new_name is not None:
             update_fields.append("name = ?")
@@ -233,6 +258,18 @@ class SystemDatabase(BaseDatabase):
                 raise UserDatabaseNotFoundError(
                     f"User database with id '{db_id}' not found."
                 )
+
+            # If the path changed (in the DB entry), then rename the actual file
+            # This check needs to be against the *relative* path stored in DB
+            if new_db_entry_path_relative != old_db_entry_path_relative:
+                new_file_system_path = os.path.join(self.databases_dir, new_db_entry_path_relative)
+                if os.path.exists(old_file_system_path):
+                    os.rename(old_file_system_path, new_file_system_path)
+                    logger.debug(f"Database file renamed from '{old_file_system_path}' to '{new_file_system_path}'.")
+                else:
+                    # If old file doesn't exist, it might be a new path for a moved/external file
+                    # Or it's an error. For now, log a warning.
+                    logger.warning(f"Old database file '{old_file_system_path}' not found during rename.")
             logger.debug(f"User database with id '{db_id}' updated.")
         except IntegrityError as e:
             logger.error(f"Failed to update user database with id '{db_id}': {str(e)}")
@@ -250,6 +287,9 @@ class SystemDatabase(BaseDatabase):
         Raises:
             UserDatabaseNotFoundError: If the database to delete is not found.
         """
+        # First get the database info to know the file path
+        db_to_delete = self.get_user_database_by_id(db_id)
+
         rows_affected = 0
         with self.single_use_cursor() as cursor:
             cursor.execute("DELETE FROM user_databases WHERE id = ?", (db_id,))
@@ -259,4 +299,13 @@ class SystemDatabase(BaseDatabase):
             raise UserDatabaseNotFoundError(
                 f"User database with id '{db_id}' not found."
             )
+
+        # Delete the actual database file
+        db_file_path = os.path.join(self.databases_dir, db_to_delete.path)
+        if os.path.exists(db_file_path):
+            os.remove(db_file_path)
+            logger.debug(f"Database file '{db_file_path}' deleted successfully.")
+        else:
+            logger.warning(f"Database file '{db_file_path}' not found during deletion.")
+
         logger.debug(f"User database with id '{db_id}' deleted successfully.")

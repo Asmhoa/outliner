@@ -100,6 +100,16 @@ export type DatabaseCreate = {
 };
 
 /**
+ * DatabaseUpdate
+ */
+export type DatabaseUpdate = {
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -892,3 +902,39 @@ export type GetDatabaseDatabasesDbIdGetResponses = {
 };
 
 export type GetDatabaseDatabasesDbIdGetResponse = GetDatabaseDatabasesDbIdGetResponses[keyof GetDatabaseDatabasesDbIdGetResponses];
+
+export type UpdateDatabaseDatabasesDbIdPutData = {
+    body: DatabaseUpdate;
+    path: {
+        /**
+         * Db Id
+         */
+        db_id: string;
+    };
+    query?: never;
+    url: '/databases/{db_id}';
+};
+
+export type UpdateDatabaseDatabasesDbIdPutErrors = {
+    /**
+     * Database not found
+     */
+    404: unknown;
+    /**
+     * Conflict - Database with this name already exists
+     */
+    409: unknown;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateDatabaseDatabasesDbIdPutError = UpdateDatabaseDatabasesDbIdPutErrors[keyof UpdateDatabaseDatabasesDbIdPutErrors];
+
+export type UpdateDatabaseDatabasesDbIdPutResponses = {
+    /**
+     * Database updated successfully
+     */
+    200: unknown;
+};

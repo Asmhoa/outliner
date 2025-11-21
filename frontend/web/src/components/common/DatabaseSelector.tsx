@@ -8,11 +8,13 @@ import {
 import {
   IconDatabase,
   IconChevronDown,
-  IconPlus
+  IconPlus,
+  IconSettings
 } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 import { useDisclosure } from "@mantine/hooks";
 import { CreateDatabaseModal } from "../CreateDatabaseModal";
+import { ManageDatabasesModal } from "../ManageDatabasesModal";
 import { useDatabase } from "../../hooks/useDatabase";
 
 interface DatabaseSelectorProps {
@@ -31,6 +33,10 @@ const DatabaseSelector: React.FC<DatabaseSelectorProps> = ({
   const [
     createDbModalOpened,
     { open: openCreateDbModal, close: closeCreateDbModal },
+  ] = useDisclosure(false);
+  const [
+    manageDbModalOpened,
+    { open: openManageDbModal, close: closeManageDbModal },
   ] = useDisclosure(false);
 
   return (
@@ -63,6 +69,12 @@ const DatabaseSelector: React.FC<DatabaseSelectorProps> = ({
           ))}
           <Menu.Divider />
           <Menu.Item
+            leftSection={<IconSettings size={14} />}
+            onClick={openManageDbModal}
+          >
+            Manage Databases
+          </Menu.Item>
+          <Menu.Item
             leftSection={<IconPlus size={14} />}
             onClick={openCreateDbModal}
           >
@@ -82,6 +94,11 @@ const DatabaseSelector: React.FC<DatabaseSelectorProps> = ({
           onDatabaseCreated();
           closeCreateDbModal();
         }}
+      />
+      <ManageDatabasesModal
+        opened={manageDbModalOpened}
+        onClose={closeManageDbModal}
+        onDatabaseChange={onDatabaseCreated}
       />
     </Group>
   );

@@ -1,4 +1,3 @@
-import logging
 import uvicorn
 from outliner_api_server.api import app
 from outliner_api_server.utils import is_test_env, get_log_level
