@@ -65,12 +65,6 @@ const LeftSidebar = ({
             />
           </AppShell.Section>
           <NavigationPanel />
-          <AppShell.Section>
-            <PageList
-              pages={pages}
-              currentPageId={currentPageId}
-            />
-          </AppShell.Section>
         </Stack>
       </Group>
     </AppShell.Navbar>

@@ -7,6 +7,7 @@ function AppRoutes() {
       <Route path="/" element={<App />} />
       <Route path="/db/:dbId" element={<App />} />
       <Route path="/db/:dbId/pages/:pageId" element={<App />} />
+      <Route path="/db/:dbId/all-pages" element={<App />} />
     </Routes>
   );
 }
