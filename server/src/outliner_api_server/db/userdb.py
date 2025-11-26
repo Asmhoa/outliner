@@ -76,7 +76,7 @@ class UserDatabase(BaseDatabase):
             CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(
                 title,
                 page_id UNINDEXED,
-                content=''
+                content='pages'
             );
         """
         )
@@ -118,7 +118,7 @@ class UserDatabase(BaseDatabase):
                 block_id UNINDEXED,
                 page_id UNINDEXED,
                 parent_block_id UNINDEXED,
-                content=''
+                content='blocks'
             );
         """
         )
@@ -471,7 +471,7 @@ class UserDatabase(BaseDatabase):
             SELECT p.page_id, p.title, p.created_at
             FROM pages p
             JOIN pages_fts pf ON p.page_id = pf.page_id
-            WHERE pf MATCH ?
+            WHERE pages_fts MATCH ?
             ORDER BY rank
             LIMIT ?
             """,
@@ -491,7 +491,7 @@ class UserDatabase(BaseDatabase):
             SELECT b.block_id, b.content, b.page_id, b.parent_block_id, b.position, b.created_at
             FROM blocks b
             JOIN blocks_fts bf ON b.block_id = bf.block_id
-            WHERE bf MATCH ?
+            WHERE blocks_fts MATCH ?
             ORDER BY rank
             LIMIT ?
             """,
