@@ -70,13 +70,13 @@ class UserDatabase(BaseDatabase):
             );
         """
         )
-        # Create FTS5 virtual table for full-text search with external content
+        # Create FTS5 virtual table for full-text search
         self.cursor.execute(
             """
             CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(
                 title,
-                content='pages',
-                content_rowid='page_id'
+                page_id UNINDEXED,
+                content=''
             );
         """
         )
@@ -109,14 +109,16 @@ class UserDatabase(BaseDatabase):
         """
         )
         # Create FTS5 virtual table for full-text search of blocks
+        # content='' prevents data duplication - the content text is used for indexing but then discarded
+        # We will still need to join with the original blocks table on block_id during retrieval
         self.cursor.execute(
             """
             CREATE VIRTUAL TABLE IF NOT EXISTS blocks_fts USING fts5(
                 content,
+                block_id UNINDEXED,
                 page_id UNINDEXED,
                 parent_block_id UNINDEXED,
-                content='blocks',
-                content_rowid='block_id'
+                content=''
             );
         """
         )
@@ -224,10 +226,9 @@ class UserDatabase(BaseDatabase):
         )
         new_page_id = temp_cursor.fetchone()[0]
 
-        # Insert just the title and rowid into FTS table (rowid matches page_id)
-        # Have to do it this way because rowid is required by FTS
+        # Insert the title and page_id into FTS table
         temp_cursor.execute(
-            "INSERT INTO pages_fts (rowid, title) VALUES (?, ?)", (new_page_id, title)
+            "INSERT INTO pages_fts (title, page_id) VALUES (?, ?)", (title, new_page_id)
         )
 
         self.conn.commit()
@@ -276,7 +277,7 @@ class UserDatabase(BaseDatabase):
         )
         # Update the FTS table as well
         self.cursor.execute(
-            "UPDATE pages_fts SET title = ? WHERE rowid = ?", (new_title, page_id)
+            "UPDATE pages_fts SET title = ? WHERE page_id = ?", (new_title, page_id)
         )
         self.conn.commit()
         if self.cursor.rowcount == 0:
@@ -290,7 +291,7 @@ class UserDatabase(BaseDatabase):
         Raises PageNotFoundError if page is not found.
         """
         # Delete from FTS table first
-        self.cursor.execute("DELETE FROM pages_fts WHERE rowid = ?", (page_id,))
+        self.cursor.execute("DELETE FROM pages_fts WHERE page_id = ?", (page_id,))
         # Then delete from the main table
         self.cursor.execute("DELETE FROM pages WHERE page_id = ?", (page_id,))
         self.conn.commit()
@@ -321,8 +322,8 @@ class UserDatabase(BaseDatabase):
             new_block_id = temp_cursor.fetchone()[0]
             # Insert the block into the FTS table as well
             temp_cursor.execute(
-                "INSERT INTO blocks_fts (rowid, content, page_id, parent_block_id) VALUES (?, ?, ?, ?)",
-                (new_block_id, content, page_id, None),
+                "INSERT INTO blocks_fts (content, block_id, page_id, parent_block_id) VALUES (?, ?, ?, ?)",
+                (content, new_block_id, page_id, None),
             )
             logger.debug(f"Block added to page ID {page_id}: '{content[:50]}...'")
         elif parent_block_id is not None and page_id is None:
@@ -334,8 +335,8 @@ class UserDatabase(BaseDatabase):
             new_block_id = temp_cursor.fetchone()[0]
             # Insert the block into the FTS table as well
             temp_cursor.execute(
-                "INSERT INTO blocks_fts (rowid, content, page_id, parent_block_id) VALUES (?, ?, ?, ?)",
-                (new_block_id, content, None, parent_block_id),
+                "INSERT INTO blocks_fts (content, block_id, page_id, parent_block_id) VALUES (?, ?, ?, ?)",
+                (content, new_block_id, None, parent_block_id),
             )
             logger.debug(
                 f"Block added under parent block ID {parent_block_id}: '{content[:50]}...'"
@@ -388,7 +389,7 @@ class UserDatabase(BaseDatabase):
         )
         # Update the FTS table as well
         self.cursor.execute(
-            "UPDATE blocks_fts SET content = ? WHERE rowid = ?",
+            "UPDATE blocks_fts SET content = ? WHERE block_id = ?",
             (new_content, block_id),
         )
         self.conn.commit()
@@ -411,7 +412,7 @@ class UserDatabase(BaseDatabase):
             )
             # Update the FTS table as well
             self.cursor.execute(
-                "UPDATE blocks_fts SET page_id = ?, parent_block_id = NULL WHERE rowid = ?",
+                "UPDATE blocks_fts SET page_id = ?, parent_block_id = NULL WHERE block_id = ?",
                 (new_page_id, block_id),
             )
             logger.debug(
@@ -424,7 +425,7 @@ class UserDatabase(BaseDatabase):
             )
             # Update the FTS table as well
             self.cursor.execute(
-                "UPDATE blocks_fts SET parent_block_id = ?, page_id = NULL WHERE rowid = ?",
+                "UPDATE blocks_fts SET parent_block_id = ?, page_id = NULL WHERE block_id = ?",
                 (new_parent_block_id, block_id),
             )
             logger.debug(
@@ -449,7 +450,7 @@ class UserDatabase(BaseDatabase):
         Raises BlockNotFoundError if block is not found.
         """
         # Delete from FTS table first
-        self.cursor.execute("DELETE FROM blocks_fts WHERE rowid = ?", (block_id,))
+        self.cursor.execute("DELETE FROM blocks_fts WHERE block_id = ?", (block_id,))
         # Then delete from the main table
         self.cursor.execute("DELETE FROM blocks WHERE block_id = ?", (block_id,))
         self.conn.commit()
@@ -464,12 +465,12 @@ class UserDatabase(BaseDatabase):
         Returns a list of PageModel objects that match the search query.
         """
         # Use FTS MATCH to search in the pages_fts table
-        # Get page_id from FTS table and join with main pages table to get full details
+        # Join with main pages table using the page_id stored in the FTS table
         self.cursor.execute(
             """
             SELECT p.page_id, p.title, p.created_at
             FROM pages p
-            JOIN pages_fts pf ON p.page_id = pf.rowid
+            JOIN pages_fts pf ON p.page_id = pf.page_id
             WHERE pf MATCH ?
             ORDER BY rank
             LIMIT ?
@@ -489,7 +490,7 @@ class UserDatabase(BaseDatabase):
             """
             SELECT b.block_id, b.content, b.page_id, b.parent_block_id, b.position, b.created_at
             FROM blocks b
-            JOIN blocks_fts bf ON b.block_id = bf.rowid
+            JOIN blocks_fts bf ON b.block_id = bf.block_id
             WHERE bf MATCH ?
             ORDER BY rank
             LIMIT ?
