@@ -7,7 +7,7 @@ from outliner_api_server.db.errors import (
     PageNotFoundError,
     WorkspaceNotFoundError,
 )
-from outliner_api_server.db.models import PageModel, BlockModel, WorkspaceModel
+from outliner_api_server.db.models import BlockModel, PageModel, WorkspaceModel
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class UserDatabase(BaseDatabase):
 
     def _create_table_pages(self) -> None:
         """
-        Creates the 'pages' table in the specified sqlite3 database.
+        Creates the 'pages' table and 'pages_fts' FTS table in the specified sqlite3 database.
         """
         self.cursor.execute(
             """
@@ -70,12 +70,24 @@ class UserDatabase(BaseDatabase):
             );
         """
         )
+        # Create FTS5 virtual table for full-text search with external content
+        self.cursor.execute(
+            """
+            CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(
+                title,
+                content='pages',
+                content_rowid='page_id'
+            );
+        """
+        )
         self.conn.commit()
-        logger.debug(f"Table 'pages' created or already exists in '{self.db_path}'.")
+        logger.debug(
+            f"Table 'pages' and 'pages_fts' created or already exists in '{self.db_path}'."
+        )
 
     def _create_table_blocks(self) -> None:
         """
-        Creates the 'blocks' table in the specified sqlite3 database.
+        Creates the 'blocks' table and 'blocks_fts' FTS table in the specified sqlite3 database.
         """
         self.cursor.execute(
             """
@@ -96,8 +108,22 @@ class UserDatabase(BaseDatabase):
             );
         """
         )
+        # Create FTS5 virtual table for full-text search of blocks
+        self.cursor.execute(
+            """
+            CREATE VIRTUAL TABLE IF NOT EXISTS blocks_fts USING fts5(
+                content,
+                page_id UNINDEXED,
+                parent_block_id UNINDEXED,
+                content='blocks',
+                content_rowid='block_id'
+            );
+        """
+        )
         self.conn.commit()
-        logger.debug(f"Table 'blocks' created or already exists in '{self.db_path}'.")
+        logger.debug(
+            f"Table 'blocks' and 'blocks_fts' created or already exists in '{self.db_path}'."
+        )
 
     def initialize_tables(self) -> None:
         """
@@ -197,6 +223,13 @@ class UserDatabase(BaseDatabase):
             "INSERT INTO pages (title) VALUES (?) RETURNING page_id", (title,)
         )
         new_page_id = temp_cursor.fetchone()[0]
+
+        # Insert just the title and rowid into FTS table (rowid matches page_id)
+        # Have to do it this way because rowid is required by FTS
+        temp_cursor.execute(
+            "INSERT INTO pages_fts (rowid, title) VALUES (?, ?)", (new_page_id, title)
+        )
+
         self.conn.commit()
         logger.debug(f"Page '{title}' added successfully with ID: {new_page_id}")
         return new_page_id
@@ -241,6 +274,10 @@ class UserDatabase(BaseDatabase):
         self.cursor.execute(
             "UPDATE pages SET title = ? WHERE page_id = ?", (new_title, page_id)
         )
+        # Update the FTS table as well
+        self.cursor.execute(
+            "UPDATE pages_fts SET title = ? WHERE rowid = ?", (new_title, page_id)
+        )
         self.conn.commit()
         if self.cursor.rowcount == 0:
             logger.debug(f"Page ID {page_id} not found or no change in title.")
@@ -252,6 +289,9 @@ class UserDatabase(BaseDatabase):
         Deletes a page and all its associated blocks.
         Raises PageNotFoundError if page is not found.
         """
+        # Delete from FTS table first
+        self.cursor.execute("DELETE FROM pages_fts WHERE rowid = ?", (page_id,))
+        # Then delete from the main table
         self.cursor.execute("DELETE FROM pages WHERE page_id = ?", (page_id,))
         self.conn.commit()
         if self.cursor.rowcount == 0:
@@ -279,6 +319,11 @@ class UserDatabase(BaseDatabase):
                 (content, page_id, position),
             )
             new_block_id = temp_cursor.fetchone()[0]
+            # Insert the block into the FTS table as well
+            temp_cursor.execute(
+                "INSERT INTO blocks_fts (rowid, content, page_id, parent_block_id) VALUES (?, ?, ?, ?)",
+                (new_block_id, content, page_id, None),
+            )
             logger.debug(f"Block added to page ID {page_id}: '{content[:50]}...'")
         elif parent_block_id is not None and page_id is None:
             temp_cursor = self.conn.cursor()
@@ -287,6 +332,11 @@ class UserDatabase(BaseDatabase):
                 (content, parent_block_id, position),
             )
             new_block_id = temp_cursor.fetchone()[0]
+            # Insert the block into the FTS table as well
+            temp_cursor.execute(
+                "INSERT INTO blocks_fts (rowid, content, page_id, parent_block_id) VALUES (?, ?, ?, ?)",
+                (new_block_id, content, None, parent_block_id),
+            )
             logger.debug(
                 f"Block added under parent block ID {parent_block_id}: '{content[:50]}...'"
             )
@@ -336,6 +386,11 @@ class UserDatabase(BaseDatabase):
         self.cursor.execute(
             "UPDATE blocks SET content = ? WHERE block_id = ?", (new_content, block_id)
         )
+        # Update the FTS table as well
+        self.cursor.execute(
+            "UPDATE blocks_fts SET content = ? WHERE rowid = ?",
+            (new_content, block_id),
+        )
         self.conn.commit()
         if self.cursor.rowcount == 0:
             logger.debug(f"Block ID {block_id} not found or no change in content.")
@@ -354,12 +409,22 @@ class UserDatabase(BaseDatabase):
                 "UPDATE blocks SET page_id = ?, parent_block_id = NULL WHERE block_id = ?",
                 (new_page_id, block_id),
             )
+            # Update the FTS table as well
+            self.cursor.execute(
+                "UPDATE blocks_fts SET page_id = ?, parent_block_id = NULL WHERE rowid = ?",
+                (new_page_id, block_id),
+            )
             logger.debug(
                 f"Block ID {block_id} parent updated to page ID {new_page_id}."
             )
         elif new_parent_block_id is not None and new_page_id is None:
             self.cursor.execute(
                 "UPDATE blocks SET parent_block_id = ?, page_id = NULL WHERE block_id = ?",
+                (new_parent_block_id, block_id),
+            )
+            # Update the FTS table as well
+            self.cursor.execute(
+                "UPDATE blocks_fts SET parent_block_id = ?, page_id = NULL WHERE rowid = ?",
                 (new_parent_block_id, block_id),
             )
             logger.debug(
@@ -383,9 +448,64 @@ class UserDatabase(BaseDatabase):
         Deletes a block and all its nested child blocks.
         Raises BlockNotFoundError if block is not found.
         """
+        # Delete from FTS table first
+        self.cursor.execute("DELETE FROM blocks_fts WHERE rowid = ?", (block_id,))
+        # Then delete from the main table
         self.cursor.execute("DELETE FROM blocks WHERE block_id = ?", (block_id,))
         self.conn.commit()
         if self.cursor.rowcount == 0:
             logger.debug(f"Block ID {block_id} not found.")
             raise BlockNotFoundError(f"Block with ID {block_id} not found")
         logger.debug(f"Block ID {block_id} and its children deleted successfully.")
+
+    def search_pages(self, query: str, limit: int = 10) -> list[PageModel]:
+        """
+        Search for pages by title using FTS.
+        Returns a list of PageModel objects that match the search query.
+        """
+        # Use FTS MATCH to search in the pages_fts table
+        # Get page_id from FTS table and join with main pages table to get full details
+        self.cursor.execute(
+            """
+            SELECT p.page_id, p.title, p.created_at
+            FROM pages p
+            JOIN pages_fts pf ON p.page_id = pf.rowid
+            WHERE pf MATCH ?
+            ORDER BY rank
+            LIMIT ?
+            """,
+            (query, limit),
+        )
+        rows = self.cursor.fetchall()
+        return [PageModel(**row) for row in rows]
+
+    def search_blocks(self, query: str, limit: int = 10) -> list[BlockModel]:
+        """
+        Search for blocks by content using FTS.
+        Returns a list of BlockModel objects that match the search query.
+        """
+        # Use FTS MATCH to search in the blocks_fts table
+        self.cursor.execute(
+            """
+            SELECT b.block_id, b.content, b.page_id, b.parent_block_id, b.position, b.created_at
+            FROM blocks b
+            JOIN blocks_fts bf ON b.block_id = bf.rowid
+            WHERE bf MATCH ?
+            ORDER BY rank
+            LIMIT ?
+            """,
+            (query, limit),
+        )
+        rows = self.cursor.fetchall()
+        return [BlockModel(**row) for row in rows]
+
+    def search_all(
+        self, query: str, limit: int = 10
+    ) -> tuple[list[PageModel], list[BlockModel]]:
+        """
+        Search for both pages and blocks using FTS.
+        Returns a tuple of (pages, blocks) that match the search query.
+        """
+        pages = self.search_pages(query, limit)
+        blocks = self.search_blocks(query, limit)
+        return pages, blocks

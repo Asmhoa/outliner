@@ -5,6 +5,7 @@ from outliner_api_server.routers import (
     blocks_router,
     workspaces_router,
     databases_router,
+    utils_router,
 )
 
 
@@ -40,3 +41,4 @@ app.include_router(pages_router.router)
 app.include_router(blocks_router.router)
 app.include_router(workspaces_router.router)
 app.include_router(databases_router.router)
+app.include_router(utils_router.router)
