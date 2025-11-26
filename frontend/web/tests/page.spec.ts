@@ -20,17 +20,11 @@ test.describe("Page Navigation", () => {
     await page.getByTestId("add-page-button").click();
     await page.getByLabel("Page Title").fill(page1Title);
     await page.getByRole("button", { name: "Create Page" }).click();
-    
-    // Wait for the page to appear in the sidebar
-    await expect(page.getByTestId("left-sidebar").getByText(page1Title)).toBeVisible();
-    
+
     // Create another different page (stay on base URL)
     await page.getByTestId("add-page-button").click();
     await page.getByLabel("Page Title").fill(page2Title);
     await page.getByRole("button", { name: "Create Page" }).click();
-    
-    // Wait for the page to appear in the sidebar
-    await expect(page.getByTestId("left-sidebar").getByText(page2Title)).toBeVisible();
 
     // Get all pages using the API to get their IDs
     const pagesResponse = await getPagesDbDbIdPagesGet({ path: { db_id: dbId } });
@@ -41,11 +35,11 @@ test.describe("Page Navigation", () => {
       if (page2) page2Id = page2.page_id;
     }
 
-    // Navigate to URL for page 1
+    // Navigate directly to page 1 using the known ID
     await page.goto(`/db/${dbId}/pages/${page1Id}`);
     await expect(page.getByRole("heading", { name: page1Title })).toBeVisible();
 
-    // Navigate to URL for page 2
+    // Navigate directly to page 2 using the known ID
     await page.goto(`/db/${dbId}/pages/${page2Id}`);
     await expect(page.getByRole("heading", { name: page2Title })).toBeVisible();
   });

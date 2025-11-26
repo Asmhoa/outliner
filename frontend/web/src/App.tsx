@@ -9,6 +9,7 @@ import log from "./utils/logger";
 
 import "./App.css";
 import Page from "./components/Page";
+import AllPages from "./components/page/AllPages";
 import RightSidebar from "./components/sidebar/RightSidebar";
 import {
   getBlocksDbDbIdBlocksPageIdGet,
@@ -23,16 +24,21 @@ import { CreateDatabaseModal } from "./components/CreateDatabaseModal";
 import { WelcomeScreen } from "./components/WelcomeScreen";
 import { usePageData } from "./hooks/usePageData";
 import { useDatabaseManager } from "./hooks/useDatabaseManager";
+import { useLocation } from "react-router-dom";
 
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
 function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { dbId: dbIdParam, pageId } = useParams<{
     dbId: string;
     pageId: string;
   }>(); // get page_id from URL
   const { dbId, setDbId } = useDatabase();
+
+  // Check if we're on the all-pages route
+  const isAllPagesRoute = location.pathname.includes('/all-pages');
 
   // Use the new hooks to get page and database management functionality
   const {
@@ -92,7 +98,7 @@ function App() {
 
   // Fetch blocks when current page changes
   useEffect(() => {
-    if (!dbId || !currentPageId) return;
+    if (!dbId || !currentPageId || isAllPagesRoute) return;
 
     const fetchBlocks = async () => {
       log.debug(`[App] Fetching blocks for page`, { page_id: currentPageId });
@@ -135,7 +141,7 @@ function App() {
     };
 
     fetchBlocks();
-  }, [currentPageId, dbId]);
+  }, [currentPageId, dbId, isAllPagesRoute]);
 
   // Handle database parameter changes
   useEffect(() => {
@@ -176,7 +182,10 @@ function App() {
 
   // Update current page ID based on URL parameter
   useEffect(() => {
-    if (pageId) {
+    if (isAllPagesRoute) {
+      // If we're on the all pages route, don't set a current page
+      setCurrentPageId(null);
+    } else if (pageId) {
       // Check if the page exists in our pages list before setting it as current
       const pageExists = pages.some((page) => page.page_id === pageId);
       if (pageExists) {
@@ -191,7 +200,7 @@ function App() {
       // Show no pages until the user explicitly selects one
       setCurrentPageId(null);
     }
-  }, [pageId, pages, setCurrentPageId]);
+  }, [pageId, pages, setCurrentPageId, isAllPagesRoute]);
 
   // Show loading overlay while checking databases initially
   if (isDatabasesLoading) {
@@ -268,7 +277,9 @@ function App() {
           onDatabaseCreated={fetchDatabases}
         />
         <AppShell.Main>
-          {currentPageId && (
+          {isAllPagesRoute ? (
+            <AllPages pages={pages} />
+          ) : currentPageId ? (
             <Page
               key={currentPageId}
               page_id={currentPageId}
@@ -279,7 +290,7 @@ function App() {
               handleDeletePage={handleDeletePage}
               handleRenamePage={() => setIsRenaming(true)}
             />
-          )}
+          ) : null}
         </AppShell.Main>
         <AppShell.Aside p="md" pt={0}>
           <RightSidebar onClose={handleRightSidebarToggle} />

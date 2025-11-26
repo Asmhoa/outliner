@@ -10,22 +10,36 @@ import {
   IconLayoutGrid,
   IconNote,
 } from "@tabler/icons-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useDatabase } from "../../hooks/useDatabase";
 import log from "../../utils/logger";
 
 interface NavigationPanelProps {
   activeItem?: string;
 }
 
-const NavigationPanel: React.FC<NavigationPanelProps> = ({ 
-  activeItem 
+const NavigationPanel: React.FC<NavigationPanelProps> = ({
+  activeItem
 }) => {
+  const navigate = useNavigate();
+  const { dbId } = useDatabase();
+  const { dbId: urlDbId } = useParams<{ dbId: string }>();
+
+  const handleAllPagesClick = () => {
+    if (!dbId) {
+      log.error("No database ID available");
+      return;
+    }
+    navigate(`/db/${dbId}/all-pages`);
+  };
+
   return (
     <>
       <Divider />
       <NavLink
         label="All Pages"
         leftSection={<IconLayoutDashboard />}
-        onClick={() => log.debug("[NavigationPanel] All Pages clicked")}
+        onClick={handleAllPagesClick}
       />
       <NavLink
         label="Graph View"
