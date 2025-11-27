@@ -597,3 +597,17 @@ class UserDatabase(BaseDatabase):
         pages = self.search_pages(query, *args, **kwargs)
         blocks = self.search_blocks(query, *args, **kwargs)
         return pages, blocks
+
+    def rebuild_search(self) -> None:
+        """
+        Rebuilds the full-text search indexes by clearing the FTS tables and
+        repopulating them with current data from the main tables.
+        This is useful when the FTS tables get out of sync with the main tables.
+        """
+        # For FTS5 external content tables, use the special 'rebuild' command
+        # This repopulates the FTS index from the content table automatically
+        self.cursor.execute("INSERT INTO pages_fts(pages_fts) VALUES('rebuild')")
+        self.cursor.execute("INSERT INTO blocks_fts(blocks_fts) VALUES('rebuild')")
+
+        self.conn.commit()
+        logger.debug("FTS tables rebuilt successfully.")

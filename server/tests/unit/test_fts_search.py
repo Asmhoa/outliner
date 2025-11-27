@@ -501,3 +501,54 @@ def test_search_with_boolean_operators(db):
     results = db.search_pages("Python NOT Tutorial", escape_special_chars=False)
     assert len(results) == 1  # Only page3 (Python and JavaScript Guide) should match
     assert results[0].page_id == page3_id
+
+
+def test_rebuild_search(db):
+    """Test rebuilding the search index."""
+    # Add some pages and blocks
+    page1_id = db.add_page("Python Tutorial")
+    page2_id = db.add_page("JavaScript Guide")
+    block1_id = db.add_block("Learning Python is fun", 1, page_id=page1_id)
+    block2_id = db.add_block("JavaScript is powerful", 2, page_id=page2_id)
+
+    # Verify search works before rebuild
+    pages_before = db.search_pages("Python")
+    blocks_before = db.search_blocks("Python")
+    assert len(pages_before) == 1
+    assert len(blocks_before) == 1
+    assert pages_before[0].page_id == page1_id
+    assert blocks_before[0].block_id == block1_id
+
+    pages_before_js = db.search_pages("JavaScript")
+    blocks_before_js = db.search_blocks("JavaScript")
+    assert len(pages_before_js) == 1
+    assert len(blocks_before_js) == 1
+    assert pages_before_js[0].page_id == page2_id
+    assert blocks_before_js[0].block_id == block2_id
+
+    # Rebuild the search index
+    db.rebuild_search()
+
+    # Verify search still works after rebuild with same results
+    pages_after = db.search_pages("Python")
+    blocks_after = db.search_blocks("Python")
+    assert len(pages_after) == 1
+    assert len(blocks_after) == 1
+    assert pages_after[0].page_id == page1_id
+    assert blocks_after[0].block_id == block1_id
+
+    pages_after_js = db.search_pages("JavaScript")
+    blocks_after_js = db.search_blocks("JavaScript")
+    assert len(pages_after_js) == 1
+    assert len(blocks_after_js) == 1
+    assert pages_after_js[0].page_id == page2_id
+    assert blocks_after_js[0].block_id == block2_id
+
+    # Verify all content is still searchable
+    all_pages, all_blocks = db.search_all("Python")
+    assert len(all_pages) == 1
+    assert len(all_blocks) == 1
+
+    all_pages_js, all_blocks_js = db.search_all("JavaScript")
+    assert len(all_pages_js) == 1
+    assert len(all_blocks_js) == 1

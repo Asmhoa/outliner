@@ -67,3 +67,36 @@ def search(db_id: str, search_request: SearchRequest, db: UserDatabase = Depends
         return {"pages": pages_data, "blocks": blocks_data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+
+
+@router.post(
+    "/db/{db_id}/rebuild-search",
+    responses={
+        200: {
+            "description": "Search index rebuilt successfully",
+            "content": {
+                "application/json": {
+                    "example": {"message": "Search index rebuilt successfully"}
+                }
+            },
+        },
+        500: {
+            "description": "Failed to rebuild search index",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Rebuild search failed: error message"}
+                }
+            },
+        },
+    },
+)
+def rebuild_search(db_id: str, db: UserDatabase = Depends(get_db)):
+    """
+    Rebuild the full-text search index for the specified database.
+    This clears and rebuilds the FTS tables to ensure they are in sync with the main tables.
+    """
+    try:
+        db.rebuild_search()
+        return {"message": "Search index rebuilt successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Rebuild search failed: {str(e)}")

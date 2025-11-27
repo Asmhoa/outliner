@@ -988,3 +988,35 @@ export type SearchDbDbIdSearchPostResponses = {
      */
     200: unknown;
 };
+
+export type RebuildSearchDbDbIdRebuildSearchPostData = {
+    body?: never;
+    path: {
+        /**
+         * Db Id
+         */
+        db_id: string;
+    };
+    query?: never;
+    url: '/db/{db_id}/rebuild-search';
+};
+
+export type RebuildSearchDbDbIdRebuildSearchPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Failed to rebuild search index
+     */
+    500: unknown;
+};
+
+export type RebuildSearchDbDbIdRebuildSearchPostError = RebuildSearchDbDbIdRebuildSearchPostErrors[keyof RebuildSearchDbDbIdRebuildSearchPostErrors];
+
+export type RebuildSearchDbDbIdRebuildSearchPostResponses = {
+    /**
+     * Search index rebuilt successfully
+     */
+    200: unknown;
+};
