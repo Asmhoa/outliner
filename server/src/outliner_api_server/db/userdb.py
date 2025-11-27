@@ -273,9 +273,7 @@ class UserDatabase(BaseDatabase):
             )
 
         # Get the old title to verify the page exists
-        self.cursor.execute(
-            "SELECT title FROM pages WHERE page_id = ?", (page_id,)
-        )
+        self.cursor.execute("SELECT title FROM pages WHERE page_id = ?", (page_id,))
         old_page = self.cursor.fetchone()
         if old_page is None:
             logger.debug(f"Page ID {page_id} not found.")
@@ -287,9 +285,7 @@ class UserDatabase(BaseDatabase):
         temp_cursor = self.conn.cursor()
 
         # Delete from FTS first to clear the old content
-        temp_cursor.execute(
-            "DELETE FROM pages_fts WHERE page_id = ?", (page_id,)
-        )
+        temp_cursor.execute("DELETE FROM pages_fts WHERE page_id = ?", (page_id,))
 
         # Update the main table
         temp_cursor.execute(
@@ -405,7 +401,8 @@ class UserDatabase(BaseDatabase):
         """
         # Get the current block to verify it exists and get related info for FTS
         self.cursor.execute(
-            "SELECT page_id, parent_block_id FROM blocks WHERE block_id = ?", (block_id,)
+            "SELECT page_id, parent_block_id FROM blocks WHERE block_id = ?",
+            (block_id,),
         )
         current_block = self.cursor.fetchone()
         if current_block is None:
@@ -417,9 +414,7 @@ class UserDatabase(BaseDatabase):
         temp_cursor = self.conn.cursor()
 
         # Delete from FTS first to clear the old content
-        temp_cursor.execute(
-            "DELETE FROM blocks_fts WHERE block_id = ?", (block_id,)
-        )
+        temp_cursor.execute("DELETE FROM blocks_fts WHERE block_id = ?", (block_id,))
 
         # Update the main table
         temp_cursor.execute(
@@ -429,7 +424,12 @@ class UserDatabase(BaseDatabase):
         # Reinsert into FTS with updated content
         temp_cursor.execute(
             "INSERT INTO blocks_fts (content, block_id, page_id, parent_block_id) VALUES (?, ?, ?, ?)",
-            (new_content, block_id, current_block['page_id'], current_block['parent_block_id'])
+            (
+                new_content,
+                block_id,
+                current_block["page_id"],
+                current_block["parent_block_id"],
+            ),
         )
 
         self.conn.commit()
@@ -505,7 +505,7 @@ class UserDatabase(BaseDatabase):
         a more sophisticated tokenization approach would be needed.
         """
         tokens = text.split()
-        escaped_tokens = [f'"{t.replace('"', '""')}"' for t in tokens]
+        escaped_tokens = [f'"{t.replace('"', '""')}"*' for t in tokens]
         return " ".join(escaped_tokens)
 
     def search_pages(
