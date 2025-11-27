@@ -45,15 +45,18 @@ def search(db_id: str, search_request: SearchRequest, db: UserDatabase = Depends
     Search for pages and/or blocks based on the provided query.
     """
     try:
+        # Determine whether to escape special characters based on advanced mode
+        escape_special_chars = not search_request.advanced
+
         # Perform search based on the search_type parameter
         if search_request.search_type == "pages":
-            pages = db.search_pages(search_request.query, search_request.limit)
+            pages = db.search_pages(search_request.query, search_request.limit, escape_special_chars=escape_special_chars)
             blocks = []
         elif search_request.search_type == "blocks":
             pages = []
-            blocks = db.search_blocks(search_request.query, search_request.limit)
+            blocks = db.search_blocks(search_request.query, search_request.limit, escape_special_chars=escape_special_chars)
         elif search_request.search_type == "all":
-            pages, blocks = db.search_all(search_request.query, search_request.limit)
+            pages, blocks = db.search_all(search_request.query, search_request.limit, escape_special_chars=escape_special_chars)
         else:
             raise HTTPException(status_code=400, detail="Invalid search_type. Must be 'pages', 'blocks', or 'all'")
 

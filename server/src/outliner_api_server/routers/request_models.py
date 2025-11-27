@@ -48,6 +48,7 @@ class SearchRequest(BaseModel):
     query: str
     search_type: Literal["pages", "blocks", "all"] = "all"
     limit: int = 10
+    advanced: bool = False
 
 
 class SearchResult(BaseModel):
