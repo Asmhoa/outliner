@@ -285,6 +285,8 @@ class UserDatabase(BaseDatabase):
         # instead of directly updating the FTS table
         # Use temp cursor for consistency with add_page method
         temp_cursor = self.conn.cursor()
+
+        # Delete from FTS first to clear the old content
         temp_cursor.execute(
             "DELETE FROM pages_fts WHERE page_id = ?", (page_id,)
         )
@@ -414,15 +416,17 @@ class UserDatabase(BaseDatabase):
         # instead of directly updating the FTS table
         temp_cursor = self.conn.cursor()
 
+        # Delete from FTS first to clear the old content
+        temp_cursor.execute(
+            "DELETE FROM blocks_fts WHERE block_id = ?", (block_id,)
+        )
+
         # Update the main table
         temp_cursor.execute(
             "UPDATE blocks SET content = ? WHERE block_id = ?", (new_content, block_id)
         )
 
-        # Delete from FTS and reinsert with updated content
-        temp_cursor.execute(
-            "DELETE FROM blocks_fts WHERE block_id = ?", (block_id,)
-        )
+        # Reinsert into FTS with updated content
         temp_cursor.execute(
             "INSERT INTO blocks_fts (content, block_id, page_id, parent_block_id) VALUES (?, ?, ?, ?)",
             (new_content, block_id, current_block['page_id'], current_block['parent_block_id'])
