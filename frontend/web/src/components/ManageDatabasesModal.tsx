@@ -8,13 +8,15 @@ import {
   ActionIcon,
   TextInput,
   Box,
+  LoadingOverlay,
 } from "@mantine/core";
-import { IconPencil, IconTrash, IconX, IconCheck } from "@tabler/icons-react";
+import { IconPencil, IconTrash, IconX, IconCheck, IconRefresh } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import {
   getDatabasesDatabasesGet,
   updateDatabaseDatabasesDbIdPut,
-  deleteDatabaseDatabasesDbIdDelete
+  deleteDatabaseDatabasesDbIdDelete,
+  rebuildSearchDbDbIdRebuildSearchPost,
 } from "../api-client";
 
 interface Database {
@@ -40,6 +42,7 @@ export function ManageDatabasesModal({
   const [renamingDbId, setRenamingDbId] = useState<string | null>(null); // Track which db is being renamed
   const [deletingDbId, setDeletingDbId] = useState<string | null>(null); // Track which db is being deleted (final deletion)
   const [deletionConfirmDbId, setDeletionConfirmDbId] = useState<string | null>(null); // Track which db is pending confirmation
+  const [rebuildingDbId, setRebuildingDbId] = useState<string | null>(null); // Track which db is being rebuilt
 
   // Load databases when modal opens
   const loadData = async () => {
@@ -157,6 +160,25 @@ export function ManageDatabasesModal({
     setEditValue("");
   };
 
+  const handleRebuild = async (dbId: string) => {
+    setRebuildingDbId(dbId); // Set loading state for the specific database
+
+    try {
+      // Call the backend API to rebuild the search index
+      await rebuildSearchDbDbIdRebuildSearchPost({
+        path: { db_id: dbId },
+        body: {},
+      });
+
+      // Optionally show a success notification here
+    } catch (error) {
+      console.error('Failed to rebuild search index:', error);
+      // Optionally show an error notification here
+    } finally {
+      setRebuildingDbId(null); // Reset loading state
+    }
+  };
+
   return (
     <Modal
       opened={modalOpened}
@@ -237,6 +259,15 @@ export function ManageDatabasesModal({
                       </>
                     ) : (
                       <>
+                        <Button
+                          variant="subtle"
+                          size="compact-sm"
+                          onClick={() => handleRebuild(db.id)}
+                          loading={rebuildingDbId === db.id}
+                          leftSection={<IconRefresh size={14} />}
+                        >
+                          Rebuild
+                        </Button>
                         <Button
                           variant="subtle"
                           size="compact-sm"

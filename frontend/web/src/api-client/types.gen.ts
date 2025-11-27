@@ -163,6 +163,28 @@ export type PageRename = {
 };
 
 /**
+ * SearchRequest
+ */
+export type SearchRequest = {
+    /**
+     * Query
+     */
+    query: string;
+    /**
+     * Search Type
+     */
+    search_type?: 'pages' | 'blocks' | 'all';
+    /**
+     * Limit
+     */
+    limit?: number;
+    /**
+     * Advanced
+     */
+    advanced?: boolean;
+};
+
+/**
  * ValidationError
  */
 export type ValidationError = {
@@ -935,6 +957,66 @@ export type UpdateDatabaseDatabasesDbIdPutError = UpdateDatabaseDatabasesDbIdPut
 export type UpdateDatabaseDatabasesDbIdPutResponses = {
     /**
      * Database updated successfully
+     */
+    200: unknown;
+};
+
+export type SearchDbDbIdSearchPostData = {
+    body: SearchRequest;
+    path: {
+        /**
+         * Db Id
+         */
+        db_id: string;
+    };
+    query?: never;
+    url: '/db/{db_id}/search';
+};
+
+export type SearchDbDbIdSearchPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SearchDbDbIdSearchPostError = SearchDbDbIdSearchPostErrors[keyof SearchDbDbIdSearchPostErrors];
+
+export type SearchDbDbIdSearchPostResponses = {
+    /**
+     * Search results returned successfully
+     */
+    200: unknown;
+};
+
+export type RebuildSearchDbDbIdRebuildSearchPostData = {
+    body?: never;
+    path: {
+        /**
+         * Db Id
+         */
+        db_id: string;
+    };
+    query?: never;
+    url: '/db/{db_id}/rebuild-search';
+};
+
+export type RebuildSearchDbDbIdRebuildSearchPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Failed to rebuild search index
+     */
+    500: unknown;
+};
+
+export type RebuildSearchDbDbIdRebuildSearchPostError = RebuildSearchDbDbIdRebuildSearchPostErrors[keyof RebuildSearchDbDbIdRebuildSearchPostErrors];
+
+export type RebuildSearchDbDbIdRebuildSearchPostResponses = {
+    /**
+     * Search index rebuilt successfully
      */
     200: unknown;
 };

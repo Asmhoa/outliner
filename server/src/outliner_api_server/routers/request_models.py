@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Literal
 
 
 class PageCreate(BaseModel):
@@ -41,3 +42,15 @@ class WorkspaceUpdate(BaseModel):
 
 class DatabaseCreate(BaseModel):
     name: str
+
+
+class SearchRequest(BaseModel):
+    query: str
+    search_type: Literal["pages", "blocks", "all"] = "all"
+    limit: int = 10
+    advanced: bool = False
+
+
+class SearchResult(BaseModel):
+    pages: list[dict]
+    blocks: list[dict]

@@ -1,9 +1,15 @@
+import os
+import tempfile
+
 import pytest
+
+from outliner_api_server.db.errors import (
+    UserDatabaseAlreadyExistsError,
+    UserDatabaseNotFoundError,
+)
 from outliner_api_server.db.sysdb import SystemDatabase
 from outliner_api_server.db.userdb import UserDatabase
-from outliner_api_server.db.errors import UserDatabaseAlreadyExistsError, UserDatabaseNotFoundError
-import tempfile
-import os
+
 
 @pytest.fixture
 def sys_db():
@@ -33,12 +39,14 @@ def test_add_and_load_user_database(sys_db):
         user_db = UserDatabase(tmp.name)
 
         # Check that the tables were created
-        cursor = user_db.conn.cursor()
+        cursor = user_db.get_cursor()
         cursor.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='workspaces'"
         )
         assert cursor.fetchone() is not None
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='pages'")
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='pages'"
+        )
         assert cursor.fetchone() is not None
         cursor.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='blocks'"
@@ -108,7 +116,9 @@ def test_update_user_database(sys_db):
     assert updated_db_info.path == "custom_path.db"
 
     # Test updating both name and relative path (name takes precedence for path generation)
-    sys_db.update_user_database(db_info.id, new_name="another_db", new_path_relative="should_be_ignored.db")
+    sys_db.update_user_database(
+        db_info.id, new_name="another_db", new_path_relative="should_be_ignored.db"
+    )
     updated_db_info = sys_db.get_user_database_by_id(db_info.id)
     assert updated_db_info.name == "another_db"
     assert updated_db_info.path == "another_db.db"
@@ -127,7 +137,7 @@ def test_update_user_database_already_exists(sys_db):
     db1_info = sys_db.get_user_database_by_name("test_db1")
     with pytest.raises(UserDatabaseAlreadyExistsError):
         sys_db.update_user_database(db1_info.id, new_name="test_db2")
-    
+
 
 def test_update_user_database_no_changes(sys_db):
     """Test that nothing happens when updating a database with no new data."""
@@ -139,23 +149,15 @@ def test_update_user_database_no_changes(sys_db):
 
 
 def test_delete_user_database(sys_db):
-
-
     """Test that a user database can be deleted."""
-
 
     sys_db.add_user_database("test_db")
 
-
     db_info = sys_db.get_user_database_by_name("test_db")
-
 
     sys_db.delete_user_database(db_info.id)
 
-
     with pytest.raises(UserDatabaseNotFoundError):
-
-
         sys_db.get_user_database_by_id(db_info.id)
 
 
@@ -181,8 +183,12 @@ def test_rename_user_database_file(sys_db):
     user_db.close_conn()
 
     # Construct expected original and new file paths
-    original_file_path = os.path.join(sys_db.databases_dir, original_name.lower().replace(" ", "_") + ".db")
-    new_file_path = os.path.join(sys_db.databases_dir, new_name.lower().replace(" ", "_") + ".db")
+    original_file_path = os.path.join(
+        sys_db.databases_dir, original_name.lower().replace(" ", "_") + ".db"
+    )
+    new_file_path = os.path.join(
+        sys_db.databases_dir, new_name.lower().replace(" ", "_") + ".db"
+    )
 
     # Verify original file exists
     assert os.path.exists(original_file_path)

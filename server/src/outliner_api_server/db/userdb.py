@@ -7,7 +7,7 @@ from outliner_api_server.db.errors import (
     PageNotFoundError,
     WorkspaceNotFoundError,
 )
-from outliner_api_server.db.models import PageModel, BlockModel, WorkspaceModel
+from outliner_api_server.db.models import BlockModel, PageModel, WorkspaceModel
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class UserDatabase(BaseDatabase):
 
     def _create_table_pages(self) -> None:
         """
-        Creates the 'pages' table in the specified sqlite3 database.
+        Creates the 'pages' table and 'pages_fts' FTS table in the specified sqlite3 database.
         """
         self.cursor.execute(
             """
@@ -70,12 +70,50 @@ class UserDatabase(BaseDatabase):
             );
         """
         )
+        # Create FTS5 virtual table for full-text search
+        self.cursor.execute(
+            """
+            CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(
+                title,
+                page_id UNINDEXED,
+                content='pages'
+            );
+        """
+        )
+        # Create triggers to automatically maintain FTS index
+        self.cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS pages_ai AFTER INSERT ON pages
+            BEGIN
+                INSERT INTO pages_fts (rowid, title, page_id) VALUES (NEW.rowid, NEW.title, NEW.page_id);
+            END;
+            """
+        )
+        self.cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS pages_ad AFTER DELETE ON pages
+            BEGIN
+                INSERT INTO pages_fts(pages_fts, rowid, title) VALUES('delete', OLD.rowid, OLD.title);
+            END;
+            """
+        )
+        self.cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS pages_au AFTER UPDATE ON pages
+            BEGIN
+                INSERT INTO pages_fts(pages_fts, rowid, title) VALUES('delete', OLD.rowid, OLD.title);
+                INSERT INTO pages_fts(rowid, title, page_id) VALUES (NEW.rowid, NEW.title, NEW.page_id);
+            END;
+            """
+        )
         self.conn.commit()
-        logger.debug(f"Table 'pages' created or already exists in '{self.db_path}'.")
+        logger.debug(
+            f"Table 'pages' and 'pages_fts' created or already exists in '{self.db_path}'."
+        )
 
     def _create_table_blocks(self) -> None:
         """
-        Creates the 'blocks' table in the specified sqlite3 database.
+        Creates the 'blocks' table and 'blocks_fts' FTS table in the specified sqlite3 database.
         """
         self.cursor.execute(
             """
@@ -96,8 +134,52 @@ class UserDatabase(BaseDatabase):
             );
         """
         )
+        # Create FTS5 virtual table for full-text search of blocks
+        # content='' prevents data duplication - the content text is used for indexing but then discarded
+        # We will still need to join with the original blocks table on block_id during retrieval
+        self.cursor.execute(
+            """
+            CREATE VIRTUAL TABLE IF NOT EXISTS blocks_fts USING fts5(
+                content,
+                block_id UNINDEXED,
+                page_id UNINDEXED,
+                parent_block_id UNINDEXED,
+                content='blocks'
+            );
+        """
+        )
+        # Create triggers to automatically maintain FTS index
+        self.cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS blocks_ai AFTER INSERT ON blocks
+            BEGIN
+                INSERT INTO blocks_fts (rowid, content, block_id, page_id, parent_block_id)
+                VALUES (NEW.rowid, NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id);
+            END;
+            """
+        )
+        self.cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS blocks_ad AFTER DELETE ON blocks
+            BEGIN
+                INSERT INTO blocks_fts(blocks_fts, rowid, content) VALUES('delete', OLD.rowid, OLD.content);
+            END;
+            """
+        )
+        self.cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS blocks_au AFTER UPDATE ON blocks
+            BEGIN
+                INSERT INTO blocks_fts(blocks_fts, rowid, content) VALUES('delete', OLD.rowid, OLD.content);
+                INSERT INTO blocks_fts (rowid, content, block_id, page_id, parent_block_id)
+                VALUES (NEW.rowid, NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id);
+            END;
+            """
+        )
         self.conn.commit()
-        logger.debug(f"Table 'blocks' created or already exists in '{self.db_path}'.")
+        logger.debug(
+            f"Table 'blocks' and 'blocks_fts' created or already exists in '{self.db_path}'."
+        )
 
     def initialize_tables(self) -> None:
         """
@@ -191,12 +273,12 @@ class UserDatabase(BaseDatabase):
         if existing_page:
             raise PageAlreadyExistsError(f"Page with title '{title}' already exists")
 
-        # Create a temporary cursor without row_factory to handle RETURNING values
-        temp_cursor = self.conn.cursor()
-        temp_cursor.execute(
+        # The trigger will automatically maintain the FTS index
+        self.cursor.execute(
             "INSERT INTO pages (title) VALUES (?) RETURNING page_id", (title,)
         )
-        new_page_id = temp_cursor.fetchone()[0]
+        new_page_id = self.cursor.fetchone()[0]
+
         self.conn.commit()
         logger.debug(f"Page '{title}' added successfully with ID: {new_page_id}")
         return new_page_id
@@ -238,13 +320,19 @@ class UserDatabase(BaseDatabase):
                 f"Page with title '{new_title}' already exists"
             )
 
+        # Get the old title to verify the page exists
+        self.cursor.execute("SELECT title FROM pages WHERE page_id = ?", (page_id,))
+        old_page = self.cursor.fetchone()
+        if old_page is None:
+            logger.debug(f"Page ID {page_id} not found.")
+            raise PageNotFoundError(f"Page with ID {page_id} not found")
+
+        # The trigger will automatically update the FTS index
         self.cursor.execute(
             "UPDATE pages SET title = ? WHERE page_id = ?", (new_title, page_id)
         )
+
         self.conn.commit()
-        if self.cursor.rowcount == 0:
-            logger.debug(f"Page ID {page_id} not found or no change in title.")
-            raise PageNotFoundError(f"Page with ID {page_id} not found")
         logger.debug(f"Page ID {page_id} renamed to '{new_title}'.")
 
     def delete_page(self, page_id: str) -> None:
@@ -252,6 +340,8 @@ class UserDatabase(BaseDatabase):
         Deletes a page and all its associated blocks.
         Raises PageNotFoundError if page is not found.
         """
+        # The trigger will automatically delete from FTS table
+        # Delete from the main table - CASCADE will handle associated blocks
         self.cursor.execute("DELETE FROM pages WHERE page_id = ?", (page_id,))
         self.conn.commit()
         if self.cursor.rowcount == 0:
@@ -273,20 +363,20 @@ class UserDatabase(BaseDatabase):
         Returns the ID of the newly created block.
         """
         if page_id is not None and parent_block_id is None:
-            temp_cursor = self.conn.cursor()
-            temp_cursor.execute(
+            # The trigger will automatically maintain the FTS index
+            self.cursor.execute(
                 "INSERT INTO blocks (content, page_id, position) VALUES (?, ?, ?) RETURNING block_id",
                 (content, page_id, position),
             )
-            new_block_id = temp_cursor.fetchone()[0]
+            new_block_id = self.cursor.fetchone()[0]
             logger.debug(f"Block added to page ID {page_id}: '{content[:50]}...'")
         elif parent_block_id is not None and page_id is None:
-            temp_cursor = self.conn.cursor()
-            temp_cursor.execute(
+            # The trigger will automatically maintain the FTS index
+            self.cursor.execute(
                 "INSERT INTO blocks (content, parent_block_id, position) VALUES (?, ?, ?) RETURNING block_id",
                 (content, parent_block_id, position),
             )
-            new_block_id = temp_cursor.fetchone()[0]
+            new_block_id = self.cursor.fetchone()[0]
             logger.debug(
                 f"Block added under parent block ID {parent_block_id}: '{content[:50]}...'"
             )
@@ -333,13 +423,22 @@ class UserDatabase(BaseDatabase):
         Updates the content of an existing block.
         Raises BlockNotFoundError if block is not found.
         """
+        # Get the current block to verify it exists
+        self.cursor.execute(
+            "SELECT block_id FROM blocks WHERE block_id = ?",
+            (block_id,),
+        )
+        current_block = self.cursor.fetchone()
+        if current_block is None:
+            logger.debug(f"Block ID {block_id} not found.")
+            raise BlockNotFoundError(f"Block with ID {block_id} not found")
+
+        # The trigger will automatically update the FTS index
         self.cursor.execute(
             "UPDATE blocks SET content = ? WHERE block_id = ?", (new_content, block_id)
         )
+
         self.conn.commit()
-        if self.cursor.rowcount == 0:
-            logger.debug(f"Block ID {block_id} not found or no change in content.")
-            raise BlockNotFoundError(f"Block with ID {block_id} not found")
         logger.debug(f"Block ID {block_id} content updated.")
 
     def update_block_parent(
@@ -389,3 +488,119 @@ class UserDatabase(BaseDatabase):
             logger.debug(f"Block ID {block_id} not found.")
             raise BlockNotFoundError(f"Block with ID {block_id} not found")
         logger.debug(f"Block ID {block_id} and its children deleted successfully.")
+
+    def _fts_escape_tokens(self, text: str) -> str:
+        """
+        Escape a whole string and split it into safe literal tokens
+        for an FTS MATCH expression.
+        Note: This uses text.split() which works for space-separated languages.
+        For languages like Chinese/Japanese/Korean without spaces between words,
+        a more sophisticated tokenization approach would be needed.
+        """
+        tokens = text.split()
+        escaped_tokens = [f'"{t.replace('"', '""')}"*' for t in tokens]
+        return " ".join(escaped_tokens)
+
+    def search_pages(
+        self, query: str, limit: int = 10, escape_special_chars: bool = True
+    ) -> list[PageModel]:
+        """
+        Search for pages by title using FTS.
+        Returns a list of PageModel objects that match the search query.
+
+        Args:
+            query: The search query string
+            limit: Maximum number of results to return
+            escape_special_chars: Whether to escape special characters in the query.
+                                 Default is True for safety, but can be set to False
+                                 to allow FTS operators like AND, OR, NOT, etc.
+        """
+        # Handle empty query gracefully by returning an empty list
+        if not query or query.strip() == "":
+            return []
+
+        # Sanitize the query to prevent FTS syntax errors if requested
+        if escape_special_chars:
+            query = self._fts_escape_tokens(query)
+
+        # Use FTS MATCH to search in the pages_fts table
+        # Join with main pages table using the page_id stored in the FTS table
+        self.cursor.execute(
+            """
+            SELECT p.page_id, p.title, p.created_at
+            FROM pages p
+            JOIN pages_fts pf ON p.page_id = pf.page_id
+            WHERE pages_fts MATCH ?
+            ORDER BY rank
+            LIMIT ?
+            """,
+            (query, limit),
+        )
+        rows = self.cursor.fetchall()
+        return [PageModel(**row) for row in rows]
+
+    def search_blocks(
+        self, query: str, limit: int = 10, escape_special_chars: bool = True
+    ) -> list[BlockModel]:
+        """
+        Search for blocks by content using FTS.
+        Returns a list of BlockModel objects that match the search query.
+
+        Args:
+            query: The search query string
+            limit: Maximum number of results to return
+            escape_special_chars: Whether to escape special characters in the query.
+                                 Default is True for safety, but can be set to False
+                                 to allow FTS operators like AND, OR, NOT, etc.
+        """
+        # Handle empty query gracefully by returning an empty list
+        if not query or query.strip() == "":
+            return []
+
+        # Sanitize the query to prevent FTS syntax errors if requested
+        if escape_special_chars:
+            query = self._fts_escape_tokens(query)
+
+        # Use FTS MATCH to search in the blocks_fts table
+        self.cursor.execute(
+            """
+            SELECT b.block_id, b.content, b.page_id, b.parent_block_id, b.position, b.created_at
+            FROM blocks b
+            JOIN blocks_fts bf ON b.block_id = bf.block_id
+            WHERE blocks_fts MATCH ?
+            ORDER BY rank
+            LIMIT ?
+            """,
+            (query, limit),
+        )
+        rows = self.cursor.fetchall()
+        return [BlockModel(**row) for row in rows]
+
+    def search_all(
+        self, query: str, *args, **kwargs
+    ) -> tuple[list[PageModel], list[BlockModel]]:
+        """
+        Search for both pages and blocks using FTS.
+        Returns a tuple of (pages, blocks) that match the search query.
+        """
+        # Handle empty query gracefully by returning empty lists
+        if not query or query.strip() == "":
+            return [], []
+
+        pages = self.search_pages(query, *args, **kwargs)
+        blocks = self.search_blocks(query, *args, **kwargs)
+        return pages, blocks
+
+    def rebuild_search(self) -> None:
+        """
+        Rebuilds the full-text search indexes by clearing the FTS tables and
+        repopulating them with current data from the main tables.
+        This is useful when the FTS tables get out of sync with the main tables.
+        """
+        # For FTS5 external content tables, use the special 'rebuild' command
+        # This repopulates the FTS index from the content table automatically
+        self.cursor.execute("INSERT INTO pages_fts(pages_fts) VALUES('rebuild')")
+        self.cursor.execute("INSERT INTO blocks_fts(blocks_fts) VALUES('rebuild')")
+
+        self.conn.commit()
+        logger.debug("FTS tables rebuilt successfully.")
