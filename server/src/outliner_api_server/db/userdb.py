@@ -80,6 +80,34 @@ class UserDatabase(BaseDatabase):
             );
         """
         )
+        # Create triggers to automatically maintain FTS index
+        self.cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS pages_ai AFTER INSERT ON pages
+            BEGIN
+                INSERT INTO pages_fts (title, page_id) VALUES (NEW.title, NEW.page_id);
+            END;
+            """
+        )
+        self.cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS pages_ad AFTER DELETE ON pages
+            BEGIN
+                INSERT INTO pages_fts(pages_fts, rowid)
+                VALUES('delete', OLD.rowid);
+            END;
+            """
+        )
+        self.cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS pages_au AFTER UPDATE ON pages
+            BEGIN
+                INSERT INTO pages_fts(pages_fts, rowid)
+                VALUES('delete', OLD.rowid);
+                INSERT INTO pages_fts (title, page_id) VALUES (NEW.title, NEW.page_id);
+            END;
+            """
+        )
         self.conn.commit()
         logger.debug(
             f"Table 'pages' and 'pages_fts' created or already exists in '{self.db_path}'."
@@ -121,6 +149,36 @@ class UserDatabase(BaseDatabase):
                 content='blocks'
             );
         """
+        )
+        # Create triggers to automatically maintain FTS index
+        self.cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS blocks_ai AFTER INSERT ON blocks
+            BEGIN
+                INSERT INTO blocks_fts (content, block_id, page_id, parent_block_id)
+                VALUES (NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id);
+            END;
+            """
+        )
+        self.cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS blocks_ad AFTER DELETE ON blocks
+            BEGIN
+                INSERT INTO blocks_fts(blocks_fts, rowid)
+                VALUES('delete', OLD.rowid);
+            END;
+            """
+        )
+        self.cursor.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS blocks_au AFTER UPDATE ON blocks
+            BEGIN
+                INSERT INTO blocks_fts(blocks_fts, rowid)
+                VALUES('delete', OLD.rowid);
+                INSERT INTO blocks_fts (content, block_id, page_id, parent_block_id)
+                VALUES (NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id);
+            END;
+            """
         )
         self.conn.commit()
         logger.debug(
@@ -219,17 +277,11 @@ class UserDatabase(BaseDatabase):
         if existing_page:
             raise PageAlreadyExistsError(f"Page with title '{title}' already exists")
 
-        # Create a temporary cursor without row_factory to handle RETURNING values
-        temp_cursor = self.conn.cursor()
-        temp_cursor.execute(
+        # The trigger will automatically maintain the FTS index
+        self.cursor.execute(
             "INSERT INTO pages (title) VALUES (?) RETURNING page_id", (title,)
         )
-        new_page_id = temp_cursor.fetchone()[0]
-
-        # Insert the title and page_id into FTS table
-        temp_cursor.execute(
-            "INSERT INTO pages_fts (title, page_id) VALUES (?, ?)", (title, new_page_id)
-        )
+        new_page_id = self.cursor.fetchone()[0]
 
         self.conn.commit()
         logger.debug(f"Page '{title}' added successfully with ID: {new_page_id}")
@@ -279,22 +331,9 @@ class UserDatabase(BaseDatabase):
             logger.debug(f"Page ID {page_id} not found.")
             raise PageNotFoundError(f"Page with ID {page_id} not found")
 
-        # For FTS5 external content tables, we need to delete and re-insert
-        # instead of directly updating the FTS table
-        # Use temp cursor for consistency with add_page method
-        temp_cursor = self.conn.cursor()
-
-        # Delete from FTS first to clear the old content
-        temp_cursor.execute("DELETE FROM pages_fts WHERE page_id = ?", (page_id,))
-
-        # Update the main table
-        temp_cursor.execute(
+        # The trigger will automatically update the FTS index
+        self.cursor.execute(
             "UPDATE pages SET title = ? WHERE page_id = ?", (new_title, page_id)
-        )
-
-        # Re-insert into FTS table with the new title
-        temp_cursor.execute(
-            "INSERT INTO pages_fts (title, page_id) VALUES (?, ?)", (new_title, page_id)
         )
 
         self.conn.commit()
@@ -305,9 +344,8 @@ class UserDatabase(BaseDatabase):
         Deletes a page and all its associated blocks.
         Raises PageNotFoundError if page is not found.
         """
-        # Delete from FTS table first
-        self.cursor.execute("DELETE FROM pages_fts WHERE page_id = ?", (page_id,))
-        # Then delete from the main table
+        # The trigger will automatically delete from FTS table
+        # Delete from the main table - CASCADE will handle associated blocks
         self.cursor.execute("DELETE FROM pages WHERE page_id = ?", (page_id,))
         self.conn.commit()
         if self.cursor.rowcount == 0:
@@ -329,30 +367,20 @@ class UserDatabase(BaseDatabase):
         Returns the ID of the newly created block.
         """
         if page_id is not None and parent_block_id is None:
-            temp_cursor = self.conn.cursor()
-            temp_cursor.execute(
+            # The trigger will automatically maintain the FTS index
+            self.cursor.execute(
                 "INSERT INTO blocks (content, page_id, position) VALUES (?, ?, ?) RETURNING block_id",
                 (content, page_id, position),
             )
-            new_block_id = temp_cursor.fetchone()[0]
-            # Insert the block into the FTS table as well
-            temp_cursor.execute(
-                "INSERT INTO blocks_fts (content, block_id, page_id, parent_block_id) VALUES (?, ?, ?, ?)",
-                (content, new_block_id, page_id, None),
-            )
+            new_block_id = self.cursor.fetchone()[0]
             logger.debug(f"Block added to page ID {page_id}: '{content[:50]}...'")
         elif parent_block_id is not None and page_id is None:
-            temp_cursor = self.conn.cursor()
-            temp_cursor.execute(
+            # The trigger will automatically maintain the FTS index
+            self.cursor.execute(
                 "INSERT INTO blocks (content, parent_block_id, position) VALUES (?, ?, ?) RETURNING block_id",
                 (content, parent_block_id, position),
             )
-            new_block_id = temp_cursor.fetchone()[0]
-            # Insert the block into the FTS table as well
-            temp_cursor.execute(
-                "INSERT INTO blocks_fts (content, block_id, page_id, parent_block_id) VALUES (?, ?, ?, ?)",
-                (content, new_block_id, None, parent_block_id),
-            )
+            new_block_id = self.cursor.fetchone()[0]
             logger.debug(
                 f"Block added under parent block ID {parent_block_id}: '{content[:50]}...'"
             )
@@ -399,9 +427,9 @@ class UserDatabase(BaseDatabase):
         Updates the content of an existing block.
         Raises BlockNotFoundError if block is not found.
         """
-        # Get the current block to verify it exists and get related info for FTS
+        # Get the current block to verify it exists
         self.cursor.execute(
-            "SELECT page_id, parent_block_id FROM blocks WHERE block_id = ?",
+            "SELECT block_id FROM blocks WHERE block_id = ?",
             (block_id,),
         )
         current_block = self.cursor.fetchone()
@@ -409,27 +437,9 @@ class UserDatabase(BaseDatabase):
             logger.debug(f"Block ID {block_id} not found.")
             raise BlockNotFoundError(f"Block with ID {block_id} not found")
 
-        # For FTS5 external content tables, we need to delete and re-insert
-        # instead of directly updating the FTS table
-        temp_cursor = self.conn.cursor()
-
-        # Delete from FTS first to clear the old content
-        temp_cursor.execute("DELETE FROM blocks_fts WHERE block_id = ?", (block_id,))
-
-        # Update the main table
-        temp_cursor.execute(
+        # The trigger will automatically update the FTS index
+        self.cursor.execute(
             "UPDATE blocks SET content = ? WHERE block_id = ?", (new_content, block_id)
-        )
-
-        # Reinsert into FTS with updated content
-        temp_cursor.execute(
-            "INSERT INTO blocks_fts (content, block_id, page_id, parent_block_id) VALUES (?, ?, ?, ?)",
-            (
-                new_content,
-                block_id,
-                current_block["page_id"],
-                current_block["parent_block_id"],
-            ),
         )
 
         self.conn.commit()
@@ -447,22 +457,12 @@ class UserDatabase(BaseDatabase):
                 "UPDATE blocks SET page_id = ?, parent_block_id = NULL WHERE block_id = ?",
                 (new_page_id, block_id),
             )
-            # Update the FTS table as well
-            self.cursor.execute(
-                "UPDATE blocks_fts SET page_id = ?, parent_block_id = NULL WHERE block_id = ?",
-                (new_page_id, block_id),
-            )
             logger.debug(
                 f"Block ID {block_id} parent updated to page ID {new_page_id}."
             )
         elif new_parent_block_id is not None and new_page_id is None:
             self.cursor.execute(
                 "UPDATE blocks SET parent_block_id = ?, page_id = NULL WHERE block_id = ?",
-                (new_parent_block_id, block_id),
-            )
-            # Update the FTS table as well
-            self.cursor.execute(
-                "UPDATE blocks_fts SET parent_block_id = ?, page_id = NULL WHERE block_id = ?",
                 (new_parent_block_id, block_id),
             )
             logger.debug(
