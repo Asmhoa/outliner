@@ -7,7 +7,6 @@ import {
   Group,
   ActionIcon,
   Divider,
-  Highlight,
   Stack,
   Loader,
   Alert,
@@ -210,7 +209,7 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
           <Alert color="red" title="Search Error">
             {error}
           </Alert>
-        ) : results && (results.pages.length > 0 || results.blocks.length > 0) ? (
+        ) : results && (results.pages?.length > 0 || results.blocks?.length > 0) ? (
           <ScrollArea.Autosize mah={400} type="auto">
             <Stack gap="sm">
               {/* Pages Section */}
@@ -235,9 +234,27 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
                         <Group wrap="nowrap">
                           <IconFileText size={16} stroke={1.5} />
                           <div style={{ flex: 1 }}>
-                            <Highlight highlight={query} fz="sm" fw={500}>
-                              {page.title}
-                            </Highlight>
+                            {(() => {
+                              // Create a custom highlight function to avoid Mantine Highlight component issues
+                              const safeQuery = query && typeof query === 'string' ? query.trim().toLowerCase() : '';
+                              const safeTitle = page.title && typeof page.title === 'string' ? page.title : '';
+
+                              if (!safeQuery) {
+                                return <Text fz="sm" fw={500}>{safeTitle}</Text>;
+                              }
+
+                              const parts = safeTitle.split(new RegExp(`(${safeQuery})`, 'gi'));
+
+                              return (
+                                <Text fz="sm" fw={500}>
+                                  {parts.map((part, index) =>
+                                    part.toLowerCase() === safeQuery.toLowerCase() ?
+                                      <Text key={index} component="span" inherit bg="yellow.3">{part}</Text> :
+                                      <Text key={index} component="span" inherit>{part}</Text>
+                                  )}
+                                </Text>
+                              );
+                            })()}
                             <Text size="xs" c="dimmed" lineClamp={1}>
                               Page
                             </Text>
@@ -271,10 +288,29 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
                         <Group wrap="nowrap">
                           <IconSquareRoundedLetterB size={16} stroke={1.5} />
                           <div style={{ flex: 1 }}>
-                            <Highlight highlight={query} fz="sm" fw={500}>
-                              {block.content.substring(0, 100)}
-                              {block.content.length > 100 ? "..." : ""}
-                            </Highlight>
+                            {(() => {
+                              // Create a custom highlight function to avoid Mantine Highlight component issues
+                              const safeQuery = query && typeof query === 'string' ? query.trim().toLowerCase() : '';
+                              const safeContent = (block.content && typeof block.content === 'string' ? block.content.substring(0, 100) : '');
+                              const safeEllipsis = block.content && typeof block.content === 'string' && block.content.length > 100 ? "..." : "";
+                              const fullText = safeContent + safeEllipsis;
+
+                              if (!safeQuery) {
+                                return <Text fz="sm" fw={500}>{fullText}</Text>;
+                              }
+
+                              const parts = fullText.split(new RegExp(`(${safeQuery})`, 'gi'));
+
+                              return (
+                                <Text fz="sm" fw={500}>
+                                  {parts.map((part, index) =>
+                                    part.toLowerCase() === safeQuery.toLowerCase() ?
+                                      <Text key={index} component="span" inherit bg="yellow.3">{part}</Text> :
+                                      <Text key={index} component="span" inherit>{part}</Text>
+                                  )}
+                                </Text>
+                              );
+                            })()}
                             <Text size="xs" c="dimmed" lineClamp={1}>
                               Block in {block.page_id ? "page" : "unknown"}
                             </Text>
