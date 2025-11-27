@@ -85,7 +85,7 @@ class UserDatabase(BaseDatabase):
             """
             CREATE TRIGGER IF NOT EXISTS pages_ai AFTER INSERT ON pages
             BEGIN
-                INSERT INTO pages_fts (title, page_id) VALUES (NEW.title, NEW.page_id);
+                INSERT INTO pages_fts (rowid, title, page_id) VALUES (NEW.rowid, NEW.title, NEW.page_id);
             END;
             """
         )
@@ -93,8 +93,7 @@ class UserDatabase(BaseDatabase):
             """
             CREATE TRIGGER IF NOT EXISTS pages_ad AFTER DELETE ON pages
             BEGIN
-                INSERT INTO pages_fts(pages_fts, rowid)
-                VALUES('delete', OLD.rowid);
+                INSERT INTO pages_fts(pages_fts, rowid, title) VALUES('delete', OLD.rowid, OLD.title);
             END;
             """
         )
@@ -102,9 +101,8 @@ class UserDatabase(BaseDatabase):
             """
             CREATE TRIGGER IF NOT EXISTS pages_au AFTER UPDATE ON pages
             BEGIN
-                INSERT INTO pages_fts(pages_fts, rowid)
-                VALUES('delete', OLD.rowid);
-                INSERT INTO pages_fts (title, page_id) VALUES (NEW.title, NEW.page_id);
+                INSERT INTO pages_fts(pages_fts, rowid, title) VALUES('delete', OLD.rowid, OLD.title);
+                INSERT INTO pages_fts(rowid, title, page_id) VALUES (NEW.rowid, NEW.title, NEW.page_id);
             END;
             """
         )
@@ -155,8 +153,8 @@ class UserDatabase(BaseDatabase):
             """
             CREATE TRIGGER IF NOT EXISTS blocks_ai AFTER INSERT ON blocks
             BEGIN
-                INSERT INTO blocks_fts (content, block_id, page_id, parent_block_id)
-                VALUES (NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id);
+                INSERT INTO blocks_fts (rowid, content, block_id, page_id, parent_block_id)
+                VALUES (NEW.rowid, NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id);
             END;
             """
         )
@@ -164,8 +162,7 @@ class UserDatabase(BaseDatabase):
             """
             CREATE TRIGGER IF NOT EXISTS blocks_ad AFTER DELETE ON blocks
             BEGIN
-                INSERT INTO blocks_fts(blocks_fts, rowid)
-                VALUES('delete', OLD.rowid);
+                INSERT INTO blocks_fts(blocks_fts, rowid, content) VALUES('delete', OLD.rowid, OLD.content);
             END;
             """
         )
@@ -173,10 +170,9 @@ class UserDatabase(BaseDatabase):
             """
             CREATE TRIGGER IF NOT EXISTS blocks_au AFTER UPDATE ON blocks
             BEGIN
-                INSERT INTO blocks_fts(blocks_fts, rowid)
-                VALUES('delete', OLD.rowid);
-                INSERT INTO blocks_fts (content, block_id, page_id, parent_block_id)
-                VALUES (NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id);
+                INSERT INTO blocks_fts(blocks_fts, rowid, content) VALUES('delete', OLD.rowid, OLD.content);
+                INSERT INTO blocks_fts (rowid, content, block_id, page_id, parent_block_id)
+                VALUES (NEW.rowid, NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id);
             END;
             """
         )
@@ -486,9 +482,6 @@ class UserDatabase(BaseDatabase):
         Deletes a block and all its nested child blocks.
         Raises BlockNotFoundError if block is not found.
         """
-        # Delete from FTS table first
-        self.cursor.execute("DELETE FROM blocks_fts WHERE block_id = ?", (block_id,))
-        # Then delete from the main table
         self.cursor.execute("DELETE FROM blocks WHERE block_id = ?", (block_id,))
         self.conn.commit()
         if self.cursor.rowcount == 0:

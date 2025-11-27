@@ -1,10 +1,11 @@
 import pytest
+
 from outliner_api_server.db.userdb import (
-    UserDatabase,
-    PageNotFoundError,
-    PageAlreadyExistsError,
-    WorkspaceNotFoundError,
     BlockNotFoundError,
+    PageAlreadyExistsError,
+    PageNotFoundError,
+    UserDatabase,
+    WorkspaceNotFoundError,
 )
 
 
@@ -19,7 +20,7 @@ def db():
 
 def test_initialize_tables(db):
     """Test if tables are created."""
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='pages'")
     assert cursor.fetchone() is not None
     cursor.execute(
@@ -32,7 +33,7 @@ def test_add_page(db):
     """Test adding a new page."""
     page_id = db.add_page("Test Page")
     assert isinstance(page_id, str)
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute("SELECT title FROM pages WHERE page_id = ?", (page_id,))
     assert cursor.fetchone()[0] == "Test Page"
 
@@ -41,7 +42,7 @@ def test_rename_page(db):
     """Test renaming a page."""
     page_id = db.add_page("Old Title")
     db.rename_page(page_id, "New Title")  # Should not raise an exception
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute("SELECT title FROM pages WHERE page_id = ?", (page_id,))
     assert cursor.fetchone()[0] == "New Title"
 
@@ -65,7 +66,7 @@ def test_add_page_duplicate_title(db):
         db.add_page("Test Page")
 
     # Verify only one page exists in the database
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute("SELECT COUNT(*) FROM pages")
     count = cursor.fetchone()[0]
     assert count == 1
@@ -84,7 +85,7 @@ def test_rename_page_duplicate_title(db):
         db.rename_page(page_id_2, "Page One")
 
     # Verify page 2 still has its original title
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute("SELECT title FROM pages WHERE page_id = ?", (page_id_2,))
     assert cursor.fetchone()[0] == "Page Two"
 
@@ -97,7 +98,7 @@ def test_delete_page(db):
     """Test deleting a page."""
     page_id = db.add_page("Test Page")
     db.delete_page(page_id)  # Should not raise an exception
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute("SELECT * FROM pages WHERE page_id = ?", (page_id,))
     assert cursor.fetchone() is None
 
@@ -113,7 +114,7 @@ def test_add_block_to_page(db):
     page_id = db.add_page("Test Page")
     block_id = db.add_block("Test Block", 1, page_id=page_id)
     assert isinstance(block_id, str)
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute("SELECT content FROM blocks WHERE block_id = ?", (block_id,))
     assert cursor.fetchone()[0] == "Test Block"
 
@@ -124,7 +125,7 @@ def test_add_block_to_block(db):
     parent_block_id = db.add_block("Parent Block", 1, page_id=page_id)
     child_block_id = db.add_block("Child Block", 1, parent_block_id=parent_block_id)
     assert isinstance(child_block_id, str)
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute("SELECT content FROM blocks WHERE block_id = ?", (child_block_id,))
     assert cursor.fetchone()[0] == "Child Block"
     cursor.execute(
@@ -146,7 +147,7 @@ def test_delete_block(db):
     page_id = db.add_page("Test Page")
     block_id = db.add_block("Test Block", 1, page_id=page_id)
     db.delete_block(block_id)  # Should not raise an exception
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute("SELECT * FROM blocks WHERE block_id = ?", (block_id,))
     assert cursor.fetchone() is None
 
@@ -162,7 +163,7 @@ def test_delete_page_cascades_to_blocks(db):
     page_id = db.add_page("Test Page")
     block_id = db.add_block("Test Block", 1, page_id=page_id)
     db.delete_page(page_id)
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute("SELECT * FROM blocks WHERE block_id = ?", (block_id,))
     assert cursor.fetchone() is None
 
@@ -173,7 +174,7 @@ def test_delete_block_cascades_to_child_blocks(db):
     parent_block_id = db.add_block("Parent Block", 1, page_id=page_id)
     child_block_id = db.add_block("Child Block", 1, parent_block_id=parent_block_id)
     db.delete_block(parent_block_id)
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute("SELECT * FROM blocks WHERE block_id = ?", (child_block_id,))
     assert cursor.fetchone() is None
 
@@ -183,7 +184,7 @@ def test_update_block_content(db):
     page_id = db.add_page("Test Page")
     block_id = db.add_block("Original Content", 1, page_id=page_id)
     db.update_block_content(block_id, "New Content")  # Should not raise an exception
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute("SELECT content FROM blocks WHERE block_id = ?", (block_id,))
     assert cursor.fetchone()[0] == "New Content"
 
@@ -202,7 +203,7 @@ def test_update_block_parent_to_new_page(db):
     db.update_block_parent(
         block_id, new_page_id=page_id_2
     )  # Should not raise an exception
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute(
         "SELECT page_id, parent_block_id FROM blocks WHERE block_id = ?", (block_id,)
     )
@@ -220,7 +221,7 @@ def test_update_block_parent_to_new_parent_block(db):
     db.update_block_parent(
         block_id, new_parent_block_id=parent_block_id_2
     )  # Should not raise an exception
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute(
         "SELECT page_id, parent_block_id FROM blocks WHERE block_id = ?", (block_id,)
     )
@@ -237,7 +238,7 @@ def test_update_block_parent_from_page_to_block(db):
     db.update_block_parent(
         block_id, new_parent_block_id=parent_block_id
     )  # Should not raise an exception
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute(
         "SELECT page_id, parent_block_id FROM blocks WHERE block_id = ?", (block_id,)
     )
@@ -255,7 +256,7 @@ def test_update_block_parent_from_block_to_page(db):
     db.update_block_parent(
         block_id, new_page_id=page_id_2
     )  # Should not raise an exception
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute(
         "SELECT page_id, parent_block_id FROM blocks WHERE block_id = ?", (block_id,)
     )
@@ -299,7 +300,7 @@ def test_add_workspace(db):
     """Test adding a new workspace."""
     workspace_id = db.add_workspace("Test Workspace", "#FF0000")
     assert isinstance(workspace_id, int)
-    cursor = db.conn.cursor()
+    cursor = db.get_cursor()
     cursor.execute(
         "SELECT name, color FROM workspaces WHERE workspace_id = ?", (workspace_id,)
     )
