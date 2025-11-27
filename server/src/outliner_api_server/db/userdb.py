@@ -459,11 +459,40 @@ class UserDatabase(BaseDatabase):
             raise BlockNotFoundError(f"Block with ID {block_id} not found")
         logger.debug(f"Block ID {block_id} and its children deleted successfully.")
 
-    def search_pages(self, query: str, limit: int = 10) -> list[PageModel]:
+    def _fts_escape_tokens(self, text: str) -> str:
+        """
+        Escape a whole string and split it into safe literal tokens
+        for an FTS MATCH expression.
+        Note: This uses text.split() which works for space-separated languages.
+        For languages like Chinese/Japanese/Korean without spaces between words,
+        a more sophisticated tokenization approach would be needed.
+        """
+        tokens = text.split()
+        escaped_tokens = [f'"{t.replace('"', '""')}"' for t in tokens]
+        return " ".join(escaped_tokens)
+
+    def search_pages(
+        self, query: str, limit: int = 10, escape_special_chars: bool = True
+    ) -> list[PageModel]:
         """
         Search for pages by title using FTS.
         Returns a list of PageModel objects that match the search query.
+
+        Args:
+            query: The search query string
+            limit: Maximum number of results to return
+            escape_special_chars: Whether to escape special characters in the query.
+                                 Default is True for safety, but can be set to False
+                                 to allow FTS operators like AND, OR, NOT, etc.
         """
+        # Handle empty query gracefully by returning an empty list
+        if not query or query.strip() == "":
+            return []
+
+        # Sanitize the query to prevent FTS syntax errors if requested
+        if escape_special_chars:
+            query = self._fts_escape_tokens(query)
+
         # Use FTS MATCH to search in the pages_fts table
         # Join with main pages table using the page_id stored in the FTS table
         self.cursor.execute(
@@ -480,11 +509,28 @@ class UserDatabase(BaseDatabase):
         rows = self.cursor.fetchall()
         return [PageModel(**row) for row in rows]
 
-    def search_blocks(self, query: str, limit: int = 10) -> list[BlockModel]:
+    def search_blocks(
+        self, query: str, limit: int = 10, escape_special_chars: bool = True
+    ) -> list[BlockModel]:
         """
         Search for blocks by content using FTS.
         Returns a list of BlockModel objects that match the search query.
+
+        Args:
+            query: The search query string
+            limit: Maximum number of results to return
+            escape_special_chars: Whether to escape special characters in the query.
+                                 Default is True for safety, but can be set to False
+                                 to allow FTS operators like AND, OR, NOT, etc.
         """
+        # Handle empty query gracefully by returning an empty list
+        if not query or query.strip() == "":
+            return []
+
+        # Sanitize the query to prevent FTS syntax errors if requested
+        if escape_special_chars:
+            query = self._fts_escape_tokens(query)
+
         # Use FTS MATCH to search in the blocks_fts table
         self.cursor.execute(
             """
@@ -501,12 +547,16 @@ class UserDatabase(BaseDatabase):
         return [BlockModel(**row) for row in rows]
 
     def search_all(
-        self, query: str, limit: int = 10
+        self, query: str, *args, **kwargs
     ) -> tuple[list[PageModel], list[BlockModel]]:
         """
         Search for both pages and blocks using FTS.
         Returns a tuple of (pages, blocks) that match the search query.
         """
-        pages = self.search_pages(query, limit)
-        blocks = self.search_blocks(query, limit)
+        # Handle empty query gracefully by returning empty lists
+        if not query or query.strip() == "":
+            return [], []
+
+        pages = self.search_pages(query, *args, **kwargs)
+        blocks = self.search_blocks(query, *args, **kwargs)
         return pages, blocks
