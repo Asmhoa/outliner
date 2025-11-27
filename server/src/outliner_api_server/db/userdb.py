@@ -272,17 +272,34 @@ class UserDatabase(BaseDatabase):
                 f"Page with title '{new_title}' already exists"
             )
 
+        # Get the old title to verify the page exists
         self.cursor.execute(
+            "SELECT title FROM pages WHERE page_id = ?", (page_id,)
+        )
+        old_page = self.cursor.fetchone()
+        if old_page is None:
+            logger.debug(f"Page ID {page_id} not found.")
+            raise PageNotFoundError(f"Page with ID {page_id} not found")
+
+        # For FTS5 external content tables, we need to delete and re-insert
+        # instead of directly updating the FTS table
+        # Use temp cursor for consistency with add_page method
+        temp_cursor = self.conn.cursor()
+        temp_cursor.execute(
+            "DELETE FROM pages_fts WHERE page_id = ?", (page_id,)
+        )
+
+        # Update the main table
+        temp_cursor.execute(
             "UPDATE pages SET title = ? WHERE page_id = ?", (new_title, page_id)
         )
-        # Update the FTS table as well
-        self.cursor.execute(
-            "UPDATE pages_fts SET title = ? WHERE page_id = ?", (new_title, page_id)
+
+        # Re-insert into FTS table with the new title
+        temp_cursor.execute(
+            "INSERT INTO pages_fts (title, page_id) VALUES (?, ?)", (new_title, page_id)
         )
+
         self.conn.commit()
-        if self.cursor.rowcount == 0:
-            logger.debug(f"Page ID {page_id} not found or no change in title.")
-            raise PageNotFoundError(f"Page with ID {page_id} not found")
         logger.debug(f"Page ID {page_id} renamed to '{new_title}'.")
 
     def delete_page(self, page_id: str) -> None:
@@ -384,18 +401,34 @@ class UserDatabase(BaseDatabase):
         Updates the content of an existing block.
         Raises BlockNotFoundError if block is not found.
         """
+        # Get the current block to verify it exists and get related info for FTS
         self.cursor.execute(
+            "SELECT page_id, parent_block_id FROM blocks WHERE block_id = ?", (block_id,)
+        )
+        current_block = self.cursor.fetchone()
+        if current_block is None:
+            logger.debug(f"Block ID {block_id} not found.")
+            raise BlockNotFoundError(f"Block with ID {block_id} not found")
+
+        # For FTS5 external content tables, we need to delete and re-insert
+        # instead of directly updating the FTS table
+        temp_cursor = self.conn.cursor()
+
+        # Update the main table
+        temp_cursor.execute(
             "UPDATE blocks SET content = ? WHERE block_id = ?", (new_content, block_id)
         )
-        # Update the FTS table as well
-        self.cursor.execute(
-            "UPDATE blocks_fts SET content = ? WHERE block_id = ?",
-            (new_content, block_id),
+
+        # Delete from FTS and reinsert with updated content
+        temp_cursor.execute(
+            "DELETE FROM blocks_fts WHERE block_id = ?", (block_id,)
         )
+        temp_cursor.execute(
+            "INSERT INTO blocks_fts (content, block_id, page_id, parent_block_id) VALUES (?, ?, ?, ?)",
+            (new_content, block_id, current_block['page_id'], current_block['parent_block_id'])
+        )
+
         self.conn.commit()
-        if self.cursor.rowcount == 0:
-            logger.debug(f"Block ID {block_id} not found or no change in content.")
-            raise BlockNotFoundError(f"Block with ID {block_id} not found")
         logger.debug(f"Block ID {block_id} content updated.")
 
     def update_block_parent(
