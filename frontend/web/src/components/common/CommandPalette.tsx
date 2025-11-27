@@ -7,6 +7,7 @@ import {
   Group,
   ActionIcon,
   Divider,
+  Highlight,
   Stack,
   Loader,
   Alert,
@@ -235,25 +236,9 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
                           <IconFileText size={16} stroke={1.5} />
                           <div style={{ flex: 1 }}>
                             {(() => {
-                              // Create a custom highlight function to avoid Mantine Highlight component issues
-                              const safeQuery = query && typeof query === 'string' ? query.trim().toLowerCase() : '';
+                              const safeQuery = query && typeof query === 'string' ? query : '';
                               const safeTitle = page.title && typeof page.title === 'string' ? page.title : '';
-
-                              if (!safeQuery) {
-                                return <Text fz="sm" fw={500}>{safeTitle}</Text>;
-                              }
-
-                              const parts = safeTitle.split(new RegExp(`(${safeQuery})`, 'gi'));
-
-                              return (
-                                <Text fz="sm" fw={500}>
-                                  {parts.map((part, index) =>
-                                    part.toLowerCase() === safeQuery.toLowerCase() ?
-                                      <Text key={index} component="span" inherit bg="yellow.3">{part}</Text> :
-                                      <Text key={index} component="span" inherit>{part}</Text>
-                                  )}
-                                </Text>
-                              );
+                              return <Highlight highlight={safeQuery} fz="sm" fw={500}>{safeTitle}</Highlight>;
                             })()}
                             <Text size="xs" c="dimmed" lineClamp={1}>
                               Page
@@ -289,27 +274,10 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
                           <IconSquareRoundedLetterB size={16} stroke={1.5} />
                           <div style={{ flex: 1 }}>
                             {(() => {
-                              // Create a custom highlight function to avoid Mantine Highlight component issues
-                              const safeQuery = query && typeof query === 'string' ? query.trim().toLowerCase() : '';
-                              const safeContent = (block.content && typeof block.content === 'string' ? block.content.substring(0, 100) : '');
+                              const safeQuery = query && typeof query === 'string' ? query : '';
+                              const safeContent = (block.content && typeof block.content === 'string' ? block.content.substring(0, 100) : '').toString();
                               const safeEllipsis = block.content && typeof block.content === 'string' && block.content.length > 100 ? "..." : "";
-                              const fullText = safeContent + safeEllipsis;
-
-                              if (!safeQuery) {
-                                return <Text fz="sm" fw={500}>{fullText}</Text>;
-                              }
-
-                              const parts = fullText.split(new RegExp(`(${safeQuery})`, 'gi'));
-
-                              return (
-                                <Text fz="sm" fw={500}>
-                                  {parts.map((part, index) =>
-                                    part.toLowerCase() === safeQuery.toLowerCase() ?
-                                      <Text key={index} component="span" inherit bg="yellow.3">{part}</Text> :
-                                      <Text key={index} component="span" inherit>{part}</Text>
-                                  )}
-                                </Text>
-                              );
+                              return <Highlight highlight={safeQuery} fz="sm" fw={500}>{safeContent + safeEllipsis}</Highlight>;
                             })()}
                             <Text size="xs" c="dimmed" lineClamp={1}>
                               Block in {block.page_id ? "page" : "unknown"}
