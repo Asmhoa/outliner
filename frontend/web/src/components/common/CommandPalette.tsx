@@ -15,6 +15,7 @@ import {
 import { useDisclosure, useDebouncedValue, useFocusTrap } from "@mantine/hooks";
 import { IconSearch, IconX, IconFileText, IconSquareRoundedLetterB } from "@tabler/icons-react";
 import { useState, useEffect, useRef, KeyboardEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { type PageModel, type BlockModel, searchDbDbIdSearchPost, type SearchRequest } from "../../api-client";
 import { useDatabase } from "../../hooks/useDatabase";
 
@@ -35,6 +36,7 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(-1); // For keyboard navigation
   const { dbId } = useDatabase();
+  const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const focusTrapRef = useFocusTrap();
 
@@ -140,11 +142,11 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
     if (item) {
       if (isPage) {
         // Navigate to the page
-        window.location.href = `/#/db/${dbId}/page/${item.page_id}`;
+        navigate(`/db/${dbId}/pages/${item.page_id}`);
         onClose();
       } else if (item.page_id) {
         // Navigate to the block's page
-        window.location.href = `/#/db/${dbId}/page/${item.page_id}`;
+        navigate(`/db/${dbId}/pages/${item.page_id}`);
         onClose();
       }
     }
@@ -152,14 +154,14 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
 
   const handlePageClick = (pageId: string) => {
     // Navigate to the page using the router
-    window.location.hash = `#/db/${dbId}/page/${pageId}`;
+    navigate(`/db/${dbId}/pages/${pageId}`);
     onClose();
   };
 
   const handleBlockClick = (blockId: string, pageId: string | undefined) => {
     if (pageId) {
       // Navigate to the page containing the block
-      window.location.hash = `#/db/${dbId}/page/${pageId}`;
+      navigate(`/db/${dbId}/pages/${pageId}`);
       onClose();
     }
   };
