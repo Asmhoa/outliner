@@ -18,6 +18,7 @@ import {
   IconX,
   IconFileText,
   IconSquareRoundedLetterB,
+  IconPlus,
 } from "@tabler/icons-react";
 import { useState, useEffect, useRef, KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
@@ -28,27 +29,29 @@ import {
   type SearchRequest,
 } from "../../api-client";
 import { useDatabase } from "../../hooks/useDatabase";
+import { usePageData } from "../../hooks/usePageData";
 
 interface SearchResult {
   pages: PageModel[];
   blocks: BlockModel[];
 }
 
-interface CommandPaletteProps {
+interface SearchPaletteProps {
   opened: boolean;
   onClose: () => void;
 }
 
-export default function CommandPalette({
+export default function SearchPalette({
   opened,
   onClose,
-}: CommandPaletteProps) {
+}: SearchPaletteProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(-1); // For keyboard navigation
   const { dbId } = useDatabase();
+  const { handleAddPage } = usePageData();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const focusTrapRef = useFocusTrap();
@@ -58,29 +61,49 @@ export default function CommandPalette({
 
   // Handle keyboard navigation
   const handleKeyDown = (event: KeyboardEvent) => {
-    if (!results) return;
+    // Calculate total items including both search results and command options
+    const totalPages = results?.pages?.length || 0;
+    const totalBlocks = results?.blocks?.length || 0;
+    const totalSearchResults = totalPages + totalBlocks;
 
-    const totalResults =
-      (results.pages?.length || 0) + (results.blocks?.length || 0);
+    // Always include command section when query exists
+    const hasCommands = query.trim();
+    const totalItems = totalSearchResults + (hasCommands ? 1 : 0);
 
     switch (event.key) {
       case "ArrowDown":
         event.preventDefault();
-        setActiveIndex((prev) => (prev < totalResults - 1 ? prev + 1 : prev));
+        setActiveIndex((prev) => (prev < totalItems - 1 ? prev + 1 : -1)); // Cycle back to start if at end
         break;
       case "ArrowUp":
         event.preventDefault();
-        setActiveIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        setActiveIndex((prev) => (prev > -1 ? prev - 1 : totalItems - 1)); // Cycle back to end if at start
         break;
       case "Enter":
         event.preventDefault();
         if (activeIndex >= 0) {
-          handleSelectResult(activeIndex);
+          if (hasCommands && activeIndex === totalSearchResults) {
+            // The command option is selected (it's the last item when commands are shown)
+            handleCreatePageCommand();
+          } else if (results) {
+            // A search result is selected
+            handleSelectResult(activeIndex);
+          }
         }
         break;
       case "Escape":
         onClose();
         break;
+    }
+  };
+
+  const handleCreatePageCommand = async () => {
+    if (query.trim()) {
+      const newPageId = await handleAddPage(query.trim());
+      if (newPageId) {
+        navigate(`/db/${dbId}/pages/${newPageId}`);
+        onClose();
+      }
     }
   };
 
@@ -341,12 +364,99 @@ export default function CommandPalette({
                   })}
                 </Box>
               )}
+
+              {/* Commands Section - Always show when query exists */}
+              {query.trim() && (
+                <Box mt="md">
+                  <Text size="sm" c="dimmed" mb="xs" px="sm">
+                    COMMANDS
+                  </Text>
+                  {[
+                    {
+                      id: "create-page",
+                      label: `Create page "${query}"`,
+                      icon: <IconPlus size={16} stroke={1.5} />,
+                      action: () => handleCreatePageCommand()
+                    }
+                  ].map((command, index) => {
+                    const totalSearchResults = (results?.pages?.length || 0) + (results?.blocks?.length || 0);
+                    const resultIndex = totalSearchResults + index; // Command index comes after all search results
+                    const isActive = activeIndex === resultIndex;
+
+                    return (
+                      <Box
+                        key={command.id}
+                        onClick={command.action}
+                        bg={isActive ? "gray.1" : "transparent"}
+                        px="sm"
+                        py="xs"
+                        style={{
+                          cursor: "pointer",
+                          borderRadius: "var(--mantine-radius-sm)",
+                        }}
+                        onMouseEnter={() => setActiveIndex(resultIndex)}
+                      >
+                        <Group wrap="nowrap">
+                          {command.icon}
+                          <div style={{ flex: 1 }}>
+                            <Text fz="sm" fw={500}>
+                              {command.label}
+                            </Text>
+                          </div>
+                        </Group>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              )}
             </Stack>
           </ScrollArea.Autosize>
         ) : query.trim() && !loading ? (
-          <Text c="dimmed" ta="center" py="lg">
-            No results found for "{query}"
-          </Text>
+          <ScrollArea.Autosize mah={400} type="auto">
+            <Stack gap="sm">
+              {/* Commands Section - Show when query exists but no results */}
+              <Box mt="md">
+                <Text size="sm" c="dimmed" mb="xs" px="sm">
+                  COMMANDS
+                </Text>
+                {[
+                  {
+                    id: "create-page",
+                    label: `Create page "${query}"`,
+                    icon: <IconPlus size={16} stroke={1.5} />,
+                    action: () => handleCreatePageCommand()
+                  }
+                ].map((command, index) => {
+                  const resultIndex = index; // Since there are no search results, command index starts at 0
+                  const isActive = activeIndex === resultIndex;
+
+                  return (
+                    <Box
+                      key={command.id}
+                      onClick={command.action}
+                      bg={isActive ? "gray.1" : "transparent"}
+                      px="sm"
+                      py="xs"
+                      style={{
+                        cursor: "pointer",
+                        borderRadius: "var(--mantine-radius-sm)",
+                      }}
+                      onMouseEnter={() => setActiveIndex(resultIndex)}
+                    >
+                      <Group wrap="nowrap">
+                        {command.icon}
+                        <div style={{ flex: 1 }}>
+                          <Text fz="sm" fw={500}>
+                            {command.label}
+                          </Text>
+                        </div>
+                      </Group>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Stack>
+          </ScrollArea.Autosize>
         ) : (
           <Text c="dimmed" ta="center" py="lg">
             Type to search pages and blocks...

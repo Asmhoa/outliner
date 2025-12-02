@@ -25,7 +25,7 @@ import { WelcomeScreen } from "./components/WelcomeScreen";
 import { usePageData } from "./hooks/usePageData";
 import { useDatabaseManager } from "./hooks/useDatabaseManager";
 import { useLocation } from "react-router-dom";
-import CommandPalette from "./components/common/CommandPalette";
+import SearchPalette from "./components/common/SearchPalette";
 import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
 
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
@@ -82,12 +82,12 @@ function App() {
     useState<NavbarVisibility>("visible");
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(true);
 
-  // Command palette state
-  const [commandPaletteOpened, { open: openCommandPalette, close: closeCommandPalette }] =
+  // Search palette state
+  const [searchPaletteOpened, { open: openSearchPalette, close: closeSearchPalette }] =
     useDisclosure(false);
 
-  // Keyboard shortcut for command palette (CMD+K or Ctrl+K)
-  useKeyboardShortcut('k', openCommandPalette, {
+  // Keyboard shortcut for search palette (CMD+K or Ctrl+K)
+  useKeyboardShortcut('k', openSearchPalette, {
     // Using cmd option to handle both CMD (Mac) and Ctrl (Windows/Linux)
     cmd: true
   });
@@ -308,7 +308,7 @@ function App() {
           <RightSidebar onClose={handleRightSidebarToggle} />
         </AppShell.Aside>
       </AppShell>
-      <CommandPalette opened={commandPaletteOpened} onClose={closeCommandPalette} />
+      <SearchPalette opened={searchPaletteOpened} onClose={closeSearchPalette} />
     </LoadingOverlayWrapper>
   );
 }

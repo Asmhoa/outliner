@@ -15,7 +15,7 @@ import {
   IconSearch,
 } from "@tabler/icons-react";
 import log from "../../utils/logger";
-import CommandPalette from "../common/CommandPalette";
+import SearchPalette from "../common/SearchPalette";
 
 interface SearchBoxProps {
   onAddPage: (title: string) => void;
@@ -35,7 +35,7 @@ export default function SearchBox({
   const [newPageTitle, setNewPageTitle] = useState("");
   const [modalOpened, { open: openModal, close: closeModal }] =
     useDisclosure(false);
-  const [commandPaletteOpened, { open: openCommandPalette, close: closeCommandPalette }] =
+  const [searchPaletteOpened, { open: openSearchPalette, close: closeSearchPalette }] =
     useDisclosure(false);
 
   const handleCreatePage = () => {
@@ -81,7 +81,7 @@ export default function SearchBox({
           Create Page
         </Button>
       </Modal>
-      <CommandPalette opened={commandPaletteOpened} onClose={closeCommandPalette} />
+      <SearchPalette opened={searchPaletteOpened} onClose={closeSearchPalette} />
       <Group pt="10px" pb="10px" pl="md" pr="md" gap="xs" w="100%">
         <Group>
           <ActionIcon
@@ -97,7 +97,7 @@ export default function SearchBox({
           </ActionIcon>
           <ActionIcon
             variant="subtle"
-            onClick={openCommandPalette}
+            onClick={openSearchPalette}
           >
             <IconSearch style={{ width: rem(16), height: rem(16) }} />
           </ActionIcon>
