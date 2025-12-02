@@ -25,8 +25,6 @@ import { WelcomeScreen } from "./components/WelcomeScreen";
 import { usePageData } from "./hooks/usePageData";
 import { useDatabaseManager } from "./hooks/useDatabaseManager";
 import { useLocation } from "react-router-dom";
-import CommandPalette from "./components/common/CommandPalette";
-import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
 
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
@@ -81,16 +79,6 @@ function App() {
   const [navbarVisibility, setNavbarVisibility] =
     useState<NavbarVisibility>("visible");
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(true);
-
-  // Command palette state
-  const [commandPaletteOpened, { open: openCommandPalette, close: closeCommandPalette }] =
-    useDisclosure(false);
-
-  // Keyboard shortcut for command palette (CMD+K or Ctrl+K)
-  useKeyboardShortcut('k', openCommandPalette, {
-    // Using cmd option to handle both CMD (Mac) and Ctrl (Windows/Linux)
-    cmd: true
-  });
 
   const handleRightSidebarToggle = () => {
     setRightSidebarCollapsed(!rightSidebarCollapsed);
@@ -308,7 +296,6 @@ function App() {
           <RightSidebar onClose={handleRightSidebarToggle} />
         </AppShell.Aside>
       </AppShell>
-      <CommandPalette opened={commandPaletteOpened} onClose={closeCommandPalette} />
     </LoadingOverlayWrapper>
   );
 }
