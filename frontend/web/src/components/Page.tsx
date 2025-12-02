@@ -65,7 +65,7 @@ const Page: React.FC<PageProps> = ({
     });
     const { data: newBlock, error } = await addBlockDbDbIdBlocksPost({
       path: { db_id: dbId },
-      body: { page_id: page_id, content: "", position: 0 },
+      body: { page_id: page_id, content: "", position: 0, type: "text" },
     });
 
     if (error) {

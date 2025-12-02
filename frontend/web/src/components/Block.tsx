@@ -1,85 +1,70 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
-import { showNotification } from "@mantine/notifications";
-import {
-  updateBlockContentDbDbIdBlocksContentPut,
-  type BlockUpdateContent,
-} from "../api-client";
+import React, { forwardRef, useImperativeHandle, useRef } from "react";
+import BaseBlock from "./common/BaseBlock";
+import TextBlock from "./TextBlock";
 import log from "../utils/logger";
-import { useDatabase } from "../hooks/useDatabase";
 
 interface BlockProps {
   id: string;
   content: string;
+  type: string;
+  position: number;
+  parentBlockId?: string | null;
   onNewBlock: (currentBlockId: string) => void;
   onDeleteBlock: (currentBlockId: string) => void;
   isDeletable: boolean;
 }
 
-const Block = forwardRef<HTMLDivElement, BlockProps>(({ id, content, onNewBlock, onDeleteBlock, isDeletable }, ref) => {
-  const [blockContent, setBlockContent] = useState(content);
-  const editableDivRef = useRef<HTMLDivElement>(null);
-  const { dbId } = useDatabase();
+const Block = forwardRef<HTMLDivElement, BlockProps>(({
+  id,
+  content,
+  type = "text", // default to text type
+  position,
+  parentBlockId,
+  onNewBlock,
+  onDeleteBlock,
+  isDeletable
+}, ref) => {
+  const blockRef = useRef<HTMLDivElement>(null);
 
-  useImperativeHandle(ref, () => editableDivRef.current as HTMLDivElement);
+  useImperativeHandle(ref, () => blockRef.current as HTMLDivElement);
 
-  useEffect(() => {
-    log.debug(`[Block] Setting content`, { block_id: id, content });
-    setBlockContent(content);
-  }, [id, content]);
-
-  const handleContentBlur = async (event: React.FocusEvent<HTMLDivElement>) => {
-    if (!dbId) {
-      log.error("[Block] No database ID available");
-      return;
-    }
-    
-    const newContent = event.currentTarget.textContent || "";
-    setBlockContent(newContent);
-    log.debug(`[Block] Updating content`, { block_id: id, new_content: newContent });
-    const updatedBlock: BlockUpdateContent = {
-      block_id: id,
-      new_content: newContent,
-    };
-    const { error } = await updateBlockContentDbDbIdBlocksContentPut({ 
-      path: { db_id: dbId }, 
-      body: updatedBlock 
-    });
-    if (error) {
-      log.error("[Block] Failed to update block content:", error);
-      setBlockContent(content); // Revert on error
-    }
+  const handleContentChange = (blockId: string, newContent: string) => {
+    log.debug(`[Block] Content changed`, { block_id: blockId, new_content: newContent });
+    // Content is already saved via TextBlock, this is just a callback if needed
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      log.debug(`[Block] Enter pressed, creating new block`, { block_id: id });
-      onNewBlock(id);
-    } else if (
-      event.key === "Backspace" &&
-      blockContent === "" &&
-      isDeletable
-    ) {
-      event.preventDefault();
-      log.debug(`[Block] Backspace on empty block, deleting`, { block_id: id });
-      onDeleteBlock(id);
+  const renderBlockType = () => {
+    switch (type) {
+      case "text":
+      default:
+        return (
+          <TextBlock
+            id={id}
+            content={content}
+            type={type}
+            onContentChange={handleContentChange}
+            onNewBlock={onNewBlock}
+            onDeleteBlock={onDeleteBlock}
+            isDeletable={isDeletable}
+          />
+        );
     }
   };
 
   return (
-    <div className="block">
+    <BaseBlock
+      id={id}
+      content={content}
+      type={type}
+      position={position}
+      parentBlockId={parentBlockId}
+      onNewBlock={onNewBlock}
+      onDeleteBlock={onDeleteBlock}
+      isDeletable={isDeletable}
+    >
       <span className="bullet">•</span>
-      <div
-        ref={editableDivRef}
-        contentEditable
-        onBlur={handleContentBlur}
-        onKeyDown={handleKeyDown}
-        suppressContentEditableWarning
-        className="editable-block"
-      >
-        {blockContent}
-      </div>
-    </div>
+      {renderBlockType()}
+    </BaseBlock>
   );
 });
 

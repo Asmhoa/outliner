@@ -17,6 +17,10 @@ export type BlockCreate = {
      */
     position: number;
     /**
+     * Type
+     */
+    type?: string;
+    /**
      * Page Id
      */
     page_id?: string | null;
@@ -51,6 +55,10 @@ export type BlockModel = {
      * Position
      */
     position: number;
+    /**
+     * Type
+     */
+    type?: string;
     /**
      * Created At
      */
@@ -87,6 +95,20 @@ export type BlockUpdateParent = {
      * New Parent Block Id
      */
     new_parent_block_id?: string | null;
+};
+
+/**
+ * BlockUpdatePosition
+ */
+export type BlockUpdatePosition = {
+    /**
+     * Block Id
+     */
+    block_id: string;
+    /**
+     * New Position
+     */
+    new_position: number;
 };
 
 /**
@@ -565,6 +587,38 @@ export type UpdateBlockContentDbDbIdBlocksContentPutError = UpdateBlockContentDb
 export type UpdateBlockContentDbDbIdBlocksContentPutResponses = {
     /**
      * Block content updated successfully
+     */
+    200: unknown;
+};
+
+export type UpdateBlockPositionDbDbIdBlocksPositionPutData = {
+    body: BlockUpdatePosition;
+    path: {
+        /**
+         * Db Id
+         */
+        db_id: string;
+    };
+    query?: never;
+    url: '/db/{db_id}/blocks/position';
+};
+
+export type UpdateBlockPositionDbDbIdBlocksPositionPutErrors = {
+    /**
+     * Block not found
+     */
+    404: unknown;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateBlockPositionDbDbIdBlocksPositionPutError = UpdateBlockPositionDbDbIdBlocksPositionPutErrors[keyof UpdateBlockPositionDbDbIdBlocksPositionPutErrors];
+
+export type UpdateBlockPositionDbDbIdBlocksPositionPutResponses = {
+    /**
+     * Block position updated successfully
      */
     200: unknown;
 };

@@ -131,7 +131,7 @@ function App() {
           const { data: newBlock, error: newBlockError } =
             await addBlockDbDbIdBlocksPost({
               path: { db_id: dbId },
-              body: { page_id: currentPageId, content: "", position: 0 },
+              body: { page_id: currentPageId, content: "", position: 0, type: "text" },
             });
 
           if (newBlockError) {

@@ -123,6 +123,7 @@ class UserDatabase(BaseDatabase):
                 page_id TEXT NULL,
                 parent_block_id TEXT NULL,
                 position INTEGER NOT NULL,
+                type TEXT NOT NULL DEFAULT 'text',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (page_id) REFERENCES pages(page_id) ON DELETE CASCADE,
                 FOREIGN KEY (parent_block_id) REFERENCES blocks(block_id) ON DELETE CASCADE,
@@ -144,6 +145,7 @@ class UserDatabase(BaseDatabase):
                 block_id UNINDEXED,
                 page_id UNINDEXED,
                 parent_block_id UNINDEXED,
+                type UNINDEXED,
                 content='blocks'
             );
         """
@@ -153,8 +155,8 @@ class UserDatabase(BaseDatabase):
             """
             CREATE TRIGGER IF NOT EXISTS blocks_ai AFTER INSERT ON blocks
             BEGIN
-                INSERT INTO blocks_fts (rowid, content, block_id, page_id, parent_block_id)
-                VALUES (NEW.rowid, NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id);
+                INSERT INTO blocks_fts (rowid, content, block_id, page_id, parent_block_id, type)
+                VALUES (NEW.rowid, NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id, NEW.type);
             END;
             """
         )
@@ -171,8 +173,8 @@ class UserDatabase(BaseDatabase):
             CREATE TRIGGER IF NOT EXISTS blocks_au AFTER UPDATE ON blocks
             BEGIN
                 INSERT INTO blocks_fts(blocks_fts, rowid, content) VALUES('delete', OLD.rowid, OLD.content);
-                INSERT INTO blocks_fts (rowid, content, block_id, page_id, parent_block_id)
-                VALUES (NEW.rowid, NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id);
+                INSERT INTO blocks_fts (rowid, content, block_id, page_id, parent_block_id, type)
+                VALUES (NEW.rowid, NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id, NEW.type);
             END;
             """
         )
@@ -357,6 +359,7 @@ class UserDatabase(BaseDatabase):
         position: int,
         page_id: str = None,
         parent_block_id: str = None,
+        block_type: str = "text",
     ) -> str:
         """
         Adds a new block to a page or as a child of another block.
@@ -365,16 +368,16 @@ class UserDatabase(BaseDatabase):
         if page_id is not None and parent_block_id is None:
             # The trigger will automatically maintain the FTS index
             self.cursor.execute(
-                "INSERT INTO blocks (content, page_id, position) VALUES (?, ?, ?) RETURNING block_id",
-                (content, page_id, position),
+                "INSERT INTO blocks (content, page_id, position, type) VALUES (?, ?, ?, ?) RETURNING block_id",
+                (content, page_id, position, block_type),
             )
             new_block_id = self.cursor.fetchone()[0]
             logger.debug(f"Block added to page ID {page_id}: '{content[:50]}...'")
         elif parent_block_id is not None and page_id is None:
             # The trigger will automatically maintain the FTS index
             self.cursor.execute(
-                "INSERT INTO blocks (content, parent_block_id, position) VALUES (?, ?, ?) RETURNING block_id",
-                (content, parent_block_id, position),
+                "INSERT INTO blocks (content, parent_block_id, position, type) VALUES (?, ?, ?, ?) RETURNING block_id",
+                (content, parent_block_id, position, block_type),
             )
             new_block_id = self.cursor.fetchone()[0]
             logger.debug(
@@ -399,7 +402,7 @@ class UserDatabase(BaseDatabase):
         Retrieves all blocks for a given page ID.
         """
         self.cursor.execute(
-            "SELECT block_id, content, page_id, parent_block_id, position, created_at FROM blocks WHERE page_id = ?",
+            "SELECT block_id, content, page_id, parent_block_id, position, type, created_at FROM blocks WHERE page_id = ?",
             (page_id,),
         )
         rows = self.cursor.fetchall()
@@ -410,7 +413,7 @@ class UserDatabase(BaseDatabase):
         Retrieves a block by its ID.
         """
         self.cursor.execute(
-            "SELECT block_id, content, page_id, parent_block_id, position, created_at FROM blocks WHERE block_id = ?",
+            "SELECT block_id, content, page_id, parent_block_id, position, type, created_at FROM blocks WHERE block_id = ?",
             (block_id,),
         )
         row = self.cursor.fetchone()
@@ -440,6 +443,28 @@ class UserDatabase(BaseDatabase):
 
         self.conn.commit()
         logger.debug(f"Block ID {block_id} content updated.")
+
+    def update_block_position(self, block_id: str, new_position: int) -> None:
+        """
+        Updates the position of an existing block.
+        Raises BlockNotFoundError if block is not found.
+        """
+        # Get the current block to verify it exists
+        self.cursor.execute(
+            "SELECT block_id FROM blocks WHERE block_id = ?",
+            (block_id,),
+        )
+        current_block = self.cursor.fetchone()
+        if current_block is None:
+            logger.debug(f"Block ID {block_id} not found.")
+            raise BlockNotFoundError(f"Block with ID {block_id} not found")
+
+        self.cursor.execute(
+            "UPDATE blocks SET position = ? WHERE block_id = ?", (new_position, block_id)
+        )
+
+        self.conn.commit()
+        logger.debug(f"Block ID {block_id} position updated to {new_position}.")
 
     def update_block_parent(
         self, block_id: str, new_page_id: str = None, new_parent_block_id: str = None
@@ -564,7 +589,7 @@ class UserDatabase(BaseDatabase):
         # Use FTS MATCH to search in the blocks_fts table
         self.cursor.execute(
             """
-            SELECT b.block_id, b.content, b.page_id, b.parent_block_id, b.position, b.created_at
+            SELECT b.block_id, b.content, b.page_id, b.parent_block_id, b.position, b.type, b.created_at
             FROM blocks b
             JOIN blocks_fts bf ON b.block_id = bf.block_id
             WHERE blocks_fts MATCH ?

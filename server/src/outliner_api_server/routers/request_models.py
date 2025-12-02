@@ -14,6 +14,7 @@ class PageRename(BaseModel):
 class BlockCreate(BaseModel):
     content: str
     position: int
+    type: str = "text"  # default to "text"
     page_id: str | None = None
     parent_block_id: str | None = None
 
@@ -27,6 +28,11 @@ class BlockUpdateParent(BaseModel):
     block_id: str
     new_page_id: str | None = None
     new_parent_block_id: str | None = None
+
+
+class BlockUpdatePosition(BaseModel):
+    block_id: str
+    new_position: int
 
 
 class WorkspaceCreate(BaseModel):
