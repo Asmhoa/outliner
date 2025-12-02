@@ -13,9 +13,20 @@ import {
   Alert,
 } from "@mantine/core";
 import { useDisclosure, useDebouncedValue, useFocusTrap } from "@mantine/hooks";
-import { IconSearch, IconX, IconFileText, IconSquareRoundedLetterB } from "@tabler/icons-react";
+import {
+  IconSearch,
+  IconX,
+  IconFileText,
+  IconSquareRoundedLetterB,
+} from "@tabler/icons-react";
 import { useState, useEffect, useRef, KeyboardEvent } from "react";
-import { type PageModel, type BlockModel, searchDbDbIdSearchPost, type SearchRequest } from "../../api-client";
+import { useNavigate } from "react-router-dom";
+import {
+  type PageModel,
+  type BlockModel,
+  searchDbDbIdSearchPost,
+  type SearchRequest,
+} from "../../api-client";
 import { useDatabase } from "../../hooks/useDatabase";
 
 interface SearchResult {
@@ -28,13 +39,17 @@ interface CommandPaletteProps {
   onClose: () => void;
 }
 
-export default function CommandPalette({ opened, onClose }: CommandPaletteProps) {
+export default function CommandPalette({
+  opened,
+  onClose,
+}: CommandPaletteProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(-1); // For keyboard navigation
   const { dbId } = useDatabase();
+  const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const focusTrapRef = useFocusTrap();
 
@@ -45,7 +60,8 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
   const handleKeyDown = (event: KeyboardEvent) => {
     if (!results) return;
 
-    const totalResults = (results.pages?.length || 0) + (results.blocks?.length || 0);
+    const totalResults =
+      (results.pages?.length || 0) + (results.blocks?.length || 0);
 
     switch (event.key) {
       case "ArrowDown":
@@ -92,7 +108,9 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
         });
 
         if (response.error) {
-          setError(`Search failed: ${response.error.detail || "Unknown error"}`);
+          setError(
+            `Search failed: ${response.error.detail || "Unknown error"}`,
+          );
           setResults(null);
         } else {
           setResults(response.data);
@@ -140,11 +158,11 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
     if (item) {
       if (isPage) {
         // Navigate to the page
-        window.location.href = `/#/db/${dbId}/page/${item.page_id}`;
+        navigate(`/db/${dbId}/pages/${item.page_id}`);
         onClose();
       } else if (item.page_id) {
         // Navigate to the block's page
-        window.location.href = `/#/db/${dbId}/page/${item.page_id}`;
+        navigate(`/db/${dbId}/pages/${item.page_id}`);
         onClose();
       }
     }
@@ -152,14 +170,14 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
 
   const handlePageClick = (pageId: string) => {
     // Navigate to the page using the router
-    window.location.hash = `#/db/${dbId}/page/${pageId}`;
+    navigate(`/db/${dbId}/pages/${pageId}`);
     onClose();
   };
 
   const handleBlockClick = (blockId: string, pageId: string | undefined) => {
     if (pageId) {
       // Navigate to the page containing the block
-      window.location.hash = `#/db/${dbId}/page/${pageId}`;
+      navigate(`/db/${dbId}/pages/${pageId}`);
       onClose();
     }
   };
@@ -210,7 +228,8 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
           <Alert color="red" title="Search Error">
             {error}
           </Alert>
-        ) : results && (results.pages?.length > 0 || results.blocks?.length > 0) ? (
+        ) : results &&
+          (results.pages?.length > 0 || results.blocks?.length > 0) ? (
           <ScrollArea.Autosize mah={400} type="auto">
             <Stack gap="sm">
               {/* Pages Section */}
@@ -229,20 +248,32 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
                         bg={isActive ? "gray.1" : "transparent"}
                         px="sm"
                         py="xs"
-                        style={{ cursor: "pointer", borderRadius: "var(--mantine-radius-sm)" }}
+                        style={{
+                          cursor: "pointer",
+                          borderRadius: "var(--mantine-radius-sm)",
+                        }}
                         onMouseEnter={() => setActiveIndex(resultIndex)}
                       >
                         <Group wrap="nowrap">
                           <IconFileText size={16} stroke={1.5} />
                           <div style={{ flex: 1 }}>
                             {(() => {
-                              const safeQuery = query && typeof query === 'string' ? query : '';
-                              const safeTitle = page.title && typeof page.title === 'string' ? page.title : '';
-                              return <Highlight highlight={safeQuery} fz="sm" fw={500}>{safeTitle}</Highlight>;
+                              const safeQuery =
+                                query && typeof query === "string" ? query : "";
+                              const safeTitle =
+                                page.title && typeof page.title === "string"
+                                  ? page.title
+                                  : "";
+                              return (
+                                <Highlight
+                                  highlight={safeQuery}
+                                  fz="sm"
+                                  fw={500}
+                                >
+                                  {safeTitle}
+                                </Highlight>
+                              );
                             })()}
-                            <Text size="xs" c="dimmed" lineClamp={1}>
-                              Page
-                            </Text>
                           </div>
                         </Group>
                       </Box>
@@ -263,25 +294,46 @@ export default function CommandPalette({ opened, onClose }: CommandPaletteProps)
                     return (
                       <Box
                         key={block.block_id}
-                        onClick={() => handleBlockClick(block.block_id, block.page_id)}
+                        onClick={() =>
+                          handleBlockClick(block.block_id, block.page_id)
+                        }
                         bg={isActive ? "gray.1" : "transparent"}
                         px="sm"
                         py="xs"
-                        style={{ cursor: "pointer", borderRadius: "var(--mantine-radius-sm)" }}
+                        style={{
+                          cursor: "pointer",
+                          borderRadius: "var(--mantine-radius-sm)",
+                        }}
                         onMouseEnter={() => setActiveIndex(resultIndex)}
                       >
                         <Group wrap="nowrap">
                           <IconSquareRoundedLetterB size={16} stroke={1.5} />
                           <div style={{ flex: 1 }}>
                             {(() => {
-                              const safeQuery = query && typeof query === 'string' ? query : '';
-                              const safeContent = (block.content && typeof block.content === 'string' ? block.content.substring(0, 100) : '').toString();
-                              const safeEllipsis = block.content && typeof block.content === 'string' && block.content.length > 100 ? "..." : "";
-                              return <Highlight highlight={safeQuery} fz="sm" fw={500}>{safeContent + safeEllipsis}</Highlight>;
+                              const safeQuery =
+                                query && typeof query === "string" ? query : "";
+                              const safeContent = (
+                                block.content &&
+                                typeof block.content === "string"
+                                  ? block.content.substring(0, 100)
+                                  : ""
+                              ).toString();
+                              const safeEllipsis =
+                                block.content &&
+                                typeof block.content === "string" &&
+                                block.content.length > 100
+                                  ? "..."
+                                  : "";
+                              return (
+                                <Highlight
+                                  highlight={safeQuery}
+                                  fz="sm"
+                                  fw={500}
+                                >
+                                  {safeContent + safeEllipsis}
+                                </Highlight>
+                              );
                             })()}
-                            <Text size="xs" c="dimmed" lineClamp={1}>
-                              Block in {block.page_id ? "page" : "unknown"}
-                            </Text>
                           </div>
                         </Group>
                       </Box>
