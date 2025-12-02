@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+import ReactMarkdown from 'react-markdown';
+// For future extensions: import remarkGfm from 'remark-gfm';  // npm install remark-gfm
 import { updateBlockContentDbDbIdBlocksContentPut, type BlockUpdateContent } from "../api-client";
 import log from "../utils/logger";
 import { useDatabase } from "../hooks/useDatabase";
@@ -22,6 +24,7 @@ const TextBlock: React.FC<TextBlockProps> = ({
   isDeletable = true
 }) => {
   const [blockContent, setBlockContent] = useState(content);
+  const [isEditing, setIsEditing] = useState(false);
   const editableDivRef = useRef<HTMLDivElement>(null);
   const { dbId } = useDatabase();
 
@@ -56,6 +59,8 @@ const TextBlock: React.FC<TextBlockProps> = ({
     } else {
       onContentChange(id, newContent);
     }
+
+    setIsEditing(false); // Exit editing mode after content is saved
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -74,18 +79,31 @@ const TextBlock: React.FC<TextBlockProps> = ({
     }
   };
 
-  return (
-    <div
-      ref={editableDivRef}
-      contentEditable
-      onBlur={handleContentChange}
-      onKeyDown={handleKeyDown}
-      suppressContentEditableWarning
-      className="editable-block"
-    >
-      {blockContent}
-    </div>
-  );
+  if (isEditing) {
+    return (
+      <div
+        ref={editableDivRef}
+        contentEditable
+        onBlur={handleContentChange}
+        onKeyDown={handleKeyDown}
+        onFocus={() => setIsEditing(true)}
+        suppressContentEditableWarning
+        className="editable-block"
+      >
+        {blockContent}
+      </div>
+    );
+  } else {
+    return (
+      <div
+        onClick={() => setIsEditing(true)}
+        className="editable-block view-mode"
+        suppressContentEditableWarning
+      >
+        <ReactMarkdown>{blockContent}</ReactMarkdown>
+      </div>
+    );
+  }
 };
 
 export default TextBlock;
