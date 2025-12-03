@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, forwardRef } from "react";
 import { showNotification } from "@mantine/notifications";
 import { Menu } from "@mantine/core";
 import { IconCopy, IconArrowsMove, IconSwitch, IconFolderPlus, IconTrash } from "@tabler/icons-react";
@@ -16,7 +16,7 @@ interface BaseBlockProps {
   children: React.ReactNode;
 }
 
-const BaseBlock: React.FC<BaseBlockProps> = ({
+const BaseBlock = forwardRef<HTMLDivElement, BaseBlockProps>(({
   id,
   content,
   type,
@@ -26,10 +26,11 @@ const BaseBlock: React.FC<BaseBlockProps> = ({
   onDeleteBlock,
   isDeletable,
   children
-}) => {
+}, ref) => {
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
+  const internalRef = useRef<HTMLDivElement>(null);
+  const containerRef = ref || internalRef;
   const { copyBlockReference, copyBlockUrl, moveBlock, changeParent } = useBlockOperations();
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -70,7 +71,8 @@ const BaseBlock: React.FC<BaseBlockProps> = ({
   };
 
   const handleClickOutside = (e: MouseEvent) => {
-    if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    const element = internalRef.current;
+    if (element && !element.contains(e.target as Node)) {
       setContextMenuOpen(false);
     }
   };
@@ -153,6 +155,6 @@ const BaseBlock: React.FC<BaseBlockProps> = ({
       </Menu>
     </div>
   );
-};
+});
 
 export default BaseBlock;

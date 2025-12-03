@@ -9,13 +9,15 @@ interface PageContentProps {
   blockRefs?: React.MutableRefObject<{
     [key: string]: HTMLDivElement | null;
   }>;
+  nextFocusableBlockId?: string | null;
 }
 
 const PageContent: React.FC<PageContentProps> = ({
   blocks,
   onNewBlock,
   onDeleteBlock,
-  blockRefs
+  blockRefs,
+  nextFocusableBlockId
 }) => {
   return (
     <div className="page-content">
@@ -31,6 +33,7 @@ const PageContent: React.FC<PageContentProps> = ({
           onNewBlock={onNewBlock}
           onDeleteBlock={onDeleteBlock}
           isDeletable={blocks.length > 1}
+          autoFocus={block.block_id === nextFocusableBlockId}
         />
       ))}
     </div>
