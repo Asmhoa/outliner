@@ -12,7 +12,6 @@ interface BlockProps {
   onNewBlock: (currentBlockId: string) => void;
   onDeleteBlock: (currentBlockId: string) => void;
   isDeletable: boolean;
-  autoFocus?: boolean;
 }
 
 const Block = forwardRef<HTMLDivElement, BlockProps>(({
@@ -23,8 +22,7 @@ const Block = forwardRef<HTMLDivElement, BlockProps>(({
   parentBlockId,
   onNewBlock,
   onDeleteBlock,
-  isDeletable,
-  autoFocus = false
+  isDeletable
 }, ref) => {
   const blockRef = useRef<HTMLDivElement>(null);
 
@@ -48,7 +46,6 @@ const Block = forwardRef<HTMLDivElement, BlockProps>(({
             onNewBlock={onNewBlock}
             onDeleteBlock={onDeleteBlock}
             isDeletable={isDeletable}
-            autoFocus={autoFocus}
           />
         );
     }

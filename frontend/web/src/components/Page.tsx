@@ -138,7 +138,6 @@ const Page: React.FC<PageProps> = ({
           onNewBlock={handleNewBlock}
           onDeleteBlock={handleDeleteBlock}
           blockRefs={blockRefs}
-          nextFocusableBlockId={nextFocusableBlockId}
         />
       </BlockEditingProvider>
     </div>

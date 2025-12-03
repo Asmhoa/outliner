@@ -14,7 +14,6 @@ interface TextBlockProps {
   onNewBlock?: (currentBlockId: string) => void;
   onDeleteBlock?: (currentBlockId: string) => void;
   isDeletable?: boolean;
-  autoFocus?: boolean;
 }
 
 const TextBlock: React.FC<TextBlockProps> = ({
@@ -23,21 +22,13 @@ const TextBlock: React.FC<TextBlockProps> = ({
   onContentChange,
   onNewBlock,
   onDeleteBlock,
-  isDeletable = true,
-  autoFocus = false
+  isDeletable = true
 }) => {
   const [blockContent, setBlockContent] = useState(content);
   const { editingBlockId, setEditingBlock } = useBlockEditing();
   const isEditing = editingBlockId === id;
   const editableDivRef = useRef<HTMLDivElement>(null);
   const { dbId } = useDatabase();
-
-  // Auto-focus and enter edit mode when autoFocus is true and not already editing
-  useEffect(() => {
-    if (autoFocus && !isEditing) {
-      setEditingBlock(id);
-    }
-  }, [autoFocus, isEditing, id, setEditingBlock]);
 
   useEffect(() => {
     setBlockContent(content);
@@ -89,19 +80,6 @@ const TextBlock: React.FC<TextBlockProps> = ({
       onDeleteBlock?.(id);
     }
   };
-
-  // Focus the contentEditable div when entering edit mode
-  useEffect(() => {
-    if (isEditing && editableDivRef.current) {
-      // Move cursor to the end of the content
-      const range = document.createRange();
-      const selection = window.getSelection();
-      range.selectNodeContents(editableDivRef.current);
-      range.collapse(false); // false means collapse to end
-      selection?.removeAllRanges();
-      selection?.addRange(range);
-    }
-  }, [isEditing]);
 
   if (isEditing) {
     return (
