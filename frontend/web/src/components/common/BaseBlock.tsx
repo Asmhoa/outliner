@@ -91,7 +91,6 @@ const BaseBlock = forwardRef<HTMLDivElement, BaseBlockProps>(({
       ref={containerRef}
       className="block"
       onContextMenu={handleContextMenu}
-      tabIndex={0} // Make the block focusable
     >
       {/* Actual block content */}
       {children}

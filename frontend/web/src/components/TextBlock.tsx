@@ -15,10 +15,6 @@ interface TextBlockProps {
   onDeleteBlock?: (currentBlockId: string) => void;
   isDeletable?: boolean;
   autoFocus?: boolean;
-  blockIndex?: number;
-  totalBlocks?: number;
-  focusPreviousBlock?: () => void;
-  focusNextBlock?: () => void;
 }
 
 const TextBlock: React.FC<TextBlockProps> = ({
@@ -28,11 +24,7 @@ const TextBlock: React.FC<TextBlockProps> = ({
   onNewBlock,
   onDeleteBlock,
   isDeletable = true,
-  autoFocus = false,
-  blockIndex,
-  totalBlocks,
-  focusPreviousBlock,
-  focusNextBlock
+  autoFocus = false
 }) => {
   const [blockContent, setBlockContent] = useState(content);
   const { editingBlockId, setEditingBlock } = useBlockEditing();
@@ -87,18 +79,6 @@ const TextBlock: React.FC<TextBlockProps> = ({
       event.preventDefault();
       log.debug(`[TextBlock] Enter pressed, creating new block`, { block_id: id });
       onNewBlock?.(id);
-    } else if (event.key === "ArrowUp") {
-      if (blockIndex !== undefined && blockIndex > 0) {
-        event.preventDefault();
-        log.debug(`[TextBlock] Up arrow pressed, moving to previous block`, { block_id: id });
-        focusPreviousBlock?.();
-      }
-    } else if (event.key === "ArrowDown") {
-      if (blockIndex !== undefined && blockIndex < (totalBlocks || 0) - 1) {
-        event.preventDefault();
-        log.debug(`[TextBlock] Down arrow pressed, moving to next block`, { block_id: id });
-        focusNextBlock?.();
-      }
     } else if (
       event.key === "Backspace" &&
       editableDivRef.current?.textContent === "" &&
