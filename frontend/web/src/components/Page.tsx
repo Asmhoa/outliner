@@ -10,6 +10,7 @@ import { usePageData } from "../hooks/usePageData";
 import PageHeader from "./page/PageHeader";
 import PageContent from "./page/PageContent";
 import PageActions from "./page/PageActions";
+import { BlockEditingProvider } from "../contexts/BlockEditingContext";
 
 import { type Block as BlockType, type HTTPError } from "../api-client";
 
@@ -131,12 +132,14 @@ const Page: React.FC<PageProps> = ({
           />
         </Group>
       </Group>
-      <PageContent
-        blocks={blocks}
-        onNewBlock={handleNewBlock}
-        onDeleteBlock={handleDeleteBlock}
-        blockRefs={blockRefs}
-      />
+      <BlockEditingProvider>
+        <PageContent
+          blocks={blocks}
+          onNewBlock={handleNewBlock}
+          onDeleteBlock={handleDeleteBlock}
+          blockRefs={blockRefs}
+        />
+      </BlockEditingProvider>
     </div>
   );
 };

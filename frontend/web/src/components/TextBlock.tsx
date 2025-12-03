@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import { updateBlockContentDbDbIdBlocksContentPut, type BlockUpdateContent } from "../api-client";
 import log from "../utils/logger";
 import { useDatabase } from "../hooks/useDatabase";
+import { useBlockEditing } from "../contexts/BlockEditingContext";
 
 interface TextBlockProps {
   id: string;
@@ -24,7 +25,8 @@ const TextBlock: React.FC<TextBlockProps> = ({
   isDeletable = true
 }) => {
   const [blockContent, setBlockContent] = useState(content);
-  const [isEditing, setIsEditing] = useState(false);
+  const { editingBlockId, setEditingBlock } = useBlockEditing();
+  const isEditing = editingBlockId === id;
   const editableDivRef = useRef<HTMLDivElement>(null);
   const { dbId } = useDatabase();
 
@@ -60,7 +62,7 @@ const TextBlock: React.FC<TextBlockProps> = ({
       onContentChange(id, newContent);
     }
 
-    setIsEditing(false); // Exit editing mode after content is saved
+    setEditingBlock(null); // Exit editing mode after content is saved
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -86,7 +88,7 @@ const TextBlock: React.FC<TextBlockProps> = ({
         contentEditable
         onBlur={handleContentChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => setIsEditing(true)}
+        onFocus={() => setEditingBlock(id)}
         suppressContentEditableWarning
         className="editable-block"
       >
@@ -96,7 +98,7 @@ const TextBlock: React.FC<TextBlockProps> = ({
   } else {
     return (
       <div
-        onClick={() => setIsEditing(true)}
+        onClick={() => setEditingBlock(id)}
         className="editable-block view-mode"
         suppressContentEditableWarning
       >
