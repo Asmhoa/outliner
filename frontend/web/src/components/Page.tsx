@@ -10,9 +10,43 @@ import { usePageData } from "../hooks/usePageData";
 import PageHeader from "./page/PageHeader";
 import PageContent from "./page/PageContent";
 import PageActions from "./page/PageActions";
-import { BlockEditingProvider } from "../contexts/BlockEditingContext";
+import { BlockEditingProvider, useBlockEditing } from "../contexts/BlockEditingContext";
 
 import { type Block as BlockType, type HTTPError } from "../api-client";
+
+// Inner component that has access to the editing context
+const PageContentWithEditing = ({
+  blocks,
+  onNewBlock,
+  onDeleteBlock,
+  blockRefs,
+  nextFocusableBlockId
+}: {
+  blocks: BlockType[];
+  onNewBlock: (currentBlockId: string) => void;
+  onDeleteBlock: (currentBlockId: string) => void;
+  blockRefs?: React.MutableRefObject<{
+    [key: string]: HTMLDivElement | null;
+  }>;
+  nextFocusableBlockId?: string | null;
+}) => {
+  const { setEditingBlock } = useBlockEditing();
+
+  const handleSetEditingBlock = (blockId: string | null) => {
+    setEditingBlock(blockId);
+  };
+
+  return (
+    <PageContent
+      blocks={blocks}
+      onNewBlock={onNewBlock}
+      onDeleteBlock={onDeleteBlock}
+      blockRefs={blockRefs}
+      nextFocusableBlockId={nextFocusableBlockId}
+      setEditingBlock={handleSetEditingBlock}
+    />
+  );
+};
 
 interface PageProps {
   page_id: string;
@@ -133,7 +167,7 @@ const Page: React.FC<PageProps> = ({
         </Group>
       </Group>
       <BlockEditingProvider>
-        <PageContent
+        <PageContentWithEditing
           blocks={blocks}
           onNewBlock={handleNewBlock}
           onDeleteBlock={handleDeleteBlock}
