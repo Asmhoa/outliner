@@ -2,17 +2,17 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   addBlockDbDbIdBlocksPost,
   deleteBlockDbDbIdBlocksBlockIdDelete,
-} from "../api-client";
-import log from "../utils/logger";
+} from "../../api-client";
+import log from "../../utils/logger";
 import { Group } from "@mantine/core";
-import { useDatabase } from "../hooks/useDatabase";
-import { usePageData } from "../hooks/usePageData";
-import PageHeader from "./page/PageHeader";
-import PageContent from "./page/PageContent";
-import PageActions from "./page/PageActions";
-import { BlockEditingProvider } from "../contexts/BlockEditingContext";
+import { useDatabase } from "../../hooks/useDatabase";
+import { usePageData } from "../../hooks/usePageData";
+import PageHeader from "./PageHeader";
+import PageContent from "./PageContent";
+import PageActions from "./PageActions";
+import { BlockEditingProvider } from "../../contexts/BlockEditingContext";
 
-import { type Block as BlockType, type HTTPError } from "../api-client";
+import { type Block as BlockType, type HTTPError } from "../../api-client";
 
 interface PageProps {
   page_id: string;

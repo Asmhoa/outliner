@@ -8,7 +8,7 @@ import WorkspaceSidebar from "./WorkspaceSidebar";
 import type { Page as PageType } from "../../api-client";
 import { useNavigate } from "react-router-dom";
 import { useDatabase } from "../../hooks/useDatabase";
-import DatabaseSelector from "../common/DatabaseSelector";
+import DatabaseSelector from "../database/DatabaseSelector";
 import NavigationPanel from "./NavigationPanel";
 import PageList from "./PageList";
 

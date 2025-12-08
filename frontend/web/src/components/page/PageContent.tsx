@@ -1,5 +1,5 @@
 import React from 'react';
-import Block from '../Block';
+import Block from '../block/Block';
 import { type Block as BlockType } from '../../api-client';
 
 interface PageContentProps {

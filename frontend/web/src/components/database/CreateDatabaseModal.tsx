@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Modal, TextInput, Button, Group } from "@mantine/core";
-import { createDatabaseDatabasesPost } from "../api-client";
-import log from "../utils/logger";
+import { createDatabaseDatabasesPost } from "../../api-client";
+import log from "../../utils/logger";
 
 interface CreateDatabaseModalProps {
   opened: boolean;

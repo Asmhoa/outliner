@@ -8,7 +8,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import log from "./utils/logger";
 
 import "./App.css";
-import Page from "./components/Page";
+import Page from "./components/page/Page";
 import AllPages from "./components/page/AllPages";
 import RightSidebar from "./components/sidebar/RightSidebar";
 import {
@@ -17,15 +17,15 @@ import {
   type Block,
   type HTTPError,
 } from "./api-client";
-import SearchBox from "./components/sidebar/SearchBox";
+import HeaderToolbar from "./components/sidebar/HeaderToolbar";
 import LeftSidebar from "./components/sidebar/LeftSidebar";
 import { useDatabase } from "./hooks/useDatabase";
-import { CreateDatabaseModal } from "./components/CreateDatabaseModal";
+import { CreateDatabaseModal } from "./components/database/CreateDatabaseModal";
 import { WelcomeScreen } from "./components/WelcomeScreen";
 import { usePageData } from "./hooks/usePageData";
 import { useDatabaseManager } from "./hooks/useDatabaseManager";
 import { useLocation } from "react-router-dom";
-import CommandPalette from "./components/common/CommandPalette";
+import CommandPalette from "./components/search/CommandPalette";
 import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
 
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
@@ -268,7 +268,7 @@ function App() {
         padding="md"
       >
         <AppShell.Header bd={"none"}>
-          <SearchBox
+          <HeaderToolbar
             onAddPage={addPage}
             navbarVisibility={navbarVisibility}
             onLeftSidebarToggle={handleLeftSidebarToggle}

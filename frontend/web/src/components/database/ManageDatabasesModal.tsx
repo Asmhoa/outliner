@@ -17,7 +17,7 @@ import {
   updateDatabaseDatabasesDbIdPut,
   deleteDatabaseDatabasesDbIdDelete,
   rebuildSearchDbDbIdRebuildSearchPost,
-} from "../api-client";
+} from "../../api-client";
 
 interface Database {
   id: string;

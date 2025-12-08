@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from 'react-markdown';
 // For future extensions: import remarkGfm from 'remark-gfm';  // npm install remark-gfm
-import { updateBlockContentDbDbIdBlocksContentPut, type BlockUpdateContent } from "../api-client";
-import log from "../utils/logger";
-import { useDatabase } from "../hooks/useDatabase";
-import { useBlockEditing } from "../contexts/BlockEditingContext";
+import { updateBlockContentDbDbIdBlocksContentPut, type BlockUpdateContent } from "../../api-client";
+import log from "../../utils/logger";
+import { useDatabase } from "../../hooks/useDatabase";
+import { useBlockEditing } from "../../contexts/BlockEditingContext";
 
 interface TextBlockProps {
   id: string;

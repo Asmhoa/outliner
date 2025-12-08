@@ -1,7 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useRef } from "react";
-import BaseBlock from "./common/BaseBlock";
+import BaseBlock from "./BaseBlock";
 import TextBlock from "./TextBlock";
-import log from "../utils/logger";
+import log from "../../utils/logger";
 
 interface BlockProps {
   id: string;
