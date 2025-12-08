@@ -2,16 +2,17 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   addBlockDbDbIdBlocksPost,
   deleteBlockDbDbIdBlocksBlockIdDelete,
-} from "../api-client";
-import log from "../utils/logger";
+} from "../../api-client";
+import log from "../../utils/logger";
 import { Group } from "@mantine/core";
-import { useDatabase } from "../hooks/useDatabase";
-import { usePageData } from "../hooks/usePageData";
-import PageHeader from "./page/PageHeader";
-import PageContent from "./page/PageContent";
-import PageActions from "./page/PageActions";
+import { useDatabase } from "../../hooks/useDatabase";
+import { usePageData } from "../../hooks/usePageData";
+import PageHeader from "./PageHeader";
+import PageContent from "./PageContent";
+import PageActions from "./PageActions";
+import { BlockEditingProvider } from "../../contexts/BlockEditingContext";
 
-import { type Block as BlockType, type HTTPError } from "../api-client";
+import { type Block as BlockType, type HTTPError } from "../../api-client";
 
 interface PageProps {
   page_id: string;
@@ -65,7 +66,7 @@ const Page: React.FC<PageProps> = ({
     });
     const { data: newBlock, error } = await addBlockDbDbIdBlocksPost({
       path: { db_id: dbId },
-      body: { page_id: page_id, content: "", position: 0 },
+      body: { page_id: page_id, content: "", position: 0, type: "text" },
     });
 
     if (error) {
@@ -131,12 +132,14 @@ const Page: React.FC<PageProps> = ({
           />
         </Group>
       </Group>
-      <PageContent
-        blocks={blocks}
-        onNewBlock={handleNewBlock}
-        onDeleteBlock={handleDeleteBlock}
-        blockRefs={blockRefs}
-      />
+      <BlockEditingProvider>
+        <PageContent
+          blocks={blocks}
+          onNewBlock={handleNewBlock}
+          onDeleteBlock={handleDeleteBlock}
+          blockRefs={blockRefs}
+        />
+      </BlockEditingProvider>
     </div>
   );
 };

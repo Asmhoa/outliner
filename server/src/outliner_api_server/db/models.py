@@ -52,4 +52,5 @@ class BlockModel(BaseModel):
     page_id: str | None = None
     parent_block_id: str | None = None
     position: int
+    type: str = "text"  # default to "text"
     created_at: datetime

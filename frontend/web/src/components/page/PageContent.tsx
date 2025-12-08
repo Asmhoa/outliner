@@ -1,5 +1,5 @@
 import React from 'react';
-import Block from '../Block';
+import Block from '../block/Block';
 import { type Block as BlockType } from '../../api-client';
 
 interface PageContentProps {
@@ -25,6 +25,9 @@ const PageContent: React.FC<PageContentProps> = ({
           key={block.block_id}
           id={block.block_id}
           content={block.content}
+          type={block.type || "text"}
+          position={block.position}
+          parentBlockId={block.parent_block_id}
           onNewBlock={onNewBlock}
           onDeleteBlock={onDeleteBlock}
           isDeletable={blocks.length > 1}

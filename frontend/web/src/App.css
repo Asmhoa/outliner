@@ -33,6 +33,22 @@ body,
 
 .editable-block {
     width: 100%;
+    padding: 2px 4px; /* Consistent padding for both edit and view modes */
+    min-height: 1.5em;
+    line-height: 1.5;
+}
+
+.editable-block.view-mode {
+    cursor: text;
+}
+
+.editable-block.view-mode:hover {
+    background-color: #f8f9fa;
+}
+
+.editable-block p {
+    margin: 0;
+    display: inline;
 }
 
 .page-menu {

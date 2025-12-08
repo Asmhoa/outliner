@@ -32,7 +32,7 @@ export const useBlockData = (): UseBlockDataReturn => {
     log.debug(`[useBlockData] Adding new block`, { page_id, position });
     const { data, error } = await addBlockDbDbIdBlocksPost({
       path: { db_id: dbId },
-      body: { page_id, content: "", position },
+      body: { page_id, content: "", position, type: "text" },
     });
 
     if (error) {

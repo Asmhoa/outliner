@@ -13,8 +13,8 @@ import {
 } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 import { useDisclosure } from "@mantine/hooks";
-import { CreateDatabaseModal } from "../CreateDatabaseModal";
-import { ManageDatabasesModal } from "../ManageDatabasesModal";
+import { CreateDatabaseModal } from "./CreateDatabaseModal";
+import { ManageDatabasesModal } from "./ManageDatabasesModal";
 import { useDatabase } from "../../hooks/useDatabase";
 
 interface DatabaseSelectorProps {

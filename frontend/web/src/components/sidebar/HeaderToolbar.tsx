@@ -15,9 +15,9 @@ import {
   IconSearch,
 } from "@tabler/icons-react";
 import log from "../../utils/logger";
-import CommandPalette from "../common/CommandPalette";
+import CommandPalette from "../search/CommandPalette";
 
-interface SearchBoxProps {
+interface HeaderToolbarProps {
   onAddPage: (title: string) => void;
   navbarVisibility: "visible" | "workspace-collapsed" | "sidebar-collapsed";
   onLeftSidebarToggle: () => void;
@@ -25,13 +25,13 @@ interface SearchBoxProps {
   onRightSidebarToggle: () => void;
 }
 
-export default function SearchBox({
+export default function HeaderToolbar({
   onAddPage,
   navbarVisibility,
   onLeftSidebarToggle,
   rightSidebarCollapsed,
   onRightSidebarToggle,
-}: SearchBoxProps) {
+}: HeaderToolbarProps) {
   const [newPageTitle, setNewPageTitle] = useState("");
   const [modalOpened, { open: openModal, close: closeModal }] =
     useDisclosure(false);

@@ -11,7 +11,7 @@ import {
 } from "@mantine/core";
 import { IconDatabase, IconDownload, IconBook } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
-import { CreateDatabaseModal } from "./CreateDatabaseModal";
+import { CreateDatabaseModal } from "./database/CreateDatabaseModal";
 
 interface WelcomeScreenProps {
   onDatabaseCreated: () => void;

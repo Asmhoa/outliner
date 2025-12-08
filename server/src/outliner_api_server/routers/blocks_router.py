@@ -6,6 +6,7 @@ from outliner_api_server.routers.request_models import (
     BlockCreate,
     BlockUpdateContent,
     BlockUpdateParent,
+    BlockUpdatePosition,
 )
 from outliner_api_server.db.errors import BlockNotFoundError
 
@@ -27,6 +28,7 @@ router = APIRouter()
                         "page_id": "abc123",
                         "parent_block_id": None,
                         "position": 0,
+                        "type": "text",
                         "created_at": "2023-01-01T00:00:00",
                     }
                 }
@@ -41,7 +43,7 @@ router = APIRouter()
 def add_block(db_id: str, block: BlockCreate, db: UserDatabase = Depends(get_db)):
     try:
         block_id = db.add_block(
-            block.content, block.position, block.page_id, block.parent_block_id
+            block.content, block.position, block.page_id, block.parent_block_id, block.type
         )
         block_data = db.get_block_content_by_id(block_id)
         return BlockModel(
@@ -50,6 +52,7 @@ def add_block(db_id: str, block: BlockCreate, db: UserDatabase = Depends(get_db)
             page_id=block_data.page_id,
             parent_block_id=block_data.parent_block_id,
             position=block_data.position,
+            type=block_data.type,
             created_at=block_data.created_at,
         )
     except BlockNotFoundError as e:
@@ -92,6 +95,7 @@ def get_block(db_id: str, block_id: str, db: UserDatabase = Depends(get_db)):
             page_id=block_data.page_id,
             parent_block_id=block_data.parent_block_id,
             position=block_data.position,
+            type=block_data.type,
             created_at=block_data.created_at,
         )
     except BlockNotFoundError as e:
@@ -113,6 +117,7 @@ def get_block(db_id: str, block_id: str, db: UserDatabase = Depends(get_db)):
                             "page_id": "abc123",
                             "parent_block_id": None,
                             "position": 0,
+                            "type": "text",
                             "created_at": "2023-01-01T00:00:00",
                         }
                     ]
@@ -134,6 +139,7 @@ def get_blocks(db_id: str, page_id: str, db: UserDatabase = Depends(get_db)):
             page_id=b.page_id,
             parent_block_id=b.parent_block_id,
             position=b.position,
+            type=b.type,
             created_at=b.created_at,
         )
         for b in blocks_data
@@ -158,6 +164,29 @@ def update_block_content(
 ):
     try:
         db.update_block_content(block.block_id, block.new_content)
+        return {"status": "success"}
+    except BlockNotFoundError:
+        raise HTTPException(status_code=404, detail="Block not found")
+
+
+@router.put(
+    "/db/{db_id}/blocks/position",
+    responses={
+        200: {
+            "description": "Block position updated successfully",
+            "content": {"application/json": {"example": {"status": "success"}}},
+        },
+        404: {
+            "description": "Block not found",
+            "content": {"application/json": {"example": {"detail": "Block not found"}}},
+        },
+    },
+)
+def update_block_position(
+    db_id: str, block: BlockUpdatePosition, db: UserDatabase = Depends(get_db)
+):
+    try:
+        db.update_block_position(block.block_id, block.new_position)
         return {"status": "success"}
     except BlockNotFoundError:
         raise HTTPException(status_code=404, detail="Block not found")
