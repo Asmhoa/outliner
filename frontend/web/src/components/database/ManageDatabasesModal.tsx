@@ -12,12 +12,7 @@ import {
 } from "@mantine/core";
 import { IconPencil, IconTrash, IconX, IconCheck, IconRefresh } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
-import {
-  getDatabasesDatabasesGet,
-  updateDatabaseDatabasesDbIdPut,
-  deleteDatabaseDatabasesDbIdDelete,
-  rebuildSearchDbDbIdRebuildSearchPost,
-} from "../../api-client";
+import apiService from "../../services";
 
 interface Database {
   id: string;
@@ -48,7 +43,7 @@ export function ManageDatabasesModal({
   const loadData = async () => {
     setLoading(true);
     try {
-      const response = await getDatabasesDatabasesGet();
+      const response = await apiService.getDatabases();
       if (response.data) {
         setDatabases(response.data as Database[]);
       }
@@ -92,10 +87,7 @@ export function ManageDatabasesModal({
 
     try {
       // Call the backend API to update the database name
-      await updateDatabaseDatabasesDbIdPut({
-        path: { db_id: editingId },
-        body: { name: editValue }
-      });
+      await apiService.updateDatabase(editingId, editValue);
 
       // Update the local state after successful API call
       setDatabases((prev) =>
@@ -131,9 +123,7 @@ export function ManageDatabasesModal({
 
     try {
       // Call the backend API to delete the database
-      await deleteDatabaseDatabasesDbIdDelete({
-        path: { db_id: dbId }
-      });
+      await apiService.deleteDatabase(dbId);
 
       // Update the local state after successful API call
       setDatabases((prev) => prev.filter((db) => db.id !== dbId));
@@ -165,10 +155,7 @@ export function ManageDatabasesModal({
 
     try {
       // Call the backend API to rebuild the search index
-      await rebuildSearchDbDbIdRebuildSearchPost({
-        path: { db_id: dbId },
-        body: {},
-      });
+      await apiService.rebuildSearch(dbId);
 
       // Optionally show a success notification here
     } catch (error) {

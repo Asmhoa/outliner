@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Modal, TextInput, Button, Group } from "@mantine/core";
-import { createDatabaseDatabasesPost } from "../../api-client";
+import apiService from "../../services";
 import log from "../../utils/logger";
 
 interface CreateDatabaseModalProps {
@@ -23,9 +23,7 @@ export function CreateDatabaseModal({
     
     setLoading(true);
 
-    const { data, error } = await createDatabaseDatabasesPost({
-      body: { name: trimmedDbName },
-    });
+    const { data, error } = await apiService.createDatabase(trimmedDbName);
     setLoading(false);
 
     if (error) {

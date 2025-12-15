@@ -1,9 +1,7 @@
 import { useState, useCallback } from "react";
 import { useDatabase } from "./useDatabase";
+import apiService from "../services";
 import {
-  addBlockDbDbIdBlocksPost,
-  deleteBlockDbDbIdBlocksBlockIdDelete,
-  updateBlockContentDbDbIdBlocksContentPut,
   type Block as BlockType,
   type BlockUpdateContent
 } from "../api-client";
@@ -30,10 +28,7 @@ export const useBlockData = (): UseBlockDataReturn => {
     }
 
     log.debug(`[useBlockData] Adding new block`, { page_id, position });
-    const { data, error } = await addBlockDbDbIdBlocksPost({
-      path: { db_id: dbId },
-      body: { page_id, content: "", position, type: "text" },
-    });
+    const { data, error } = await apiService.addBlock(dbId, page_id, "", position, "text");
 
     if (error) {
       log.error("[useBlockData] Failed to add new block:", error);
@@ -55,9 +50,7 @@ export const useBlockData = (): UseBlockDataReturn => {
     }
 
     log.debug(`[useBlockData] Deleting block`, { block_id });
-    const { error } = await deleteBlockDbDbIdBlocksBlockIdDelete({
-      path: { db_id: dbId, block_id },
-    });
+    const { error } = await apiService.deleteBlock(dbId, block_id);
 
     if (error) {
       log.error("[useBlockData] Failed to delete block:", error);
@@ -75,26 +68,19 @@ export const useBlockData = (): UseBlockDataReturn => {
     }
 
     log.debug(`[useBlockData] Updating block content`, { block_id, new_content });
-    const updatedBlock: BlockUpdateContent = {
-      block_id,
-      new_content,
-    };
-    const { error } = await updateBlockContentDbDbIdBlocksContentPut({
-      path: { db_id: dbId },
-      body: updatedBlock
-    });
+    const { error } = await apiService.updateBlockContent(dbId, block_id, new_content);
 
     if (error) {
       log.error("[useBlockData] Failed to update block content:", error);
       return false;
     }
 
-    setBlocks(prevBlocks => 
-      prevBlocks.map(block => 
+    setBlocks(prevBlocks =>
+      prevBlocks.map(block =>
         block.block_id === block_id ? { ...block, content: new_content } : block
       )
     );
-    
+
     return true;
   };
 
