@@ -1,0 +1,17 @@
+{
+  "name": "outliner",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter ./packages/backend dev\" \"pnpm --filter ./packages/frontend dev\" \"pnpm --filter ./packages/shared dev\"",
+    "build": "pnpm --filter ./packages/* build",
+    "test": "pnpm --filter ./packages/* test"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.27",
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.3"
+  }
+}
