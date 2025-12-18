@@ -1,13 +1,15 @@
 import { Router, Request, Response } from 'express';
-import { DatabaseService, UserDatabaseService } from '../services';
+import { SystemDatabase } from '../database/system';
+import { UserDatabase } from '../database/user';
+import { UserDatabaseNotFoundError } from '../database/errors';
 import { SearchRequest, PageResponse, BlockResponse } from '../models/api-types';
 
 const router: Router = Router();
 
 // POST /api/utils/search - Search for pages and blocks
 router.post('/search', (req: Request, res: Response) => {
-  let dbService: DatabaseService | null = null;
-  let userDbService: UserDatabaseService | null = null;
+  let sysDb: SystemDatabase | null = null;
+  let userDb: UserDatabase | null = null;
   try {
     const { db_id } = req.params;
     const { query } = req.body as SearchRequest;
@@ -17,12 +19,13 @@ router.post('/search', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Query is required' });
     }
 
-    dbService = new DatabaseService(process.env.SYSTEM_DB_PATH || 'system.db');
-    userDbService = dbService.getUserDatabaseService(db_id);
+    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
+    const dbInfo = sysDb.getUserDatabaseById(db_id);
+    userDb = new UserDatabase(dbInfo.path);
 
     // Perform search in both pages and blocks
-    const pageResults = userDbService.searchPages(query);
-    const blockResults = userDbService.searchBlocks(query);
+    const pageResults = userDb.searchPages(query);
+    const blockResults = userDb.searchBlocks(query);
 
     // Format the results to match the expected response
     const formattedPages = pageResults.map(page => ({
@@ -46,10 +49,13 @@ router.post('/search', (req: Request, res: Response) => {
       blocks: formattedBlocks
     });
   } catch (error) {
+    if (error instanceof UserDatabaseNotFoundError) {
+      return res.status(404).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Failed to search' });
   } finally {
-    userDbService?.close();
-    dbService?.close();
+    userDb?.close();
+    sysDb?.close();
   }
 });
 
