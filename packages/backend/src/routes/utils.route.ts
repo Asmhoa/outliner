@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { DatabaseService, UserDatabaseService } from '../services';
-import { SearchRequest } from '../types/global';
+import { SearchRequest, PageResponse, BlockResponse } from '../models/api-types';
 
-const router = Router();
+const router: Router = Router();
 
 // POST /api/utils/search - Search for pages and blocks
 router.post('/search', (req: Request, res: Response) => {

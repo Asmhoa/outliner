@@ -1,9 +1,11 @@
 import { ErrorRequestHandler } from 'express';
-import { 
-  PageNotFoundError, 
-  BlockNotFoundError, 
-  WorkspaceNotFoundError, 
-  UserDatabaseNotFoundError 
+import {
+  PageNotFoundError,
+  BlockNotFoundError,
+  WorkspaceNotFoundError,
+  UserDatabaseNotFoundError,
+  PageAlreadyExistsError,
+  UserDatabaseAlreadyExistsError
 } from '../database/errors';
 
 // Define custom error types for better type checking
@@ -11,35 +13,29 @@ interface CustomError extends Error {
   status?: number;
 }
 
+// Map error names to HTTP status codes
+const errorStatusMap: { [key: string]: number } = {
+  PageNotFoundError: 404,
+  BlockNotFoundError: 404,
+  WorkspaceNotFoundError: 404,
+  UserDatabaseNotFoundError: 404,
+  PageAlreadyExistsError: 409,
+  UserDatabaseAlreadyExistsError: 409,
+};
+
 export const errorHandler: ErrorRequestHandler = (
   err: CustomError,
   _req,
   res,
   _next
 ) => {
-  // Map custom errors to appropriate HTTP status codes
-  if (err instanceof PageNotFoundError) {
-    return res.status(404).json({ error: err.message });
+  // Use mapped status codes for known errors
+  const statusCode = errorStatusMap[err.name] || err.status || 500;
+
+  // Log unexpected errors
+  if (statusCode === 500) {
+    console.error('Unhandled error:', err);
   }
 
-  if (err instanceof BlockNotFoundError) {
-    return res.status(404).json({ error: err.message });
-  }
-
-  if (err instanceof WorkspaceNotFoundError) {
-    return res.status(404).json({ error: err.message });
-  }
-
-  if (err instanceof UserDatabaseNotFoundError) {
-    return res.status(404).json({ error: err.message });
-  }
-
-  // Handle validation errors or other errors
-  if (err.status) {
-    return res.status(err.status).json({ error: err.message });
-  }
-
-  // Default to 500 for unhandled errors
-  console.error('Unhandled error:', err);
-  return res.status(500).json({ error: 'Internal server error' });
+  return res.status(statusCode).json({ error: err.message });
 };

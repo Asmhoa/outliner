@@ -5,10 +5,11 @@ import {
   BlockCreate,
   BlockUpdateContent,
   BlockUpdateParent,
-  BlockUpdatePosition
-} from '../types/global';
+  BlockUpdatePosition,
+  BlockResponse
+} from '../models/api-types';
 
-const router = Router();
+const router: Router = Router();
 
 // POST /api/blocks - Create a new block
 router.post('/', (req: Request, res: Response) => {
@@ -94,6 +95,10 @@ router.get('/:blockId', (req: Request, res: Response) => {
 
     const blockIdNum = parseInt(blockId, 10);
     const block = userDbService.getBlockById(blockIdNum);
+
+    if (!block) {
+      throw new BlockNotFoundError(`Block with ID ${blockIdNum} not found`);
+    }
 
     res.json({
       block_id: block.id,

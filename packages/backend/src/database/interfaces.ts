@@ -1,3 +1,10 @@
+import {
+  UserDatabaseInfo,
+  Page,
+  Block,
+  Workspace
+} from '../models/data-objects';
+
 /**
  * Interface for database connection management
  */
@@ -9,20 +16,14 @@ export interface IDatabaseConnection {
  * Interface for system database operations
  */
 export interface ISystemDatabase extends IDatabaseConnection {
-  // Method to get all user databases
+  // The SystemDatabase manages CRUD operations on UserDatabases
+  addUserDatabase(name: string): Promise<UserDatabaseInfo>; // Automatically calculates path from name
   getAllUserDatabases(): UserDatabaseInfo[];
-
-  // Method to get a specific user database by ID
-  getUserDatabaseById(id: string): UserDatabaseInfo | null;
-
-  // Method to add a new user database
-  addUserDatabase(name: string, path: string): UserDatabaseInfo;
-
-  // Method to update an existing user database
-  updateUserDatabase(id: string, name: string): boolean;
-
-  // Method to remove a user database
-  removeUserDatabase(id: string): boolean;
+  getUserDatabaseById(id: string): UserDatabaseInfo;
+  getUserDatabaseByName(name: string): UserDatabaseInfo;
+  getUserDatabaseByPath(path: string): UserDatabaseInfo;
+  updateUserDatabase(id: string, newName?: string, newPathRelative?: string): Promise<boolean>;
+  removeUserDatabase(id: string): Promise<boolean>; // Also removes the actual database file
 }
 
 /**
@@ -55,41 +56,4 @@ export interface IUserDatabase extends IDatabaseConnection {
   // Search functionality
   searchPages(query: string): Page[];
   searchBlocks(query: string): Block[];
-}
-
-/**
- * Type definitions for database entities
- */
-export interface UserDatabaseInfo {
-  id: string;
-  name: string;
-  path: string;
-  createdAt: Date;
-}
-
-export interface Page {
-  id: number;
-  title: string;
-  workspaceId?: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Block {
-  id: number;
-  content: string;
-  position: number;
-  type: string;
-  pageId: number;
-  parentBlockId?: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Workspace {
-  id: number;
-  name: string;
-  color: string;
-  createdAt: Date;
-  updatedAt: Date;
 }

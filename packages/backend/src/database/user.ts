@@ -1,21 +1,31 @@
-import { Database as SQLiteDB } from 'better-sqlite3';
-import { 
-  IUserDatabase, 
-  Page, 
-  Block, 
-  Workspace,
-  IDatabaseConnection 
+import BetterSqlite3 from 'better-sqlite3';
+import {
+  IUserDatabase,
+  IDatabaseConnection
 } from './interfaces';
+
+import {
+  Page,
+  Block,
+  Workspace
+} from '../models/data-objects';
+
+import {
+  PageNotFoundError,
+  BlockNotFoundError,
+  WorkspaceNotFoundError,
+  PageAlreadyExistsError
+} from './errors';
 
 /**
  * UserDatabase handles operations for a specific user's data.
  * It stores pages, blocks, and workspaces for a single user.
  */
 export class UserDatabase implements IUserDatabase {
-  private db: SQLiteDB;
+  private db: BetterSqlite3.Database;
 
   constructor(private dbPath: string) {
-    this.db = new SQLiteDB(dbPath);
+    this.db = new BetterSqlite3(dbPath);
     this.initializeTables();
   }
 
@@ -145,11 +155,17 @@ export class UserDatabase implements IUserDatabase {
    * Add a new page to the database
    */
   addPage(title: string): number {
+    // Check if a page with this title already exists
+    const existingPage = this.getAllPages().find(page => page.title === title);
+    if (existingPage) {
+      throw new PageAlreadyExistsError(`Page with title '${title}' already exists`);
+    }
+
     const stmt = this.db.prepare(`
       INSERT INTO pages (title)
       VALUES (?)
     `);
-    
+
     const result = stmt.run(title);
     return result.lastInsertRowid as number;
   }
@@ -157,16 +173,19 @@ export class UserDatabase implements IUserDatabase {
   /**
    * Get a page by its ID
    */
-  getPageById(id: number): Page | null {
+  getPageById(id: number): Page {
     const stmt = this.db.prepare(`
-      SELECT id, title, workspace_id as workspaceId, 
+      SELECT id, title, workspace_id as workspaceId,
              created_at as createdAt, updated_at as updatedAt
-      FROM pages 
+      FROM pages
       WHERE id = ?
     `);
-    
+
     const result = stmt.get(id) as Page | undefined;
-    return result || null;
+    if (!result) {
+      throw new PageNotFoundError(`Page with id '${id}' not found`);
+    }
+    return result;
   }
 
   /**
@@ -226,17 +245,20 @@ export class UserDatabase implements IUserDatabase {
   /**
    * Get a block by its ID
    */
-  getBlockById(id: number): Block | null {
+  getBlockById(id: number): Block {
     const stmt = this.db.prepare(`
-      SELECT id, content, position, type, page_id as pageId, 
+      SELECT id, content, position, type, page_id as pageId,
              parent_block_id as parentBlockId,
              created_at as createdAt, updated_at as updatedAt
-      FROM blocks 
+      FROM blocks
       WHERE id = ?
     `);
-    
+
     const result = stmt.get(id) as Block | undefined;
-    return result || null;
+    if (!result) {
+      throw new BlockNotFoundError(`Block with id '${id}' not found`);
+    }
+    return result;
   }
 
   /**
@@ -326,16 +348,19 @@ export class UserDatabase implements IUserDatabase {
   /**
    * Get a workspace by its ID
    */
-  getWorkspaceById(id: number): Workspace | null {
+  getWorkspaceById(id: number): Workspace {
     const stmt = this.db.prepare(`
       SELECT id, name, color,
              created_at as createdAt, updated_at as updatedAt
-      FROM workspaces 
+      FROM workspaces
       WHERE id = ?
     `);
-    
+
     const result = stmt.get(id) as Workspace | undefined;
-    return result || null;
+    if (!result) {
+      throw new WorkspaceNotFoundError(`Workspace with id '${id}' not found`);
+    }
+    return result;
   }
 
   /**

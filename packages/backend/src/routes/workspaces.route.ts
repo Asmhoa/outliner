@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { DatabaseService, UserDatabaseService } from '../services';
 import { WorkspaceNotFoundError } from '../database/errors';
-import { WorkspaceCreate, WorkspaceUpdate } from '../types/global';
+import { WorkspaceCreate, WorkspaceUpdate, WorkspaceResponse } from '../models/api-types';
 
-const router = Router();
+const router: Router = Router();
 
 // POST /api/workspaces - Create a new workspace
 router.post('/', (req: Request, res: Response) => {
@@ -73,6 +73,10 @@ router.get('/:workspaceId', (req: Request, res: Response) => {
 
     const workspaceIdNum = parseInt(workspaceId, 10);
     const workspace = userDbService.getWorkspaceById(workspaceIdNum);
+
+    if (!workspace) {
+      throw new WorkspaceNotFoundError(`Workspace with ID ${workspaceIdNum} not found`);
+    }
 
     res.json({
       workspace_id: workspace.id,

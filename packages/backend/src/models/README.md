@@ -1,5 +1,7 @@
 # Models
 
-Data models and schemas for the backend application.
+Data models and type definitions for the backend application.
 
-This contains TypeScript interfaces and classes that represent the data structures used in the application, including pages, blocks, workspaces, and user databases.
+This contains TypeScript interfaces that represent:
+- Domain models in data-objects.ts (representing internal data structures)
+- API types in api-types.ts (representing request/response contracts)

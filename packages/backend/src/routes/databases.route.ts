@@ -1,53 +1,53 @@
 import { Router, Request, Response } from 'express';
-import { SystemDatabaseService } from '../services';
+import { SystemDatabase } from '../database/system';
 import { UserDatabaseNotFoundError } from '../database/errors';
-import { DatabaseCreate, DatabaseUpdate } from '../types/global';
+import { DatabaseCreate, DatabaseUpdate } from '../models/api-types';
 
-const router = Router();
+const router: Router = Router();
 
 // GET /api/databases - Get all databases
 router.get('/', (req: Request, res: Response) => {
-  let sysDbService: SystemDatabaseService | null = null;
+  let sysDb: SystemDatabase | null = null;
   try {
-    sysDbService = new SystemDatabaseService(process.env.SYSTEM_DB_PATH || 'system.db');
-    const databases = sysDbService.getAllUserDatabases();
+    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
+    const databases = sysDb.getAllUserDatabases();
     res.json(databases);
   } catch (error) {
     res.status(500).json({ error: 'Failed to retrieve databases' });
   } finally {
-    sysDbService?.close();
+    sysDb?.close();
   }
 });
 
 // POST /api/databases - Create a new database
 router.post('/', (req: Request, res: Response) => {
-  let sysDbService: SystemDatabaseService | null = null;
+  let sysDb: SystemDatabase | null = null;
   try {
-    const { name, path } = req.body as DatabaseCreate;
+    const { name } = req.body as DatabaseCreate;
 
     // Validate request body
-    if (!name || !path) {
-      return res.status(400).json({ error: 'Name and path are required' });
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
     }
 
-    sysDbService = new SystemDatabaseService(process.env.SYSTEM_DB_PATH || 'system.db');
-    const newDb = sysDbService.addUserDatabase(name, path);
+    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
+    const newDb = sysDb.addUserDatabase(name);
     res.status(201).json(newDb);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create database' });
   } finally {
-    sysDbService?.close();
+    sysDb?.close();
   }
 });
 
 // GET /api/databases/:id - Get a specific database
 router.get('/:id', (req: Request, res: Response) => {
-  let sysDbService: SystemDatabaseService | null = null;
+  let sysDb: SystemDatabase | null = null;
   try {
     const { id } = req.params;
 
-    sysDbService = new SystemDatabaseService(process.env.SYSTEM_DB_PATH || 'system.db');
-    const dbInfo = sysDbService.getUserDatabaseById(id);
+    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
+    const dbInfo = sysDb.getUserDatabaseById(id);
 
     res.json(dbInfo);
   } catch (error) {
@@ -56,13 +56,13 @@ router.get('/:id', (req: Request, res: Response) => {
     }
     res.status(500).json({ error: 'Failed to retrieve database' });
   } finally {
-    sysDbService?.close();
+    sysDb?.close();
   }
 });
 
 // PUT /api/databases/:id - Update a database
 router.put('/:id', (req: Request, res: Response) => {
-  let sysDbService: SystemDatabaseService | null = null;
+  let sysDb: SystemDatabase | null = null;
   try {
     const { id } = req.params;
     const { name } = req.body as DatabaseUpdate;
@@ -72,8 +72,8 @@ router.put('/:id', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Name is required' });
     }
 
-    sysDbService = new SystemDatabaseService(process.env.SYSTEM_DB_PATH || 'system.db');
-    const success = sysDbService.updateUserDatabase(id, name);
+    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
+    const success = sysDb.updateUserDatabase(id, name);
 
     res.json({ message: 'Database updated successfully' });
   } catch (error) {
@@ -82,18 +82,18 @@ router.put('/:id', (req: Request, res: Response) => {
     }
     res.status(500).json({ error: 'Failed to update database' });
   } finally {
-    sysDbService?.close();
+    sysDb?.close();
   }
 });
 
 // DELETE /api/databases/:id - Delete a database
 router.delete('/:id', (req: Request, res: Response) => {
-  let sysDbService: SystemDatabaseService | null = null;
+  let sysDb: SystemDatabase | null = null;
   try {
     const { id } = req.params;
 
-    sysDbService = new SystemDatabaseService(process.env.SYSTEM_DB_PATH || 'system.db');
-    const success = sysDbService.removeUserDatabase(id);
+    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
+    const success = sysDb.removeUserDatabase(id);
 
     res.json({ message: 'Database deleted successfully' });
   } catch (error) {
@@ -102,7 +102,7 @@ router.delete('/:id', (req: Request, res: Response) => {
     }
     res.status(500).json({ error: 'Failed to delete database' });
   } finally {
-    sysDbService?.close();
+    sysDb?.close();
   }
 });
 
