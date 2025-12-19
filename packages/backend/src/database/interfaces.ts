@@ -23,7 +23,7 @@ export interface ISystemDatabase extends IDatabaseConnection {
   getUserDatabaseByName(name: string): UserDatabaseInfo;
   getUserDatabaseByPath(path: string): UserDatabaseInfo;
   updateUserDatabase(id: string, newName?: string, newPathRelative?: string): Promise<boolean>;
-  removeUserDatabase(id: string): Promise<boolean>; // Also removes the actual database file
+  deleteUserDatabase(id: string): Promise<boolean>; // Also removes the actual database file
 }
 
 /**

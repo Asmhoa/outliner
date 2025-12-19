@@ -20,9 +20,9 @@ export class SystemDatabase implements ISystemDatabase {
   private readonly TABLE_NAME = 'user_databases';
   private databasesDir: string;
 
-  constructor(dbPath?: string) {
+  constructor(dbPath?: string, databasesDir?: string) {
     // Define the directory for user databases
-    this.databasesDir = path.join(__dirname, '..', 'databases');
+    this.databasesDir = databasesDir || path.join(__dirname, '..', 'databases');
 
     // Create the databases directory synchronously if it doesn't exist
     // Better to use synchronous fs call in constructor
@@ -68,7 +68,11 @@ export class SystemDatabase implements ISystemDatabase {
       ORDER BY created_at DESC
     `);
 
-    return stmt.all() as UserDatabaseInfo[];
+    const results = stmt.all() as any[];
+    return results.map(row => ({
+      ...row,
+      createdAt: new Date(row.createdAt) // Convert string to Date
+    })) as UserDatabaseInfo[];
   }
 
   /**
@@ -81,11 +85,15 @@ export class SystemDatabase implements ISystemDatabase {
       WHERE id = ?
     `);
 
-    const result = stmt.get(id) as UserDatabaseInfo;
+    const result = stmt.get(id) as any;
     if (!result) {
       throw new UserDatabaseNotFoundError(`Database with id '${id}' not found.`);
     }
-    return result;
+    // Convert string date to Date object
+    return {
+      ...result,
+      createdAt: new Date(result.createdAt)
+    } as UserDatabaseInfo;
   }
 
   /**
@@ -98,11 +106,15 @@ export class SystemDatabase implements ISystemDatabase {
       WHERE name = ?
     `);
 
-    const result = stmt.get(name) as UserDatabaseInfo;
+    const result = stmt.get(name) as any;
     if (!result) {
       throw new UserDatabaseNotFoundError(`Database with name '${name}' not found.`);
     }
-    return result;
+    // Convert string date to Date object
+    return {
+      ...result,
+      createdAt: new Date(result.createdAt)
+    } as UserDatabaseInfo;
   }
 
   /**
@@ -115,11 +127,15 @@ export class SystemDatabase implements ISystemDatabase {
       WHERE path = ?
     `);
 
-    const result = stmt.get(path) as UserDatabaseInfo;
+    const result = stmt.get(path) as any;
     if (!result) {
       throw new UserDatabaseNotFoundError(`Database with path '${path}' not found.`);
     }
-    return result;
+    // Convert string date to Date object
+    return {
+      ...result,
+      createdAt: new Date(result.createdAt)
+    } as UserDatabaseInfo;
   }
 
   /**
@@ -146,13 +162,13 @@ export class SystemDatabase implements ISystemDatabase {
         FROM ${this.TABLE_NAME}
         WHERE name = ?
       `);
-      const result = selectStmt.get(name) as UserDatabaseInfo;
+      const result = selectStmt.get(name) as any;
 
       return {
         id: result.id,
         name,
         path: dbPath,
-        createdAt: result.createdAt
+        createdAt: new Date(result.createdAt) // Convert string to Date
       };
     } catch (error) {
       if (error instanceof BetterSqlite3.SqliteError && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
@@ -205,10 +221,22 @@ export class SystemDatabase implements ISystemDatabase {
       newDbEntryPathRelative = sanitizedProvidedPath;
     }
 
-    // Check if name already exists
+    // Check if name already exists (but exclude the current database being updated)
     if (newName) {
-      const existing = this.getUserDatabaseByName(newName);
-      if (existing && existing.id !== id) {
+      // Use a different approach - try to get by name, but if it doesn't exist that's ok
+      let existingByName: UserDatabaseInfo | null = null;
+      try {
+        existingByName = this.getUserDatabaseByName(newName);
+      } catch (error) {
+        if (error instanceof UserDatabaseNotFoundError) {
+          existingByName = null; // Name doesn't exist, which is fine
+        } else {
+          throw error; // Some other error occurred
+        }
+      }
+
+      // If there's an existing database with this name and it's not the one we're updating
+      if (existingByName && existingByName.id !== id) {
         throw new UserDatabaseAlreadyExistsError(
           `Cannot update database with id '${id}' to '${newName}': name already exists`
         );
@@ -273,9 +301,9 @@ export class SystemDatabase implements ISystemDatabase {
   }
 
   /**
-   * Remove a user database from the system database
+   * Delete a user database from the system database
    */
-  async removeUserDatabase(id: string): Promise<boolean> {
+  async deleteUserDatabase(id: string): Promise<boolean> {
     // First get the database info to know the file path
     const dbToDelete = this.getUserDatabaseById(id);
     if (!dbToDelete) {

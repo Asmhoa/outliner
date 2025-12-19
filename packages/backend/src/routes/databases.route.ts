@@ -93,7 +93,7 @@ router.delete('/:id', (req: Request, res: Response) => {
     const { id } = req.params;
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const success = sysDb.removeUserDatabase(id);
+    const success = sysDb.deleteUserDatabase(id);
 
     res.json({ message: 'Database deleted successfully' });
   } catch (error) {
