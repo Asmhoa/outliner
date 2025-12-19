@@ -161,8 +161,19 @@ describe('SystemDatabase', () => {
     // Test that a user database can be deleted
     const dbInfo = await sysDb.addUserDatabase('test_db');
 
+    // Create the actual user database file in the databases directory to match the system DB entry
+    const dbFilePath = path.join(tempDir, 'test_db.db');
+    const userDb = new UserDatabase(dbFilePath);
+    userDb.close(); // Create and close to initialize the file
+
+    // Verify the file exists before deletion
+    expect(fs.existsSync(dbFilePath)).toBe(true);
+
     const deleted = await sysDb.deleteUserDatabase(dbInfo.id);
     expect(deleted).toBe(true);
+
+    // Verify the database file was also deleted
+    expect(fs.existsSync(dbFilePath)).toBe(false);
 
     // Verify the database is no longer retrievable
     expect(() => {
