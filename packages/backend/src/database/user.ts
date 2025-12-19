@@ -340,7 +340,7 @@ export class UserDatabase implements IUserDatabase {
    * Update a block's parent relationship
    */
   updateBlockParent(id: string, newPageId?: string, newParentBlockId?: string): void {
-    if (newPageId !== undefined && newParentBlockId !== undefined) {
+    if (Boolean(newPageId) === Boolean(newParentBlockId)) {
       throw new Error("A block must be associated with either a page_id or a parent_block_id, but not both.");
     }
 
