@@ -61,7 +61,7 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 // PUT /api/databases/:id - Update a database
-router.put('/:id', (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   try {
     const { id } = req.params;
@@ -73,7 +73,7 @@ router.put('/:id', (req: Request, res: Response) => {
     }
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const success = sysDb.updateUserDatabase(id, name);
+    const success = await sysDb.updateUserDatabase(id, name);
 
     res.json({ message: 'Database updated successfully' });
   } catch (error) {

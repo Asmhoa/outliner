@@ -193,8 +193,8 @@ export class SystemDatabase implements ISystemDatabase {
   /**
    * Update an existing user database
    */
-  async updateUserDatabase(id: string, newName?: string, newPathRelative?: string): Promise<boolean> {
-    if (!newName && !newPathRelative) {
+  async updateUserDatabase(id: string, newName?: string): Promise<boolean> {
+    if (!newName) {
       return true; // Nothing to update
     }
 
@@ -207,67 +207,36 @@ export class SystemDatabase implements ISystemDatabase {
     const oldDbEntryPathRelative = currentDb.path;
     const oldFileSystemPath = path.join(this.databasesDir, oldDbEntryPathRelative);
 
-    // Determine the new relative path to be stored in the DB
-    let newDbEntryPathRelative = oldDbEntryPathRelative; // Default to current
-    if (newName) {
-      // Path derived from new name (always relative)
-      const calculatedPathFromName = newName.toLowerCase().replace(/\s/g, '_') + '.db';
-      const sanitizedCalculatedPath = this.sanitizePath(calculatedPathFromName);
-      newDbEntryPathRelative = sanitizedCalculatedPath;
-    } else if (newPathRelative) {
-      // Use the provided newPathRelative directly (must be relative filename)
-      // We should sanitize this to prevent directory traversal attacks if it's user-provided
-      const sanitizedProvidedPath = this.sanitizePath(newPathRelative);
-      newDbEntryPathRelative = sanitizedProvidedPath;
-    }
+    // Calculate the new relative path from the new name
+    const calculatedPathFromName = newName.toLowerCase().replace(/\s/g, '_') + '.db';
+    const newDbEntryPathRelative = this.sanitizePath(calculatedPathFromName);
 
     // Check if name already exists (but exclude the current database being updated)
-    if (newName) {
-      // Use a different approach - try to get by name, but if it doesn't exist that's ok
-      let existingByName: UserDatabaseInfo | null = null;
-      try {
-        existingByName = this.getUserDatabaseByName(newName);
-      } catch (error) {
-        if (error instanceof UserDatabaseNotFoundError) {
-          existingByName = null; // Name doesn't exist, which is fine
-        } else {
-          throw error; // Some other error occurred
-        }
-      }
-
-      // If there's an existing database with this name and it's not the one we're updating
-      if (existingByName && existingByName.id !== id) {
-        throw new UserDatabaseAlreadyExistsError(
-          `Cannot update database with id '${id}' to '${newName}': name already exists`
-        );
+    // Use a different approach - try to get by name, but if it doesn't exist that's ok
+    let existingByName: UserDatabaseInfo | null = null;
+    try {
+      existingByName = this.getUserDatabaseByName(newName);
+    } catch (error) {
+      if (error instanceof UserDatabaseNotFoundError) {
+        existingByName = null; // Name doesn't exist, which is fine
+      } else {
+        throw error; // Some other error occurred
       }
     }
 
-    const updateFields: string[] = [];
-    const params: any[] = [];
-
-    // Only update path if it has actually changed
-    if (newDbEntryPathRelative !== oldDbEntryPathRelative) {
-      updateFields.push('path = ?');
-      params.push(newDbEntryPathRelative); // Store relative path in DB
+    // If there's an existing database with this name and it's not the one we're updating
+    if (existingByName && existingByName.id !== id) {
+      throw new UserDatabaseAlreadyExistsError(
+        `Cannot update database with id '${id}' to '${newName}': name already exists`
+      );
     }
 
-    if (newName) {
-      updateFields.push('name = ?');
-      params.push(newName);
-    }
-
-    if (updateFields.length === 0) {
-      return true; // Nothing to update after all checks
-    }
-
-    params.push(id);
-
+    // Update both name and path in the database
     try {
       const stmt = this.db.prepare(
-        `UPDATE ${this.TABLE_NAME} SET ${updateFields.join(', ')} WHERE id = ?`
+        `UPDATE ${this.TABLE_NAME} SET name = ?, path = ? WHERE id = ?`
       );
-      const result = stmt.run(params);
+      const result = stmt.run(newName, newDbEntryPathRelative, id);
 
       if (result.changes === 0) {
         throw new UserDatabaseNotFoundError(
@@ -275,18 +244,15 @@ export class SystemDatabase implements ISystemDatabase {
         );
       }
 
-      // If the path changed (in the DB entry), then rename the actual file
-      // This check needs to be against the *relative* path stored in DB
-      if (newDbEntryPathRelative !== oldDbEntryPathRelative) {
-        const newFileSystemPath = path.join(this.databasesDir, newDbEntryPathRelative);
+      // Rename the actual file to match the new name
+      const newFileSystemPath = path.join(this.databasesDir, newDbEntryPathRelative);
 
-        try {
-          await fsPromises.access(oldFileSystemPath);
-          await fsPromises.rename(oldFileSystemPath, newFileSystemPath);
-        } catch (error) {
-          // If old file doesn't exist, it might be a new path for a moved/external file
-          // Or it's an error. For now, just continue.
-        }
+      try {
+        await fsPromises.access(oldFileSystemPath);
+        await fsPromises.rename(oldFileSystemPath, newFileSystemPath);
+      } catch (error) {
+        // If old file doesn't exist, it might be a new path for a moved/external file
+        // Or it's an error. For now, just continue.
       }
 
       return true;
@@ -310,6 +276,20 @@ export class SystemDatabase implements ISystemDatabase {
       throw new UserDatabaseNotFoundError(`User database with id '${id}' not found.`);
     }
 
+    // Delete the actual database file first
+    const dbFilePath = path.join(this.databasesDir, dbToDelete.path);
+    try {
+      await fsPromises.unlink(dbFilePath); // unlink removes the file
+    } catch (error) {
+      // If file doesn't exist, just log a warning and continue
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        console.warn(`Database file '${dbFilePath}' not found during deletion.`);
+      } else {
+        // If there's another error (permissions, etc.), throw an error to prevent removal from system DB
+        throw error;
+      }
+    }
+
     const stmt = this.db.prepare(`
       DELETE FROM ${this.TABLE_NAME}
       WHERE id = ?
@@ -319,15 +299,6 @@ export class SystemDatabase implements ISystemDatabase {
 
     if (result.changes === 0) {
       throw new UserDatabaseNotFoundError(`User database with id '${id}' not found.`);
-    }
-
-    // Delete the actual database file
-    const dbFilePath = path.join(this.databasesDir, dbToDelete.path);
-    try {
-      await fsPromises.unlink(dbFilePath); // unlink removes the file
-    } catch (error) {
-      // If file doesn't exist, just log a warning and continue
-      console.warn(`Database file '${dbFilePath}' not found during deletion.`);
     }
 
     return result.changes > 0;

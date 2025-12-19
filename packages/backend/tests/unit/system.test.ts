@@ -26,7 +26,7 @@ describe('SystemDatabase', () => {
   });
 
 
-  test('should add and retrieve user database', async () => {
+  test('[add] should add and retrieve user database', async () => {
     // Test that a new user database can be added and loaded
     const dbName = 'test_db';
     const expectedPath = 'test_db.db'; // Path is calculated from name
@@ -51,7 +51,7 @@ describe('SystemDatabase', () => {
   });
 
 
-  test('should throw error when adding database with existing name', async () => {
+  test('[add] should throw error when adding database with existing name', async () => {
     // Test that adding a database with a name that already exists raises an error
     const dbName = 'test_db';
 
@@ -63,20 +63,20 @@ describe('SystemDatabase', () => {
       .toThrow(UserDatabaseAlreadyExistsError);
   });
 
-  test('should throw error when getting database that does not exist', () => {
+  test('[read] should throw error when getting database that does not exist', () => {
     // Test that getting a database that doesn't exist raises an error
     expect(() => {
       sysDb.getUserDatabaseById('non_existent_db_id');
     }).toThrow(UserDatabaseNotFoundError);
   });
 
-  test('should return empty array when no databases exist', () => {
+  test('[read] should return empty array when no databases exist', () => {
     // Test that all user databases can be retrieved
     const allDbs = sysDb.getAllUserDatabases();
     expect(allDbs).toHaveLength(0);
   });
 
-  test('should retrieve user database by path', async () => {
+  test('[read] should retrieve user database by path', async () => {
     // Test that a database can be retrieved by path
     const dbName = 'test_db';
     const dbInfo = await sysDb.addUserDatabase(dbName);
@@ -85,14 +85,14 @@ describe('SystemDatabase', () => {
     expect(retrievedDbInfo.name).toBe(dbName);
   });
 
-  test('should throw error when getting database by path that does not exist', () => {
+  test('[read] should throw error when getting database by path that does not exist', () => {
     // Test that getting a database by path that doesn't exist raises an error
     expect(() => {
       sysDb.getUserDatabaseByPath('/non/existent/path.db');
     }).toThrow(UserDatabaseNotFoundError);
   });
 
-  test('should return all user databases', async () => {
+  test('[read] should return all user databases', async () => {
     // Add two databases
     await sysDb.addUserDatabase('test_db1');
     await sysDb.addUserDatabase('test_db2');
@@ -106,7 +106,7 @@ describe('SystemDatabase', () => {
     expect(dbNames).toContain('test_db2');
   });
 
-  test('should update user database name', async () => {
+  test('[update] should update user database name', async () => {
     // Test updating a user database
     const dbInfo = await sysDb.addUserDatabase('test_db');
 
@@ -122,7 +122,7 @@ describe('SystemDatabase', () => {
     expect(updatedDbInfo!.path).toBe('new_test_db.db'); // Path should reflect the new name
   });
 
-  test('should not change database when updating with no new data', async () => {
+  test('[update] should not change database when updating with no new data', async () => {
     // Test that nothing happens when updating a database with no new data
     const dbInfo = await sysDb.addUserDatabase('test_db');
     const originalDbInfo = sysDb.getUserDatabaseById(dbInfo.id);
@@ -137,14 +137,14 @@ describe('SystemDatabase', () => {
     expect(updatedDbInfo.path).toBe(originalDbInfo.path);
   });
 
-  test('should throw error when trying to update non-existent database', async () => {
+  test('[update] should throw error when trying to update non-existent database', async () => {
     // Test that updating a database that doesn't exist raises an error
     await expect(sysDb.updateUserDatabase('non_existent_db_id', 'new_name'))
       .rejects
       .toThrow(UserDatabaseNotFoundError);
   });
 
-  test('should throw error when updating database to existing name', async () => {
+  test('[update] should throw error when updating database to existing name', async () => {
     // Test that updating a database to a name that already exists raises an error
     await sysDb.addUserDatabase('test_db1');
     await sysDb.addUserDatabase('test_db2');
@@ -157,7 +157,7 @@ describe('SystemDatabase', () => {
       .toThrow(UserDatabaseAlreadyExistsError);
   });
 
-  test('should delete user database', async () => {
+  test('[delete] should delete user database', async () => {
     // Test that a user database can be deleted
     const dbInfo = await sysDb.addUserDatabase('test_db');
 
@@ -170,7 +170,7 @@ describe('SystemDatabase', () => {
     }).toThrow(UserDatabaseNotFoundError);
   });
 
-  test('should rename user database file in the file system', async () => {
+  test('[update] should rename user database file in the file system', async () => {
     // Test that renaming a user database also renames its corresponding file
     const originalName = 'original_db';
     const newName = 'renamed_db';
@@ -205,14 +205,14 @@ describe('SystemDatabase', () => {
     expect(fs.existsSync(newDbPath)).toBe(true); // New file should exist
   });
 
-  test('should throw error when trying to delete non-existent database', async () => {
+  test('[delete] should throw error when trying to delete non-existent database', async () => {
     // Test that deleting a database that doesn't exist raises an error
     await expect(sysDb.deleteUserDatabase('non_existent_db_id'))
       .rejects
       .toThrow(UserDatabaseNotFoundError);
   });
 
-  test('should create default tables in user database', () => {
+  test('[add] should create default tables in user database', () => {
     // Test that when a user database file is created, it has the required tables
     const tempUserDbPath = path.join(tempDir, 'user_test.db');
     const userDb = new UserDatabase(tempUserDbPath);
