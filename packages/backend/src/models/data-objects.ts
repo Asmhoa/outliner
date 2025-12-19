@@ -9,28 +9,27 @@ export interface UserDatabaseInfo {
 }
 
 export interface Page {
-  id: number;
+  id: string;
   title: string;
-  workspaceId?: number;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
 }
 
 export interface Block {
-  id: number;
+  id: string;
   content: string;
   position: number;
   type: string;
-  pageId: number;
-  parentBlockId?: number;
+  pageId?: string;
+  parentBlockId?: string;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
 }
 
 export interface Workspace {
   id: number;
   name: string;
   color: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

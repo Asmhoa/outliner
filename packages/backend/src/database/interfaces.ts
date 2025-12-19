@@ -24,6 +24,7 @@ export interface ISystemDatabase extends IDatabaseConnection {
   getUserDatabaseByPath(path: string): UserDatabaseInfo;
   updateUserDatabase(id: string, newName?: string): Promise<boolean>;
   deleteUserDatabase(id: string): Promise<boolean>; // Also removes the actual database file
+  close(): void;
 }
 
 /**
@@ -31,29 +32,32 @@ export interface ISystemDatabase extends IDatabaseConnection {
  */
 export interface IUserDatabase extends IDatabaseConnection {
   // Methods for page operations
-  addPage(title: string): number;          // Returns page ID
-  getPageById(id: number): Page | null;
+  addPage(title: string): string;          // Returns page ID
+  getPageById(id: string): Page;
   getAllPages(): Page[];
-  updatePageTitle(id: number, newTitle: string): boolean;
-  deletePage(id: number): boolean;
+  updatePageTitle(id: string, newTitle: string): void;
+  deletePage(id: string): void;
 
   // Methods for block operations
-  addBlock(content: string, position: number, type: string, pageId?: number, parentBlockId?: number): number; // Returns block ID
-  getBlockById(id: number): Block | null;
-  getBlocksByPageId(pageId: number): Block[];
-  updateBlockContent(id: number, newContent: string): boolean;
-  updateBlockParent(id: number, newPageId?: number, newParentBlockId?: number): boolean;
-  updateBlockPosition(blockId: number, newPosition: number, parentId?: number): boolean;
-  deleteBlock(id: number): boolean;
+  addBlock(content: string, position: number, type: string, pageId?: string, parentBlockId?: string): string; // Returns block ID
+  getBlockById(id: string): Block;
+  getBlocksByPageId(pageId: string): Block[];
+  updateBlockContent(id: string, newContent: string): void;
+  updateBlockParent(id: string, newPageId?: string, newParentBlockId?: string): void;
+  updateBlockPosition(blockId: string, newPosition: number): void;
+  deleteBlock(id: string): void;
 
   // Methods for workspace operations
   addWorkspace(name: string, color: string): number; // Returns workspace ID
-  getWorkspaceById(id: number): Workspace | null;
+  getWorkspaceById(id: number): Workspace;
   getAllWorkspaces(): Workspace[];
-  updateWorkspace(id: number, name: string, color: string): boolean;
-  deleteWorkspace(id: number): boolean;
+  updateWorkspace(id: number, name: string, color: string): void;
+  deleteWorkspace(id: number): void;
 
   // Search functionality
   searchPages(query: string): Page[];
   searchBlocks(query: string): Block[];
+
+  // Connection management
+  close(): void;
 }
