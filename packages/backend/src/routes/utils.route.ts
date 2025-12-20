@@ -3,17 +3,16 @@ import { SystemDatabase } from '../database/system';
 import { UserDatabase } from '../database/user';
 import { UserDatabaseNotFoundError } from '../database/errors';
 import { SearchRequest } from './requests';
-import { Page, Block } from '../database/entities';
 
 const router: Router = Router();
 
-// POST /api/utils/search - Search for pages and blocks
-router.post('/search', (req: Request, res: Response) => {
+// POST /db/{db_id}/search - Search for pages and/or blocks
+router.post('/db/:db_id/search', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   let userDb: UserDatabase | null = null;
   try {
     const { db_id } = req.params;
-    const { query } = req.body as SearchRequest;
+    const { query, limit = 10, search_type = "all", advanced = false } = req.body as SearchRequest;
 
     // Validate request body
     if (!query) {
@@ -24,18 +23,31 @@ router.post('/search', (req: Request, res: Response) => {
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    // Perform search in both pages and blocks
-    const pageResults = userDb.searchPages(query);
-    const blockResults = userDb.searchBlocks(query);
+    // Determine whether to escape special characters based on advanced mode
+    const escapeSpecialChars = !advanced;
+
+    // Perform search based on the search_type parameter
+    let pages, blocks;
+    if (search_type === "pages") {
+      pages = userDb.searchPages(query, limit, escapeSpecialChars);
+      blocks = [];
+    } else if (search_type === "blocks") {
+      pages = [];
+      blocks = userDb.searchBlocks(query, limit, escapeSpecialChars);
+    } else if (search_type === "all") {
+      [pages, blocks] = userDb.searchAll(query, limit, escapeSpecialChars);
+    } else {
+      return res.status(400).json({ error: "Invalid search_type. Must be 'pages', 'blocks', or 'all'" });
+    }
 
     // Format the results to match the expected response
-    const formattedPages = pageResults.map(page => ({
+    const formattedPages = pages.map(page => ({
       page_id: page.id,
       title: page.title,
       created_at: page.created_at.toISOString()
     }));
 
-    const formattedBlocks = blockResults.map(block => ({
+    const formattedBlocks = blocks.map(block => ({
       block_id: block.id,
       content: block.content,
       page_id: block.page_id,
@@ -53,7 +65,33 @@ router.post('/search', (req: Request, res: Response) => {
     if (error instanceof UserDatabaseNotFoundError) {
       return res.status(404).json({ error: error.message });
     }
-    res.status(500).json({ error: 'Failed to search' });
+    res.status(500).json({ error: `Search failed: ${error}` });
+  } finally {
+    userDb?.close();
+    sysDb?.close();
+  }
+});
+
+// POST /db/{db_id}/rebuild-search - Rebuild the search index
+router.post('/db/:db_id/rebuild-search', (req: Request, res: Response) => {
+  let sysDb: SystemDatabase | null = null;
+  let userDb: UserDatabase | null = null;
+  try {
+    const { db_id } = req.params;
+
+    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
+    const dbInfo = sysDb.getUserDatabaseById(db_id);
+    userDb = new UserDatabase(dbInfo.path);
+
+    // Rebuild the search index
+    userDb.rebuildSearch();
+
+    res.json({ message: 'Search index rebuilt successfully' });
+  } catch (error) {
+    if (error instanceof UserDatabaseNotFoundError) {
+      return res.status(404).json({ error: error.message });
+    }
+    res.status(500).json({ error: `Rebuild search failed: ${error}` });
   } finally {
     userDb?.close();
     sysDb?.close();

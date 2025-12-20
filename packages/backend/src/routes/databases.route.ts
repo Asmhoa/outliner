@@ -1,12 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { SystemDatabase } from '../database/system';
-import { UserDatabaseNotFoundError } from '../database/errors';
+import { UserDatabaseNotFoundError, UserDatabaseAlreadyExistsError } from '../database/errors';
 import { DatabaseCreate, DatabaseUpdate } from './requests';
 
 const router: Router = Router();
 
-// GET /api/databases - Get all databases
-router.get('/', (req: Request, res: Response) => {
+// GET /databases - Get all databases
+router.get('/databases', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   try {
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
@@ -19,8 +19,8 @@ router.get('/', (req: Request, res: Response) => {
   }
 });
 
-// POST /api/databases - Create a new database
-router.post('/', (req: Request, res: Response) => {
+// POST /databases - Create a new database
+router.post('/databases', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   try {
     const { name } = req.body as DatabaseCreate;
@@ -32,22 +32,25 @@ router.post('/', (req: Request, res: Response) => {
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
     const newDb = sysDb.addUserDatabase(name);
-    res.status(201).json(newDb);
+    res.status(200).json(newDb);
   } catch (error) {
+    if (error instanceof UserDatabaseAlreadyExistsError) {
+      return res.status(409).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Failed to create database' });
   } finally {
     sysDb?.close();
   }
 });
 
-// GET /api/databases/:id - Get a specific database
-router.get('/:id', (req: Request, res: Response) => {
+// GET /databases/{db_id} - Get a specific database
+router.get('/databases/:db_id', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   try {
-    const { id } = req.params;
+    const { db_id } = req.params;
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const dbInfo = sysDb.getUserDatabaseById(id);
+    const dbInfo = sysDb.getUserDatabaseById(db_id);
 
     res.json(dbInfo);
   } catch (error) {
@@ -60,11 +63,11 @@ router.get('/:id', (req: Request, res: Response) => {
   }
 });
 
-// PUT /api/databases/:id - Update a database
-router.put('/:id', async (req: Request, res: Response) => {
+// PUT /databases/{db_id} - Update a database
+router.put('/databases/:db_id', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   try {
-    const { id } = req.params;
+    const { db_id } = req.params;
     const { name } = req.body as DatabaseUpdate;
 
     // Validate request body
@@ -73,12 +76,15 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const success = await sysDb.updateUserDatabase(id, name);
+    const success = sysDb.updateUserDatabase(db_id, name);
 
     res.json({ message: 'Database updated successfully' });
   } catch (error) {
     if (error instanceof UserDatabaseNotFoundError) {
       return res.status(404).json({ error: error.message });
+    }
+    if (error instanceof UserDatabaseAlreadyExistsError) {
+      return res.status(409).json({ error: error.message });
     }
     res.status(500).json({ error: 'Failed to update database' });
   } finally {
@@ -86,14 +92,14 @@ router.put('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// DELETE /api/databases/:id - Delete a database
-router.delete('/:id', (req: Request, res: Response) => {
+// DELETE /databases/{db_id} - Delete a database
+router.delete('/databases/:db_id', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   try {
-    const { id } = req.params;
+    const { db_id } = req.params;
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const success = sysDb.deleteUserDatabase(id);
+    const success = sysDb.deleteUserDatabase(db_id);
 
     res.json({ message: 'Database deleted successfully' });
   } catch (error) {

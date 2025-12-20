@@ -1,14 +1,14 @@
 import { Router, Request, Response } from 'express';
 import { SystemDatabase } from '../database/system';
 import { UserDatabase } from '../database/user';
-import { PageNotFoundError, UserDatabaseNotFoundError } from '../database/errors';
+import { PageNotFoundError, PageAlreadyExistsError, UserDatabaseNotFoundError } from '../database/errors';
 import { PageCreate, PageRename } from './requests';
 import { Page } from '../database/entities';
 
 const router: Router = Router();
 
-// POST /api/pages - Create a new page
-router.post('/', (req: Request, res: Response) => {
+// POST /db/{db_id}/pages - Create a new page
+router.post('/db/:db_id/pages', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   let userDb: UserDatabase | null = null;
   try {
@@ -25,10 +25,10 @@ router.post('/', (req: Request, res: Response) => {
     userDb = new UserDatabase(dbInfo.path);
 
     const pageId = userDb.addPage(title);
-    res.status(201).json({ page_id: pageId });
+    res.status(200).json({ page_id: pageId });
   } catch (error) {
-    if (error instanceof PageNotFoundError) {
-      return res.status(404).json({ error: error.message });
+    if (error instanceof PageAlreadyExistsError) {
+      return res.status(409).json({ error: error.message });
     }
     if (error instanceof UserDatabaseNotFoundError) {
       return res.status(404).json({ error: error.message });
@@ -40,8 +40,41 @@ router.post('/', (req: Request, res: Response) => {
   }
 });
 
-// GET /api/pages - Get all pages
-router.get('/', (req: Request, res: Response) => {
+// GET /db/{db_id}/pages/{page_id} - Get a specific page
+router.get('/db/:db_id/pages/:page_id', (req: Request, res: Response) => {
+  let sysDb: SystemDatabase | null = null;
+  let userDb: UserDatabase | null = null;
+  try {
+    const { db_id, page_id } = req.params;
+
+    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
+    const dbInfo = sysDb.getUserDatabaseById(db_id);
+    userDb = new UserDatabase(dbInfo.path);
+
+    const pageIdNum = parseInt(page_id, 10);
+    const page = userDb.getPageById(pageIdNum);
+
+    res.json({
+      page_id: page.id,
+      title: page.title,
+      created_at: page.created_at.toISOString()
+    });
+  } catch (error) {
+    if (error instanceof PageNotFoundError) {
+      return res.status(404).json({ error: error.message });
+    }
+    if (error instanceof UserDatabaseNotFoundError) {
+      return res.status(404).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Failed to retrieve page' });
+  } finally {
+    userDb?.close();
+    sysDb?.close();
+  }
+});
+
+// GET /db/{db_id}/pages - Get all pages
+router.get('/db/:db_id/pages', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   let userDb: UserDatabase | null = null;
   try {
@@ -68,93 +101,59 @@ router.get('/', (req: Request, res: Response) => {
   }
 });
 
-// GET /api/pages/:pageId - Get a specific page
-router.get('/:pageId', (req: Request, res: Response) => {
+// PUT /db/{db_id}/pages - Rename a page
+router.put('/db/:db_id/pages', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   let userDb: UserDatabase | null = null;
   try {
-    const { db_id, pageId } = req.params;
-
-    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const dbInfo = sysDb.getUserDatabaseById(db_id);
-    userDb = new UserDatabase(dbInfo.path);
-
-    const pageIdNum = parseInt(pageId, 10);
-    const page = userDb.getPageById(pageIdNum);
-
-    res.json({
-      page_id: page.id,
-      title: page.title,
-      created_at: page.created_at.toISOString()
-    });
-  } catch (error) {
-    if (error instanceof PageNotFoundError) {
-      return res.status(404).json({ error: error.message });
-    }
-    if (error instanceof UserDatabaseNotFoundError) {
-      return res.status(404).json({ error: error.message });
-    }
-    res.status(500).json({ error: 'Failed to retrieve page' });
-  } finally {
-    userDb?.close();
-    sysDb?.close();
-  }
-});
-
-// PUT /api/pages/:pageId - Update a page
-router.put('/:pageId', (req: Request, res: Response) => {
-  let sysDb: SystemDatabase | null = null;
-  let userDb: UserDatabase | null = null;
-  try {
-    const { db_id, pageId } = req.params;
-    const { new_title } = req.body as PageRename;
+    const { db_id } = req.params;
+    const { page_id, new_title } = req.body as PageRename;
 
     // Validate request body
-    if (!new_title) {
-      return res.status(400).json({ error: 'New title is required' });
+    if (!page_id || !new_title) {
+      return res.status(400).json({ error: 'page_id and new_title are required' });
     }
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const pageIdNum = parseInt(pageId, 10);
-    // Check page existence (this will throw PageNotFoundError if not found)
-    userDb.getPageById(pageIdNum);
-    const success = userDb.updatePageTitle(pageIdNum, new_title);
+    const pageIdNum = parseInt(page_id, 10);
+    userDb.updatePageTitle(pageIdNum, new_title);
 
-    res.json({ message: 'Page updated successfully' });
+    res.json({ status: 'success' });
   } catch (error) {
     if (error instanceof PageNotFoundError) {
       return res.status(404).json({ error: error.message });
     }
+    if (error instanceof PageAlreadyExistsError) {
+      return res.status(409).json({ error: error.message });
+    }
     if (error instanceof UserDatabaseNotFoundError) {
       return res.status(404).json({ error: error.message });
     }
-    res.status(500).json({ error: 'Failed to update page' });
+    res.status(500).json({ error: 'Failed to rename page' });
   } finally {
     userDb?.close();
     sysDb?.close();
   }
 });
 
-// DELETE /api/pages/:pageId - Delete a page
-router.delete('/:pageId', (req: Request, res: Response) => {
+// DELETE /db/{db_id}/pages/{page_id} - Delete a page
+router.delete('/db/:db_id/pages/:page_id', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   let userDb: UserDatabase | null = null;
   try {
-    const { db_id, pageId } = req.params;
+    const { db_id, page_id } = req.params;
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const pageIdNum = parseInt(pageId, 10);
-    // Check page existence (this will throw PageNotFoundError if not found)
-    userDb.getPageById(pageIdNum);
-    const success = userDb.deletePage(pageIdNum);
+    const pageIdNum = parseInt(page_id, 10);
+    userDb.deletePage(pageIdNum);
 
-    res.json({ message: 'Page deleted successfully' });
+    res.json({ status: 'success' });
   } catch (error) {
     if (error instanceof PageNotFoundError) {
       return res.status(404).json({ error: error.message });

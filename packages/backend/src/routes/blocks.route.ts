@@ -12,8 +12,8 @@ import { Block } from '../database/entities';
 
 const router: Router = Router();
 
-// POST /api/blocks - Create a new block
-router.post('/', (req: Request, res: Response) => {
+// POST /db/{db_id}/blocks - Create a new block
+router.post('/db/:db_id/blocks', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   let userDb: UserDatabase | null = null;
   try {
@@ -33,7 +33,7 @@ router.post('/', (req: Request, res: Response) => {
     const parentIdNum = parent_block_id ? parseInt(parent_block_id, 10) : undefined;
 
     const blockId = userDb.addBlock(content, position, type, pageIdNum, parentIdNum);
-    res.status(201).json({
+    res.status(200).json({
       block_id: blockId,
       content,
       page_id: pageIdNum,
@@ -43,6 +43,9 @@ router.post('/', (req: Request, res: Response) => {
       created_at: new Date().toISOString()
     });
   } catch (error) {
+    if (error instanceof BlockNotFoundError) {
+      return res.status(404).json({ error: error.message });
+    }
     if (error instanceof UserDatabaseNotFoundError) {
       return res.status(404).json({ error: error.message });
     }
@@ -53,57 +56,18 @@ router.post('/', (req: Request, res: Response) => {
   }
 });
 
-// GET /api/blocks - Get all blocks for a page
-router.get('/', (req: Request, res: Response) => {
+// GET /db/{db_id}/block/{block_id} - Get a specific block
+router.get('/db/:db_id/block/:block_id', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   let userDb: UserDatabase | null = null;
   try {
-    const { db_id } = req.params;
-    const { page_id } = req.query;
-
-    if (!page_id) {
-      return res.status(400).json({ error: 'page_id query parameter is required' });
-    }
+    const { db_id, block_id } = req.params;
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const pageIdNum = parseInt(page_id as string, 10);
-    const blocks = userDb.getBlocksByPageId(pageIdNum);
-
-    res.json(blocks.map(block => ({
-      block_id: block.id,
-      content: block.content,
-      page_id: block.page_id,
-      parent_block_id: block.parent_block_id,
-      position: block.position,
-      type: block.type,
-      created_at: block.created_at.toISOString()
-    })));
-  } catch (error) {
-    if (error instanceof UserDatabaseNotFoundError) {
-      return res.status(404).json({ error: error.message });
-    }
-    res.status(500).json({ error: 'Failed to retrieve blocks' });
-  } finally {
-    userDb?.close();
-    sysDb?.close();
-  }
-});
-
-// GET /api/blocks/:blockId - Get a specific block
-router.get('/:blockId', (req: Request, res: Response) => {
-  let sysDb: SystemDatabase | null = null;
-  let userDb: UserDatabase | null = null;
-  try {
-    const { db_id, blockId } = req.params;
-
-    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const dbInfo = sysDb.getUserDatabaseById(db_id);
-    userDb = new UserDatabase(dbInfo.path);
-
-    const blockIdNum = parseInt(blockId, 10);
+    const blockIdNum = parseInt(block_id, 10);
     const block = userDb.getBlockById(blockIdNum);
 
     res.json({
@@ -129,28 +93,60 @@ router.get('/:blockId', (req: Request, res: Response) => {
   }
 });
 
-// PUT /api/blocks/:blockId - Update a block's content
-router.put('/:blockId/content', (req: Request, res: Response) => {
+// GET /db/{db_id}/blocks/{page_id} - Get all blocks for a page
+router.get('/db/:db_id/blocks/:page_id', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   let userDb: UserDatabase | null = null;
   try {
-    const { db_id, blockId } = req.params;
-    const { new_content } = req.body as BlockUpdateContent;
+    const { db_id, page_id } = req.params;
 
-    if (!new_content) {
-      return res.status(400).json({ error: 'New content is required' });
+    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
+    const dbInfo = sysDb.getUserDatabaseById(db_id);
+    userDb = new UserDatabase(dbInfo.path);
+
+    const pageIdNum = parseInt(page_id, 10);
+    const blocks = userDb.getBlocksByPageId(pageIdNum);
+
+    res.json(blocks.map(block => ({
+      block_id: block.id,
+      content: block.content,
+      page_id: block.page_id,
+      parent_block_id: block.parent_block_id,
+      position: block.position,
+      type: block.type,
+      created_at: block.created_at.toISOString()
+    })));
+  } catch (error) {
+    if (error instanceof UserDatabaseNotFoundError) {
+      return res.status(404).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Failed to retrieve blocks' });
+  } finally {
+    userDb?.close();
+    sysDb?.close();
+  }
+});
+
+// PUT /db/{db_id}/blocks/content - Update a block's content
+router.put('/db/:db_id/blocks/content', (req: Request, res: Response) => {
+  let sysDb: SystemDatabase | null = null;
+  let userDb: UserDatabase | null = null;
+  try {
+    const { db_id } = req.params;
+    const { block_id, new_content } = req.body as BlockUpdateContent;
+
+    if (!block_id || !new_content) {
+      return res.status(400).json({ error: 'block_id and new_content are required' });
     }
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const blockIdNum = parseInt(blockId, 10);
-    // Check block existence (this will throw BlockNotFoundError if not found)
-    userDb.getBlockById(blockIdNum);
-    const success = userDb.updateBlockContent(blockIdNum, new_content);
+    const blockIdNum = parseInt(block_id, 10);
+    userDb.updateBlockContent(blockIdNum, new_content);
 
-    res.json({ message: 'Block content updated successfully' });
+    res.json({ status: 'success' });
   } catch (error) {
     if (error instanceof BlockNotFoundError) {
       return res.status(404).json({ error: error.message });
@@ -165,65 +161,28 @@ router.put('/:blockId/content', (req: Request, res: Response) => {
   }
 });
 
-// PUT /api/blocks/:blockId/parent - Update a block's parent
-router.put('/:blockId/parent', (req: Request, res: Response) => {
+// PUT /db/{db_id}/blocks/position - Update a block's position
+router.put('/db/:db_id/blocks/position', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   let userDb: UserDatabase | null = null;
   try {
-    const { db_id, blockId } = req.params;
-    const { new_page_id, new_parent_block_id } = req.body as BlockUpdateParent;
+    const { db_id } = req.params;
+    const { block_id, new_position, new_parent_block_id } = req.body as BlockUpdatePosition;
 
-    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const dbInfo = sysDb.getUserDatabaseById(db_id);
-    userDb = new UserDatabase(dbInfo.path);
-
-    const blockIdNum = parseInt(blockId, 10);
-    const newPageIdNum = new_page_id ? parseInt(new_page_id, 10) : undefined;
-    const newParentBlockIdNum = new_parent_block_id ? parseInt(new_parent_block_id, 10) : undefined;
-
-    // Check block existence (this will throw BlockNotFoundError if not found)
-    userDb.getBlockById(blockIdNum);
-    const success = userDb.updateBlockParent(blockIdNum, newPageIdNum, newParentBlockIdNum);
-
-    res.json({ message: 'Block parent updated successfully' });
-  } catch (error) {
-    if (error instanceof BlockNotFoundError) {
-      return res.status(404).json({ error: error.message });
-    }
-    if (error instanceof UserDatabaseNotFoundError) {
-      return res.status(404).json({ error: error.message });
-    }
-    res.status(500).json({ error: 'Failed to update block parent' });
-  } finally {
-    userDb?.close();
-    sysDb?.close();
-  }
-});
-
-// PUT /api/blocks/:blockId/position - Update a block's position
-router.put('/:blockId/position', (req: Request, res: Response) => {
-  let sysDb: SystemDatabase | null = null;
-  let userDb: UserDatabase | null = null;
-  try {
-    const { db_id, blockId } = req.params;
-    const { new_position, new_parent_block_id } = req.body as BlockUpdatePosition;
-
-    if (new_position === undefined) {
-      return res.status(400).json({ error: 'New position is required' });
+    if (!block_id || new_position === undefined) {
+      return res.status(400).json({ error: 'block_id and new_position are required' });
     }
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const blockIdNum = parseInt(blockId, 10);
+    const blockIdNum = parseInt(block_id, 10);
     const newParentBlockIdNum = new_parent_block_id ? parseInt(new_parent_block_id, 10) : undefined;
 
-    // Check block existence (this will throw BlockNotFoundError if not found)
-    userDb.getBlockById(blockIdNum);
-    const success = userDb.updateBlockPosition(blockIdNum, new_position, newParentBlockIdNum);
+    userDb.updateBlockPosition(blockIdNum, new_position, newParentBlockIdNum);
 
-    res.json({ message: 'Block position updated successfully' });
+    res.json({ status: 'success' });
   } catch (error) {
     if (error instanceof BlockNotFoundError) {
       return res.status(404).json({ error: error.message });
@@ -238,23 +197,58 @@ router.put('/:blockId/position', (req: Request, res: Response) => {
   }
 });
 
-// DELETE /api/blocks/:blockId - Delete a block
-router.delete('/:blockId', (req: Request, res: Response) => {
+// PUT /db/{db_id}/blocks/parent - Update a block's parent
+router.put('/db/:db_id/blocks/parent', (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   let userDb: UserDatabase | null = null;
   try {
-    const { db_id, blockId } = req.params;
+    const { db_id } = req.params;
+    const { block_id, new_page_id, new_parent_block_id } = req.body as BlockUpdateParent;
+
+    if (!block_id) {
+      return res.status(400).json({ error: 'block_id is required' });
+    }
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const blockIdNum = parseInt(blockId, 10);
-    // Check block existence (this will throw BlockNotFoundError if not found)
-    userDb.getBlockById(blockIdNum);
-    const success = userDb.deleteBlock(blockIdNum);
+    const blockIdNum = parseInt(block_id, 10);
+    const newPageIdNum = new_page_id ? parseInt(new_page_id, 10) : undefined;
+    const newParentBlockIdNum = new_parent_block_id ? parseInt(new_parent_block_id, 10) : undefined;
 
-    res.json({ message: 'Block deleted successfully' });
+    userDb.updateBlockParent(blockIdNum, newPageIdNum, newParentBlockIdNum);
+
+    res.json({ status: 'success' });
+  } catch (error) {
+    if (error instanceof BlockNotFoundError) {
+      return res.status(404).json({ error: error.message });
+    }
+    if (error instanceof UserDatabaseNotFoundError) {
+      return res.status(404).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Failed to update block parent' });
+  } finally {
+    userDb?.close();
+    sysDb?.close();
+  }
+});
+
+// DELETE /db/{db_id}/blocks/{block_id} - Delete a block
+router.delete('/db/:db_id/blocks/:block_id', (req: Request, res: Response) => {
+  let sysDb: SystemDatabase | null = null;
+  let userDb: UserDatabase | null = null;
+  try {
+    const { db_id, block_id } = req.params;
+
+    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
+    const dbInfo = sysDb.getUserDatabaseById(db_id);
+    userDb = new UserDatabase(dbInfo.path);
+
+    const blockIdNum = parseInt(block_id, 10);
+    userDb.deleteBlock(blockIdNum);
+
+    res.json({ status: 'success' });
   } catch (error) {
     if (error instanceof BlockNotFoundError) {
       return res.status(404).json({ error: error.message });

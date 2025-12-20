@@ -20,11 +20,11 @@ app.use(cors({
 app.use(express.json());
 
 // Routes
-app.use('/api/pages', pagesRouter);
-app.use('/api/blocks', blocksRouter);
-app.use('/api/workspaces', workspacesRouter);
-app.use('/api/databases', databasesRouter);
-app.use('/api/utils', utilsRouter);
+app.use(pagesRouter);
+app.use(blocksRouter);
+app.use(workspacesRouter);
+app.use(databasesRouter);
+app.use(utilsRouter);
 
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
