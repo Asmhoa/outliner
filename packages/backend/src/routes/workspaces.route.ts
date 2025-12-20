@@ -2,7 +2,8 @@ import { Router, Request, Response } from 'express';
 import { SystemDatabase } from '../database/system';
 import { UserDatabase } from '../database/user';
 import { WorkspaceNotFoundError, UserDatabaseNotFoundError } from '../database/errors';
-import { WorkspaceCreate, WorkspaceUpdate, WorkspaceResponse } from '../models/api-types';
+import { WorkspaceCreate, WorkspaceUpdate } from './requests';
+import { Workspace } from '../database/entities';
 
 const router: Router = Router();
 

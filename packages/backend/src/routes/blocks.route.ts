@@ -6,9 +6,9 @@ import {
   BlockCreate,
   BlockUpdateContent,
   BlockUpdateParent,
-  BlockUpdatePosition,
-  BlockResponse
-} from '../models/api-types';
+  BlockUpdatePosition
+} from './requests';
+import { Block } from '../database/entities';
 
 const router: Router = Router();
 

@@ -11,7 +11,7 @@ import { z } from 'zod';
 import {
   UserDatabaseInfo,
   UserDatabaseInfoSchema
-} from '../models/entities';
+} from './entities';
 
 /**
  * SystemDatabase manages the list of UserDatabases available to the application.

@@ -2,7 +2,8 @@ import { Router, Request, Response } from 'express';
 import { SystemDatabase } from '../database/system';
 import { UserDatabase } from '../database/user';
 import { PageNotFoundError, UserDatabaseNotFoundError } from '../database/errors';
-import { PageCreate, PageRename, PageResponse } from '../models/api-types';
+import { PageCreate, PageRename } from './requests';
+import { Page } from '../database/entities';
 
 const router: Router = Router();
 

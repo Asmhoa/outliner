@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { SystemDatabase } from '../database/system';
 import { UserDatabaseNotFoundError } from '../database/errors';
-import { DatabaseCreate, DatabaseUpdate } from '../models/api-types';
+import { DatabaseCreate, DatabaseUpdate } from './requests';
 
 const router: Router = Router();
 
