@@ -7,7 +7,10 @@ import {
 import {
   Page,
   Block,
-  Workspace
+  Workspace,
+  PageSchema,
+  BlockSchema,
+  WorkspaceSchema
 } from '../models/data-objects';
 
 import {
@@ -36,7 +39,7 @@ export class UserDatabase implements IUserDatabase {
     // Create workspaces table (matching Python implementation)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS workspaces (
-        workspace_id INTEGER PRIMARY KEY,
+        id INTEGER PRIMARY KEY,
         name VARCHAR(255),
         color BLOB(3) NOT NULL
       )
@@ -178,16 +181,17 @@ export class UserDatabase implements IUserDatabase {
    */
   getPageById(id: string): Page {
     const stmt = this.db.prepare(`
-      SELECT id, title, created_at as createdAt
+      SELECT id, title, created_at
       FROM pages
       WHERE id = ?
     `);
 
-    const result = stmt.get(id) as Page | undefined;
+    const result = stmt.get(id);
     if (!result) {
       throw new PageNotFoundError(`Page with id '${id}' not found`);
     }
-    return result;
+
+    return PageSchema.parse(result);
   }
 
   /**
@@ -195,12 +199,13 @@ export class UserDatabase implements IUserDatabase {
    */
   getAllPages(): Page[] {
     const stmt = this.db.prepare(`
-      SELECT id, title, created_at as createdAt
+      SELECT id, title, created_at
       FROM pages
       ORDER BY created_at DESC
     `);
 
-    return stmt.all() as Page[];
+    const results = stmt.all();
+    return results.map(result => PageSchema.parse(result));
   }
 
   /**
@@ -285,17 +290,17 @@ export class UserDatabase implements IUserDatabase {
    */
   getBlockById(id: string): Block {
     const stmt = this.db.prepare(`
-      SELECT id, content, page_id as pageId, parent_block_id as parentBlockId,
-             position, type, created_at as createdAt
+      SELECT id, content, page_id, parent_block_id, position, type, created_at
       FROM blocks
       WHERE id = ?
     `);
 
-    const result = stmt.get(id) as Block | undefined;
+    const result = stmt.get(id);
     if (!result) {
       throw new BlockNotFoundError(`Block with ID ${id} not found`);
     }
-    return result;
+
+    return BlockSchema.parse(result);
   }
 
   /**
@@ -303,14 +308,14 @@ export class UserDatabase implements IUserDatabase {
    */
   getBlocksByPageId(pageId: string): Block[] {
     const stmt = this.db.prepare(`
-      SELECT id, content, page_id as pageId, parent_block_id as parentBlockId,
-             position, type, created_at as createdAt
+      SELECT id, content, page_id, parent_block_id, position, type, created_at
       FROM blocks
       WHERE page_id = ?
       ORDER BY position ASC
     `);
 
-    return stmt.all() as Block[];
+    const results = stmt.all();
+    return results.map(result => BlockSchema.parse(result));
   }
 
   /**
@@ -425,10 +430,10 @@ export class UserDatabase implements IUserDatabase {
     const colorBytes = Buffer.from(color.replace('#', ''), 'hex');
 
     const stmt = this.db.prepare(`
-      INSERT INTO workspaces (name, color) VALUES (?, ?) RETURNING workspace_id
+      INSERT INTO workspaces (name, color) VALUES (?, ?) RETURNING id
     `);
-    const result = stmt.get(name, colorBytes) as { workspace_id: number };
-    return result.workspace_id;
+    const result = stmt.get(name, colorBytes) as { id: number };
+    return result.id;
   }
 
   /**
@@ -436,26 +441,21 @@ export class UserDatabase implements IUserDatabase {
    */
   getWorkspaceById(id: number): Workspace {
     const stmt = this.db.prepare(`
-      SELECT workspace_id, name, color
+      SELECT id, name, color
       FROM workspaces
-      WHERE workspace_id = ?
+      WHERE id = ?
     `);
 
-    const row = stmt.get(id) as { workspace_id: number, name: string, color: Buffer } | undefined;
+    const row = stmt.get(id) as { id: number, name: string, color: Buffer } | undefined;
     if (!row) {
       throw new WorkspaceNotFoundError(`Workspace with ID ${id} not found`);
     }
 
     // Convert BLOB color back to hex string
-    const color = `#${row.color.toString('hex')}`;
+    const colorString = `#${row.color.toString('hex')}`;
 
-    return {
-      id: row.workspace_id,
-      name: row.name,
-      color: color,
-      createdAt: undefined,  // We don't have timestamps in the Python schema
-      updatedAt: undefined   // We don't have timestamps in the Python schema
-    };
+    // Validate and return typed object
+    return WorkspaceSchema.parse({ ...row, color: colorString });
   }
 
   /**
@@ -463,23 +463,18 @@ export class UserDatabase implements IUserDatabase {
    */
   getAllWorkspaces(): Workspace[] {
     const stmt = this.db.prepare(`
-      SELECT workspace_id, name, color
+      SELECT id, name, color
       FROM workspaces
     `);
 
-    const rows = stmt.all() as { workspace_id: number, name: string, color: Buffer }[];
+    const rows = stmt.all() as { id: number, name: string, color: Buffer }[];
 
     return rows.map(row => {
       // Convert BLOB color back to hex string
-      const color = `#${row.color.toString('hex')}`;
+      const colorString = `#${row.color.toString('hex')}`;
 
-      return {
-        id: row.workspace_id,
-        name: row.name,
-        color: color,
-        createdAt: undefined,  // We don't have timestamps in the Python schema
-        updatedAt: undefined   // We don't have timestamps in the Python schema
-      };
+      // Validate and return typed object
+      return WorkspaceSchema.parse({ ...row, color: colorString });
     });
   }
 
@@ -491,7 +486,7 @@ export class UserDatabase implements IUserDatabase {
     const colorBytes = Buffer.from(color.replace('#', ''), 'hex');
 
     const stmt = this.db.prepare(`
-      UPDATE workspaces SET name = ?, color = ? WHERE workspace_id = ?
+      UPDATE workspaces SET name = ?, color = ? WHERE id = ?
     `);
 
     const result = stmt.run(name, colorBytes, id);
@@ -506,7 +501,7 @@ export class UserDatabase implements IUserDatabase {
   deleteWorkspace(id: number): void {
     const stmt = this.db.prepare(`
       DELETE FROM workspaces
-      WHERE workspace_id = ?
+      WHERE id = ?
     `);
 
     const result = stmt.run(id);
@@ -534,7 +529,7 @@ export class UserDatabase implements IUserDatabase {
     // Get full page records for matching IDs
     const placeholders = matchingIds.map(() => '?').join(',');
     const pageStmt = this.db.prepare(`
-      SELECT id, title, created_at as createdAt
+      SELECT id, title, created_at
       FROM pages
       WHERE id IN (${placeholders})
       ORDER BY created_at DESC
@@ -562,8 +557,7 @@ export class UserDatabase implements IUserDatabase {
     // Get full block records for matching IDs
     const placeholders = matchingIds.map(() => '?').join(',');
     const blockStmt = this.db.prepare(`
-      SELECT id, content, page_id as pageId, parent_block_id as parentBlockId,
-             position, type, created_at as createdAt
+      SELECT id, content, page_id, parent_block_id, position, type, created_at
       FROM blocks
       WHERE id IN (${placeholders})
       ORDER BY position ASC
@@ -584,14 +578,14 @@ export class UserDatabase implements IUserDatabase {
    */
   private createDefaultWorkspace(): void {
     // Check if default workspace with ID 0 already exists
-    const stmt = this.db.prepare('SELECT 1 FROM workspaces WHERE workspace_id = 0');
+    const stmt = this.db.prepare('SELECT 1 FROM workspaces WHERE id = 0');
     const existing = stmt.get();
 
     if (!existing) {
       const defaultName = 'Default';
       const defaultColor = Buffer.from('4285F4', 'hex'); // Color as BLOB
       const insertStmt = this.db.prepare(
-        'INSERT INTO workspaces (workspace_id, name, color) VALUES (?, ?, ?)'
+        'INSERT INTO workspaces (id, name, color) VALUES (?, ?, ?)'
       );
       insertStmt.run(0, defaultName, defaultColor);
     }

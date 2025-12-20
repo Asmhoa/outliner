@@ -75,11 +75,11 @@ router.get('/', (req: Request, res: Response) => {
     res.json(blocks.map(block => ({
       block_id: block.id,
       content: block.content,
-      page_id: block.pageId,
-      parent_block_id: block.parentBlockId,
+      page_id: block.page_id,
+      parent_block_id: block.parent_block_id,
       position: block.position,
       type: block.type,
-      created_at: block.createdAt.toISOString()
+      created_at: block.created_at.toISOString()
     })));
   } catch (error) {
     if (error instanceof UserDatabaseNotFoundError) {
@@ -109,11 +109,11 @@ router.get('/:blockId', (req: Request, res: Response) => {
     res.json({
       block_id: block.id,
       content: block.content,
-      page_id: block.pageId,
-      parent_block_id: block.parentBlockId,
+      page_id: block.page_id,
+      parent_block_id: block.parent_block_id,
       position: block.position,
       type: block.type,
-      created_at: block.createdAt.toISOString()
+      created_at: block.created_at.toISOString()
     });
   } catch (error) {
     if (error instanceof BlockNotFoundError) {

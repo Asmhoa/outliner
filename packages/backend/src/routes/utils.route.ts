@@ -31,17 +31,17 @@ router.post('/search', (req: Request, res: Response) => {
     const formattedPages = pageResults.map(page => ({
       page_id: page.id,
       title: page.title,
-      created_at: page.createdAt.toISOString()
+      created_at: page.created_at.toISOString()
     }));
 
     const formattedBlocks = blockResults.map(block => ({
       block_id: block.id,
       content: block.content,
-      page_id: block.pageId,
-      parent_block_id: block.parentBlockId,
+      page_id: block.page_id,
+      parent_block_id: block.parent_block_id,
       position: block.position,
       type: block.type,
-      created_at: block.createdAt.toISOString()
+      created_at: block.created_at.toISOString()
     }));
 
     res.json({

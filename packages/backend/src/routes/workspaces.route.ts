@@ -56,8 +56,7 @@ router.get('/', (req: Request, res: Response) => {
     res.json(workspaces.map(workspace => ({
       workspace_id: workspace.id,
       name: workspace.name,
-      color: workspace.color,
-      created_at: workspace.createdAt.toISOString()
+      color: workspace.color
     })));
   } catch (error) {
     if (error instanceof UserDatabaseNotFoundError) {
@@ -87,8 +86,7 @@ router.get('/:workspaceId', (req: Request, res: Response) => {
     res.json({
       workspace_id: workspace.id,
       name: workspace.name,
-      color: workspace.color,
-      created_at: workspace.createdAt.toISOString()
+      color: workspace.color
     });
   } catch (error) {
     if (error instanceof WorkspaceNotFoundError) {

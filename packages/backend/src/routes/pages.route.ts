@@ -54,7 +54,7 @@ router.get('/', (req: Request, res: Response) => {
     res.json(pages.map(page => ({
       page_id: page.id,
       title: page.title,
-      created_at: page.createdAt.toISOString()
+      created_at: page.created_at.toISOString()
     })));
   } catch (error) {
     if (error instanceof UserDatabaseNotFoundError) {
@@ -84,7 +84,7 @@ router.get('/:pageId', (req: Request, res: Response) => {
     res.json({
       page_id: page.id,
       title: page.title,
-      created_at: page.createdAt.toISOString()
+      created_at: page.created_at.toISOString()
     });
   } catch (error) {
     if (error instanceof PageNotFoundError) {

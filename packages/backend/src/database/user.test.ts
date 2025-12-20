@@ -129,7 +129,7 @@ describe('UserDatabase', () => {
 
     const childBlock = db.getBlockById(childBlockId);
     expect(childBlock.content).toBe('Child Block');
-    expect(childBlock.parentBlockId).toBe(parentBlockId);
+    expect(childBlock.parent_block_id).toBe(parentBlockId);
   });
 
   test('addBlock should throw error when adding block with both page_id and parent_block_id', () => {
@@ -212,8 +212,8 @@ describe('UserDatabase', () => {
 
     // Verify the change
     const updatedBlock = db.getBlockById(blockId);
-    expect(updatedBlock.pageId).toBe(pageId2);
-    expect(updatedBlock.parentBlockId).toBeNull();
+    expect(updatedBlock.page_id).toBe(pageId2);
+    expect(updatedBlock.parent_block_id).toBeNull();
   });
 
   test('updateBlockParent should update a block\'s parent to a different block', () => {
@@ -227,8 +227,8 @@ describe('UserDatabase', () => {
 
     // Verify the change
     const updatedBlock = db.getBlockById(blockId);
-    expect(updatedBlock.pageId).toBeNull();
-    expect(updatedBlock.parentBlockId).toBe(parentBlockId2);
+    expect(updatedBlock.page_id).toBeNull();
+    expect(updatedBlock.parent_block_id).toBe(parentBlockId2);
   });
 
   test('updateBlockParent should move a block from a page to be a child of another block', () => {
@@ -241,8 +241,8 @@ describe('UserDatabase', () => {
 
     // Verify the change
     const updatedBlock = db.getBlockById(blockId);
-    expect(updatedBlock.pageId).toBeNull();
-    expect(updatedBlock.parentBlockId).toBe(parentBlockId);
+    expect(updatedBlock.page_id).toBeNull();
+    expect(updatedBlock.parent_block_id).toBe(parentBlockId);
   });
 
   test('updateBlockParent should move a block from a parent block to be directly under a page', () => {
@@ -256,8 +256,8 @@ describe('UserDatabase', () => {
 
     // Verify the change
     const updatedBlock = db.getBlockById(blockId);
-    expect(updatedBlock.pageId).toBe(pageId2);
-    expect(updatedBlock.parentBlockId).toBeNull();
+    expect(updatedBlock.page_id).toBe(pageId2);
+    expect(updatedBlock.parent_block_id).toBeNull();
   });
 
   test('updateBlockParent should throw error when updating block parent with both page_id and parent_block_id', () => {
