@@ -3,7 +3,7 @@ import {
   Page,
   Block,
   Workspace
-} from '../models/data-objects';
+} from '../models/entities';
 
 /**
  * Interface for database connection management

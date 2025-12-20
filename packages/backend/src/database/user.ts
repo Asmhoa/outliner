@@ -12,7 +12,7 @@ import {
   PageSchema,
   BlockSchema,
   WorkspaceSchema
-} from '../models/data-objects';
+} from '../models/entities';
 
 import {
   PageNotFoundError,
