@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { SystemDatabase } from '../../src/database/system';
-import { UserDatabase } from '../../src/database/user';
-import { UserDatabaseAlreadyExistsError, UserDatabaseNotFoundError } from '../../src/database/errors';
+import { SystemDatabase } from './system';
+import { UserDatabase } from './user';
+import { UserDatabaseAlreadyExistsError, UserDatabaseNotFoundError } from './errors';
 
 describe('SystemDatabase', () => {
   let tempDir: string;

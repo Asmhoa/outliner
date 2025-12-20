@@ -1,12 +1,4 @@
 import { ErrorRequestHandler } from 'express';
-import {
-  PageNotFoundError,
-  BlockNotFoundError,
-  WorkspaceNotFoundError,
-  UserDatabaseNotFoundError,
-  PageAlreadyExistsError,
-  UserDatabaseAlreadyExistsError
-} from '../database/errors';
 
 // Define custom error types for better type checking
 interface CustomError extends Error {
