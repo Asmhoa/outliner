@@ -37,7 +37,7 @@ describe('SystemDatabase', () => {
     expect(dbInfo.name).toBe(dbName);
     expect(dbInfo.path).toBe(expectedPath);
     expect(typeof dbInfo.id).toBe('string'); // UUID should be a string
-    expect(dbInfo.createdAt).toBeInstanceOf(Date);
+    expect(dbInfo.created_at).toBeInstanceOf(Date);
 
     // Retrieve by ID
     const retrievedById = sysDb.getUserDatabaseById(dbInfo.id);

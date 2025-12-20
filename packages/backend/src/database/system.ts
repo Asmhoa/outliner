@@ -6,9 +6,11 @@ import { ISystemDatabase } from './interfaces';
 import { SYSTEM_DB_NAME, TESTING_SYSTEM_DB_NAME } from '../config';
 import { isTestEnv } from '../utils';
 import { UserDatabaseAlreadyExistsError, UserDatabaseNotFoundError } from './errors';
+import { z } from 'zod';
 
 import {
-  UserDatabaseInfo
+  UserDatabaseInfo,
+  UserDatabaseInfoSchema
 } from '../models/data-objects';
 
 /**
@@ -63,16 +65,14 @@ export class SystemDatabase implements ISystemDatabase {
    */
   getAllUserDatabases(): UserDatabaseInfo[] {
     const stmt = this.db.prepare(`
-      SELECT id, name, path, created_at as createdAt
+      SELECT id, name, path, created_at
       FROM ${this.TABLE_NAME}
       ORDER BY created_at DESC
     `);
 
     const results = stmt.all() as any[];
-    return results.map(row => ({
-      ...row,
-      createdAt: new Date(row.createdAt) // Convert string to Date
-    })) as UserDatabaseInfo[];
+    // Validate and parse the array using the schema
+    return z.array(UserDatabaseInfoSchema).parse(results);
   }
 
   /**
@@ -80,7 +80,7 @@ export class SystemDatabase implements ISystemDatabase {
    */
   getUserDatabaseById(id: string): UserDatabaseInfo {
     const stmt = this.db.prepare(`
-      SELECT id, name, path, created_at as createdAt
+      SELECT id, name, path, created_at
       FROM ${this.TABLE_NAME}
       WHERE id = ?
     `);
@@ -89,11 +89,8 @@ export class SystemDatabase implements ISystemDatabase {
     if (!result) {
       throw new UserDatabaseNotFoundError(`Database with id '${id}' not found.`);
     }
-    // Convert string date to Date object
-    return {
-      ...result,
-      createdAt: new Date(result.createdAt)
-    } as UserDatabaseInfo;
+    // Validate and parse the result using the schema
+    return UserDatabaseInfoSchema.parse(result);
   }
 
   /**
@@ -101,7 +98,7 @@ export class SystemDatabase implements ISystemDatabase {
    */
   getUserDatabaseByName(name: string): UserDatabaseInfo {
     const stmt = this.db.prepare(`
-      SELECT id, name, path, created_at as createdAt
+      SELECT id, name, path, created_at
       FROM ${this.TABLE_NAME}
       WHERE name = ?
     `);
@@ -110,11 +107,8 @@ export class SystemDatabase implements ISystemDatabase {
     if (!result) {
       throw new UserDatabaseNotFoundError(`Database with name '${name}' not found.`);
     }
-    // Convert string date to Date object
-    return {
-      ...result,
-      createdAt: new Date(result.createdAt)
-    } as UserDatabaseInfo;
+    // Validate and parse the result using the schema
+    return UserDatabaseInfoSchema.parse(result);
   }
 
   /**
@@ -122,7 +116,7 @@ export class SystemDatabase implements ISystemDatabase {
    */
   getUserDatabaseByPath(path: string): UserDatabaseInfo {
     const stmt = this.db.prepare(`
-      SELECT id, name, path, created_at as createdAt
+      SELECT id, name, path, created_at
       FROM ${this.TABLE_NAME}
       WHERE path = ?
     `);
@@ -131,11 +125,8 @@ export class SystemDatabase implements ISystemDatabase {
     if (!result) {
       throw new UserDatabaseNotFoundError(`Database with path '${path}' not found.`);
     }
-    // Convert string date to Date object
-    return {
-      ...result,
-      createdAt: new Date(result.createdAt)
-    } as UserDatabaseInfo;
+    // Validate and parse the result using the schema
+    return UserDatabaseInfoSchema.parse(result);
   }
 
   /**
@@ -158,18 +149,20 @@ export class SystemDatabase implements ISystemDatabase {
 
       // Get the inserted record to return all fields
       const selectStmt = this.db.prepare(`
-        SELECT id, name, path, created_at as createdAt
+        SELECT id, name, path, created_at
         FROM ${this.TABLE_NAME}
         WHERE name = ?
       `);
       const result = selectStmt.get(name) as any;
 
-      return {
+      // Validate and parse the result using the schema
+      const validatedData = UserDatabaseInfoSchema.parse({
         id: result.id,
         name,
         path: dbPath,
-        createdAt: new Date(result.createdAt) // Convert string to Date
-      };
+        created_at: result.created_at
+      });
+      return validatedData;
     } catch (error) {
       if (error instanceof BetterSqlite3.SqliteError && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         throw new UserDatabaseAlreadyExistsError(`Database '${name}' already exists.`);

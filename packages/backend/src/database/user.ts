@@ -3,6 +3,7 @@ import {
   IUserDatabase,
   IDatabaseConnection
 } from './interfaces';
+import { z } from 'zod';
 
 import {
   Page,
@@ -205,7 +206,7 @@ export class UserDatabase implements IUserDatabase {
     `);
 
     const results = stmt.all();
-    return results.map(result => PageSchema.parse(result));
+    return z.array(PageSchema).parse(results);
   }
 
   /**
@@ -315,7 +316,7 @@ export class UserDatabase implements IUserDatabase {
     `);
 
     const results = stmt.all();
-    return results.map(result => BlockSchema.parse(result));
+    return z.array(BlockSchema).parse(results);
   }
 
   /**
@@ -535,7 +536,8 @@ export class UserDatabase implements IUserDatabase {
       ORDER BY created_at DESC
     `);
 
-    return pageStmt.all(...matchingIds) as Page[];
+    const results = pageStmt.all(...matchingIds);
+    return z.array(PageSchema).parse(results);
   }
 
   /**
@@ -563,7 +565,8 @@ export class UserDatabase implements IUserDatabase {
       ORDER BY position ASC
     `);
 
-    return blockStmt.all(...matchingIds) as Block[];
+    const results = blockStmt.all(...matchingIds);
+    return z.array(BlockSchema).parse(results);
   }
 
   /**
