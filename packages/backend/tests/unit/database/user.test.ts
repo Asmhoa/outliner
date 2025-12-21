@@ -1,10 +1,10 @@
-import { UserDatabase } from './user';
+import { UserDatabase } from '../../../src/database/user';
 import {
   PageNotFoundError,
   PageAlreadyExistsError,
   BlockNotFoundError,
   WorkspaceNotFoundError
-} from './errors';
+} from '../../../src/database/errors';
 
 describe('UserDatabase', () => {
   let db: UserDatabase;

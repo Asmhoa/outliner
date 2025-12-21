@@ -4,7 +4,7 @@ import { pagesRouter } from './routes/pages.route';
 import { blocksRouter } from './routes/blocks.route';
 import { workspacesRouter } from './routes/workspaces.route';
 import { databasesRouter } from './routes/databases.route';
-import { utilsRouter } from './routes/utils.route';
+import { searchRouter } from './routes/search.route';
 import { errorHandler } from './middleware';
 import { PORT } from './config';
 
@@ -24,7 +24,7 @@ app.use(pagesRouter);
 app.use(blocksRouter);
 app.use(workspacesRouter);
 app.use(databasesRouter);
-app.use(utilsRouter);
+app.use(searchRouter);
 
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {

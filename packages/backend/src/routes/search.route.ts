@@ -99,4 +99,4 @@ router.post('/db/:db_id/rebuild-search', (req: Request, res: Response) => {
   }
 });
 
-export { router as utilsRouter };
+export { router as searchRouter };

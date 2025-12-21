@@ -20,7 +20,7 @@ router.get('/databases', (req: Request, res: Response) => {
 });
 
 // POST /databases - Create a new database
-router.post('/databases', (req: Request, res: Response) => {
+router.post('/databases', async (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   try {
     const { name } = req.body as DatabaseCreate;
@@ -31,7 +31,7 @@ router.post('/databases', (req: Request, res: Response) => {
     }
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const newDb = sysDb.addUserDatabase(name);
+    const newDb = await sysDb.addUserDatabase(name);
     res.status(200).json(newDb);
   } catch (error) {
     if (error instanceof UserDatabaseAlreadyExistsError) {
@@ -64,7 +64,7 @@ router.get('/databases/:db_id', (req: Request, res: Response) => {
 });
 
 // PUT /databases/{db_id} - Update a database
-router.put('/databases/:db_id', (req: Request, res: Response) => {
+router.put('/databases/:db_id', async (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   try {
     const { db_id } = req.params;
@@ -76,7 +76,7 @@ router.put('/databases/:db_id', (req: Request, res: Response) => {
     }
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const success = sysDb.updateUserDatabase(db_id, name);
+    const success = await sysDb.updateUserDatabase(db_id, name);
 
     res.json({ message: 'Database updated successfully' });
   } catch (error) {
@@ -93,13 +93,13 @@ router.put('/databases/:db_id', (req: Request, res: Response) => {
 });
 
 // DELETE /databases/{db_id} - Delete a database
-router.delete('/databases/:db_id', (req: Request, res: Response) => {
+router.delete('/databases/:db_id', async (req: Request, res: Response) => {
   let sysDb: SystemDatabase | null = null;
   try {
     const { db_id } = req.params;
 
     sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const success = sysDb.deleteUserDatabase(db_id);
+    const success = await sysDb.deleteUserDatabase(db_id);
 
     res.json({ message: 'Database deleted successfully' });
   } catch (error) {
