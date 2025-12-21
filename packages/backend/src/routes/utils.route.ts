@@ -3,6 +3,7 @@ import { SystemDatabase } from '../database/system';
 import { UserDatabase } from '../database/user';
 import { UserDatabaseNotFoundError } from '../database/errors';
 import { SearchRequest } from './requests';
+import { Page, Block } from '../database/entities';
 
 const router: Router = Router();
 
@@ -27,15 +28,15 @@ router.post('/db/:db_id/search', (req: Request, res: Response) => {
     const escapeSpecialChars = !advanced;
 
     // Perform search based on the search_type parameter
-    let pages, blocks;
+    let pages: Page[], blocks: Block[];
     if (search_type === "pages") {
-      pages = userDb.searchPages(query, limit, escapeSpecialChars);
+      pages = userDb.searchPages(query);
       blocks = [];
     } else if (search_type === "blocks") {
       pages = [];
-      blocks = userDb.searchBlocks(query, limit, escapeSpecialChars);
+      blocks = userDb.searchBlocks(query);
     } else if (search_type === "all") {
-      [pages, blocks] = userDb.searchAll(query, limit, escapeSpecialChars);
+      [pages, blocks] = userDb.searchAll(query);
     } else {
       return res.status(400).json({ error: "Invalid search_type. Must be 'pages', 'blocks', or 'all'" });
     }

@@ -48,10 +48,14 @@ export interface WorkspaceCreate {
 }
 
 export interface WorkspaceUpdate {
-  name: string;
-  color: string;
+  workspace_id: number;
+  new_name: string;
+  new_color: string;
 }
 
 export interface SearchRequest {
   query: string;
+  limit?: number;
+  search_type?: string;
+  advanced?: boolean;
 }

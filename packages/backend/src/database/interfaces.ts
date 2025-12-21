@@ -57,6 +57,8 @@ export interface IUserDatabase extends IDatabaseConnection {
   // Search functionality
   searchPages(query: string): Page[];
   searchBlocks(query: string): Block[];
+  searchAll(query: string): [Page[], Block[]];
+  rebuildSearch(): void;
 
   // Connection management
   close(): void;

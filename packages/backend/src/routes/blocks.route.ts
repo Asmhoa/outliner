@@ -29,15 +29,12 @@ router.post('/db/:db_id/blocks', (req: Request, res: Response) => {
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const pageIdNum = parseInt(page_id, 10);
-    const parentIdNum = parent_block_id ? parseInt(parent_block_id, 10) : undefined;
-
-    const blockId = userDb.addBlock(content, position, type, pageIdNum, parentIdNum);
+    const blockId = userDb.addBlock(content, position, type, page_id, parent_block_id);
     res.status(200).json({
       block_id: blockId,
       content,
-      page_id: pageIdNum,
-      parent_block_id: parentIdNum,
+      page_id: page_id,
+      parent_block_id: parent_block_id,
       position,
       type,
       created_at: new Date().toISOString()
@@ -67,8 +64,7 @@ router.get('/db/:db_id/block/:block_id', (req: Request, res: Response) => {
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const blockIdNum = parseInt(block_id, 10);
-    const block = userDb.getBlockById(blockIdNum);
+    const block = userDb.getBlockById(block_id);
 
     res.json({
       block_id: block.id,
@@ -104,8 +100,7 @@ router.get('/db/:db_id/blocks/:page_id', (req: Request, res: Response) => {
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const pageIdNum = parseInt(page_id, 10);
-    const blocks = userDb.getBlocksByPageId(pageIdNum);
+    const blocks = userDb.getBlocksByPageId(page_id);
 
     res.json(blocks.map(block => ({
       block_id: block.id,
@@ -143,8 +138,7 @@ router.put('/db/:db_id/blocks/content', (req: Request, res: Response) => {
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const blockIdNum = parseInt(block_id, 10);
-    userDb.updateBlockContent(blockIdNum, new_content);
+    userDb.updateBlockContent(block_id, new_content);
 
     res.json({ status: 'success' });
   } catch (error) {
@@ -177,10 +171,10 @@ router.put('/db/:db_id/blocks/position', (req: Request, res: Response) => {
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const blockIdNum = parseInt(block_id, 10);
-    const newParentBlockIdNum = new_parent_block_id ? parseInt(new_parent_block_id, 10) : undefined;
-
-    userDb.updateBlockPosition(blockIdNum, new_position, newParentBlockIdNum);
+    if (new_parent_block_id !== undefined) {
+      userDb.updateBlockParent(block_id, undefined, new_parent_block_id);
+    }
+    userDb.updateBlockPosition(block_id, new_position);
 
     res.json({ status: 'success' });
   } catch (error) {
@@ -213,11 +207,7 @@ router.put('/db/:db_id/blocks/parent', (req: Request, res: Response) => {
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const blockIdNum = parseInt(block_id, 10);
-    const newPageIdNum = new_page_id ? parseInt(new_page_id, 10) : undefined;
-    const newParentBlockIdNum = new_parent_block_id ? parseInt(new_parent_block_id, 10) : undefined;
-
-    userDb.updateBlockParent(blockIdNum, newPageIdNum, newParentBlockIdNum);
+    userDb.updateBlockParent(block_id, new_page_id, new_parent_block_id);
 
     res.json({ status: 'success' });
   } catch (error) {
@@ -245,8 +235,7 @@ router.delete('/db/:db_id/blocks/:block_id', (req: Request, res: Response) => {
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const blockIdNum = parseInt(block_id, 10);
-    userDb.deleteBlock(blockIdNum);
+    userDb.deleteBlock(block_id);
 
     res.json({ status: 'success' });
   } catch (error) {

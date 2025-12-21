@@ -123,7 +123,7 @@ router.put('/db/:db_id/workspaces', (req: Request, res: Response) => {
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    userDb.updateWorkspace(workspace_id, new_name, new_color);
+    userDb.updateWorkspace(Number(workspace_id), new_name, new_color);
 
     res.json({ status: 'success' });
   } catch (error) {

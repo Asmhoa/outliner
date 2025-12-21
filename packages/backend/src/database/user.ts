@@ -514,59 +514,80 @@ export class UserDatabase implements IUserDatabase {
   /**
    * Search for pages based on a query string
    */
-  searchPages(query: string): Page[] {
-    // Use FTS to search for pages by title
-    const ftsStmt = this.db.prepare(`
-      SELECT page_id FROM pages_fts
-      WHERE pages_fts MATCH ?
-    `);
-
-    const matchingIds = ftsStmt.all(query).map(row => (row as any).page_id);
-
-    if (matchingIds.length === 0) {
+  searchPages(query: string, limit: number = 10, escapeSpecialChars: boolean = true): Page[] {
+    // Handle empty query gracefully by returning an empty list
+    if (!query || query.trim() === "") {
       return [];
     }
 
-    // Get full page records for matching IDs
-    const placeholders = matchingIds.map(() => '?').join(',');
-    const pageStmt = this.db.prepare(`
-      SELECT id, title, created_at
-      FROM pages
-      WHERE id IN (${placeholders})
-      ORDER BY created_at DESC
+    // Sanitize the query to prevent FTS syntax errors if requested
+    if (escapeSpecialChars) {
+      query = this._ftsEscapeTokens(query);
+    }
+
+    // Use FTS to search for pages by title with ranking
+    const ftsStmt = this.db.prepare(`
+      SELECT p.id, p.title, p.created_at
+      FROM pages p
+      JOIN pages_fts pf ON p.id = pf.page_id
+      WHERE pages_fts MATCH ?
+      ORDER BY rank
+      LIMIT ?
     `);
 
-    const results = pageStmt.all(...matchingIds);
+    const results = ftsStmt.all(query, limit);
     return z.array(PageSchema).parse(results);
   }
 
   /**
    * Search for blocks based on a query string
    */
-  searchBlocks(query: string): Block[] {
-    // Use FTS to search for blocks by content
-    const ftsStmt = this.db.prepare(`
-      SELECT block_id FROM blocks_fts
-      WHERE blocks_fts MATCH ?
-    `);
-
-    const matchingIds = ftsStmt.all(query).map(row => (row as any).block_id);
-
-    if (matchingIds.length === 0) {
+  searchBlocks(query: string, limit: number = 10, escapeSpecialChars: boolean = true): Block[] {
+    // Handle empty query gracefully by returning an empty list
+    if (!query || query.trim() === "") {
       return [];
     }
 
-    // Get full block records for matching IDs
-    const placeholders = matchingIds.map(() => '?').join(',');
-    const blockStmt = this.db.prepare(`
-      SELECT id, content, page_id, parent_block_id, position, type, created_at
-      FROM blocks
-      WHERE id IN (${placeholders})
-      ORDER BY position ASC
+    // Sanitize the query to prevent FTS syntax errors if requested
+    if (escapeSpecialChars) {
+      query = this._ftsEscapeTokens(query);
+    }
+
+    // Use FTS to search for blocks by content with ranking
+    const ftsStmt = this.db.prepare(`
+      SELECT b.id, b.content, b.page_id, b.parent_block_id, b.position, b.type, b.created_at
+      FROM blocks b
+      JOIN blocks_fts bf ON b.id = bf.block_id
+      WHERE blocks_fts MATCH ?
+      ORDER BY rank
+      LIMIT ?
     `);
 
-    const results = blockStmt.all(...matchingIds);
+    const results = ftsStmt.all(query, limit);
     return z.array(BlockSchema).parse(results);
+  }
+
+  /**
+   * Search for both pages and blocks based on a query string
+   */
+  searchAll(query: string, limit: number = 10, escapeSpecialChars: boolean = true): [Page[], Block[]] {
+    // Handle empty query gracefully by returning empty lists
+    if (!query || query.trim() === "") {
+      return [[], []];
+    }
+
+    const pages = this.searchPages(query, limit, escapeSpecialChars);
+    const blocks = this.searchBlocks(query, limit, escapeSpecialChars);
+    return [pages, blocks];
+  }
+
+  /**
+   * Rebuild the search index
+   */
+  rebuildSearch(): void {
+    // Rebuild FTS tables
+    this.db.exec('INSERT INTO pages_fts(pages_fts) VALUES(\'rebuild\')');
+    this.db.exec('INSERT INTO blocks_fts(blocks_fts) VALUES(\'rebuild\')');
   }
 
   /**
@@ -574,6 +595,19 @@ export class UserDatabase implements IUserDatabase {
    */
   close(): void {
     this.db.close();
+  }
+
+  /**
+   * Escape a whole string and split it into safe literal tokens
+   * for an FTS MATCH expression.
+   * Note: This uses text.split() which works for space-separated languages.
+   * For languages like Chinese/Japanese/Korean without spaces between words,
+   * a more sophisticated tokenization approach would be needed.
+   */
+  private _ftsEscapeTokens(text: string): string {
+    const tokens = text.split(/\s+/);
+    const escapedTokens = tokens.map(t => `"${t.replace(/"/g, '""')}"*`);
+    return escapedTokens.join(' ');
   }
 
   /**

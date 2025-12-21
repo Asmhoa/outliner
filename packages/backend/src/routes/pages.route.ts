@@ -51,8 +51,7 @@ router.get('/db/:db_id/pages/:page_id', (req: Request, res: Response) => {
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const pageIdNum = parseInt(page_id, 10);
-    const page = userDb.getPageById(pageIdNum);
+    const page = userDb.getPageById(page_id);
 
     res.json({
       page_id: page.id,
@@ -118,8 +117,7 @@ router.put('/db/:db_id/pages', (req: Request, res: Response) => {
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const pageIdNum = parseInt(page_id, 10);
-    userDb.updatePageTitle(pageIdNum, new_title);
+    userDb.updatePageTitle(page_id, new_title);
 
     res.json({ status: 'success' });
   } catch (error) {
@@ -150,8 +148,7 @@ router.delete('/db/:db_id/pages/:page_id', (req: Request, res: Response) => {
     const dbInfo = sysDb.getUserDatabaseById(db_id);
     userDb = new UserDatabase(dbInfo.path);
 
-    const pageIdNum = parseInt(page_id, 10);
-    userDb.deletePage(pageIdNum);
+    userDb.deletePage(page_id);
 
     res.json({ status: 'success' });
   } catch (error) {
