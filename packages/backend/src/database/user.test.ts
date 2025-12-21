@@ -301,7 +301,7 @@ describe('UserDatabase', () => {
 
     const workspace = db.getWorkspaceById(workspaceId);
 
-    expect(workspace.id).toBe(workspaceId);
+    expect(workspace.workspace_id).toBe(workspaceId);
     expect(workspace.name).toBe('Test Workspace');
     expect(workspace.color).toBe('#00ff00');
   });
@@ -386,7 +386,7 @@ describe('UserDatabaseFTS', () => {
     // Search for an exact match
     const results = db.searchPages('Python');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(pageId1);
+    expect(results[0].page_id).toBe(pageId1);
     expect(results[0].title).toBe('Introduction to Python');
   });
 
@@ -398,7 +398,7 @@ describe('UserDatabaseFTS', () => {
     // Search for pages containing "Python"
     const results = db.searchPages('Python');
     expect(results).toHaveLength(2);
-    const pageIds = results.map(result => result.id);
+    const pageIds = results.map(result => result.page_id);
     expect(pageIds).toContain(pageId1);
     expect(pageIds).toContain(pageId3);
   });
@@ -411,7 +411,7 @@ describe('UserDatabaseFTS', () => {
     // Search for pages containing both "Python" and "Programming"
     const results = db.searchPages('Python Programming');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(pageId1);
+    expect(results[0].page_id).toBe(pageId1);
     expect(results[0].title).toBe('Introduction to Python Programming');
   });
 
@@ -445,8 +445,8 @@ describe('UserDatabaseFTS', () => {
     }
 
     // Search with a limit of 5
-    const results = db.searchPages('Python');
-    expect(results).toHaveLength(15); // All 15 pages will be found since we didn't implement limit in the DB method
+    const results = db.searchPages('Python', 5);
+    expect(results).toHaveLength(5);
   });
 
   test('searchPages should be case insensitive', () => {
@@ -456,12 +456,12 @@ describe('UserDatabaseFTS', () => {
     // Search using different case
     let results = db.searchPages('python');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(pageId1);
+    expect(results[0].page_id).toBe(pageId1);
     expect(results[0].title).toBe('Introduction to Python');
 
     results = db.searchPages('PYTHON');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(pageId1);
+    expect(results[0].page_id).toBe(pageId1);
     expect(results[0].title).toBe('Introduction to Python');
   });
 
@@ -474,7 +474,7 @@ describe('UserDatabaseFTS', () => {
     // Search for an exact match
     const results = db.searchBlocks('Python');
     expect(results).toHaveLength(2);
-    const blockIds = results.map(result => result.id);
+    const blockIds = results.map(result => result.block_id);
     expect(blockIds).toContain(blockId1);
     expect(blockIds).toContain(blockId3);
     expect(blockIds).not.toContain(blockId2);
@@ -489,7 +489,7 @@ describe('UserDatabaseFTS', () => {
     // Search for blocks containing "Python"
     const results = db.searchBlocks('Python');
     expect(results).toHaveLength(2);
-    const blockIds = results.map(result => result.id);
+    const blockIds = results.map(result => result.block_id);
     expect(blockIds).toContain(blockId1);
     expect(blockIds).toContain(blockId3);
   });
@@ -503,7 +503,7 @@ describe('UserDatabaseFTS', () => {
     // Search for blocks containing both "Python" and "Programming"
     const results = db.searchBlocks('Python Programming');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(blockId1);
+    expect(results[0].block_id).toBe(blockId1);
     expect(results[0].content).toBe('Introduction to Python Programming');
   });
 
@@ -540,8 +540,8 @@ describe('UserDatabaseFTS', () => {
     }
 
     // Search with a limit of 5
-    const results = db.searchBlocks('Python');
-    expect(results).toHaveLength(15); // All 15 blocks will be found since we didn't implement limit in the DB method
+    const results = db.searchBlocks('Python', 5);
+    expect(results).toHaveLength(5);
   });
 
   test('searchBlocks should be case insensitive', () => {
@@ -552,12 +552,12 @@ describe('UserDatabaseFTS', () => {
     // Search using different case
     let results = db.searchBlocks('python');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(blockId1);
+    expect(results[0].block_id).toBe(blockId1);
     expect(results[0].content).toBe('Learning Python is Fun');
 
     results = db.searchBlocks('PYTHON');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(blockId1);
+    expect(results[0].block_id).toBe(blockId1);
     expect(results[0].content).toBe('Learning Python is Fun');
   });
 
@@ -569,13 +569,13 @@ describe('UserDatabaseFTS', () => {
     // Search for blocks containing "Python"
     const results = db.searchBlocks('Python');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(parentBlockId);
+    expect(results[0].block_id).toBe(parentBlockId);
     expect(results[0].content).toBe('Parent block with Python content');
 
     // Search for blocks containing "JavaScript"
     const results2 = db.searchBlocks('JavaScript');
     expect(results2).toHaveLength(1);
-    expect(results2[0].id).toBe(childBlockId);
+    expect(results2[0].block_id).toBe(childBlockId);
     expect(results2[0].content).toBe('Child block with JavaScript content');
   });
 
@@ -589,8 +589,8 @@ describe('UserDatabaseFTS', () => {
     const [pages, blocks] = db.searchAll('Python');
     expect(pages).toHaveLength(1);
     expect(blocks).toHaveLength(1);
-    expect(pages[0].id).toBe(pageId1);
-    expect(blocks[0].id).toBe(blockId1);
+    expect(pages[0].page_id).toBe(pageId1);
+    expect(blocks[0].block_id).toBe(blockId1);
   });
 
   test('searchAll should work when query matches only pages', () => {
@@ -603,7 +603,7 @@ describe('UserDatabaseFTS', () => {
     const [pages, blocks] = db.searchAll('Python');
     expect(pages).toHaveLength(1);
     expect(blocks).toHaveLength(0);
-    expect(pages[0].id).toBe(pageId1);
+    expect(pages[0].page_id).toBe(pageId1);
   });
 
   test('searchAll should work when query matches only blocks', () => {
@@ -616,7 +616,7 @@ describe('UserDatabaseFTS', () => {
     const [pages, blocks] = db.searchAll('Python');
     expect(pages).toHaveLength(0);
     expect(blocks).toHaveLength(1);
-    expect(blocks[0].id).toBe(blockId1);
+    expect(blocks[0].block_id).toBe(blockId1);
   });
 
   test('searchPages should update correctly after title update', () => {
@@ -624,7 +624,7 @@ describe('UserDatabaseFTS', () => {
     // Initially, should find the page
     let results = db.searchPages('Python');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(pageId);
+    expect(results[0].page_id).toBe(pageId);
 
     // Update the title
     db.updatePageTitle(pageId, 'New Title JavaScript');
@@ -636,7 +636,7 @@ describe('UserDatabaseFTS', () => {
     // Search for new term - should find it
     results = db.searchPages('JavaScript');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(pageId);
+    expect(results[0].page_id).toBe(pageId);
   });
 
   test('searchBlocks should update correctly after content update', () => {
@@ -646,7 +646,7 @@ describe('UserDatabaseFTS', () => {
     // Initially, should find the block
     let results = db.searchBlocks('Python');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(blockId);
+    expect(results[0].block_id).toBe(blockId);
 
     // Update the content
     db.updateBlockContent(blockId, 'New content with JavaScript');
@@ -658,7 +658,7 @@ describe('UserDatabaseFTS', () => {
     // Search for new term - should find it
     results = db.searchBlocks('JavaScript');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(blockId);
+    expect(results[0].block_id).toBe(blockId);
   });
 
   test('searchPages should update correctly after deletion', () => {
@@ -667,7 +667,7 @@ describe('UserDatabaseFTS', () => {
     // Initially, should find the page
     let results = db.searchPages('Python');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(pageId);
+    expect(results[0].page_id).toBe(pageId);
 
     // Delete the page
     db.deletePage(pageId);
@@ -684,7 +684,7 @@ describe('UserDatabaseFTS', () => {
     // Initially, should find the block
     let results = db.searchBlocks('Python');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(blockId);
+    expect(results[0].block_id).toBe(blockId);
 
     // Delete the block
     db.deleteBlock(blockId);
@@ -705,7 +705,7 @@ describe('UserDatabaseFTS', () => {
     // Now it should be searchable
     results = db.searchPages('Python');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(pageId);
+    expect(results[0].page_id).toBe(pageId);
 
     // Add a block
     const blockId = db.addBlock('Advanced Python techniques', 1, 'text', pageId);
@@ -713,7 +713,7 @@ describe('UserDatabaseFTS', () => {
     // Block should be searchable
     results = db.searchBlocks('Python');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(blockId);
+    expect(results[0].block_id).toBe(blockId);
   });
 
   test('search should work with special characters', () => {
@@ -723,17 +723,17 @@ describe('UserDatabaseFTS', () => {
     // Search with ampersand
     let results = db.searchPages('Python & JavaScript');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(pageId);
+    expect(results[0].page_id).toBe(pageId);
 
     // Search with quotes
     results = db.searchBlocks('Advanced Python');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(blockId);
+    expect(results[0].block_id).toBe(blockId);
 
     // Search with punctuation
     results = db.searchPages('Tutorial');
     expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(pageId);
+    expect(results[0].page_id).toBe(pageId);
   });
 
   test('search with empty query should return empty results', () => {
@@ -787,7 +787,7 @@ describe('UserDatabaseFTS', () => {
 
     // At least the pages containing "Python" should be returned
     const python_page_ids = [page1_id, page2_id];
-    const result_ids = results.map(r => r.id);
+    const result_ids = results.map(r => r.page_id);
 
     // Both Python-related pages should be in the results
     for (const pid of python_page_ids) {
@@ -807,7 +807,7 @@ describe('UserDatabaseFTS', () => {
     // Search with OR operator - should find pages containing either Python or JavaScript
     const results_or = db.searchPages('Python OR JavaScript', 10, false);
     expect(results_or.length).toBe(3); // All three pages should match the OR query
-    const result_ids_or = results_or.map(r => r.id);
+    const result_ids_or = results_or.map(r => r.page_id);
     expect(result_ids_or).toContain(page1_id); // Contains Python
     expect(result_ids_or).toContain(page2_id); // Contains JavaScript
     expect(result_ids_or).toContain(page3_id); // Contains both Python and JavaScript
@@ -815,12 +815,12 @@ describe('UserDatabaseFTS', () => {
     // Search with AND operator - should find pages containing both terms
     const results_and = db.searchPages('Python AND JavaScript', 10, false);
     expect(results_and.length).toBe(1); // Only page3 contains both Python and Guide
-    expect(results_and[0].id).toBe(page3_id);
+    expect(results_and[0].page_id).toBe(page3_id);
 
     // Search with NOT operator - should find pages containing Python but not Tutorial
     const results_not = db.searchPages('Python NOT Tutorial', 10, false);
     // Only page3 contains Python but not Tutorial ("Tutorial" is not substring of "Tutorial")
-    const result_ids_not = results_not.map(r => r.id);
+    const result_ids_not = results_not.map(r => r.page_id);
     // Note: This depends on exact implementation of NOT operator in search
     expect(result_ids_not).not.toContain(page1_id); // Contains both Python and Tutorial
   });

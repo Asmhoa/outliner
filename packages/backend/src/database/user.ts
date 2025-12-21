@@ -40,7 +40,7 @@ export class UserDatabase implements IUserDatabase {
     // Create workspaces table (matching Python implementation)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS workspaces (
-        id INTEGER PRIMARY KEY,
+        workspace_id INTEGER PRIMARY KEY,
         name VARCHAR(255),
         color BLOB(3) NOT NULL
       )
@@ -49,7 +49,7 @@ export class UserDatabase implements IUserDatabase {
     // Create pages table (matching Python implementation)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS pages (
-        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        page_id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         title VARCHAR(255) NOT NULL UNIQUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -67,15 +67,15 @@ export class UserDatabase implements IUserDatabase {
     // Create blocks table (matching Python implementation)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS blocks (
-        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        block_id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         content TEXT NOT NULL,
         page_id TEXT NULL,
         parent_block_id TEXT NULL,
         position INTEGER NOT NULL,
         type TEXT NOT NULL DEFAULT 'text',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE,
-        FOREIGN KEY (parent_block_id) REFERENCES blocks(id) ON DELETE CASCADE,
+        FOREIGN KEY (page_id) REFERENCES pages(page_id) ON DELETE CASCADE,
+        FOREIGN KEY (parent_block_id) REFERENCES blocks(block_id) ON DELETE CASCADE,
         CHECK (
           (page_id IS NOT NULL AND parent_block_id IS NULL)
           OR
@@ -114,7 +114,7 @@ export class UserDatabase implements IUserDatabase {
     this.db.exec(`
       CREATE TRIGGER IF NOT EXISTS pages_ai AFTER INSERT ON pages
       BEGIN
-        INSERT INTO pages_fts (rowid, title, page_id) VALUES (NEW.rowid, NEW.title, NEW.id);
+        INSERT INTO pages_fts (rowid, title, page_id) VALUES (NEW.rowid, NEW.title, NEW.page_id);
       END;
     `);
 
@@ -129,7 +129,7 @@ export class UserDatabase implements IUserDatabase {
       CREATE TRIGGER IF NOT EXISTS pages_au AFTER UPDATE ON pages
       BEGIN
         INSERT INTO pages_fts(pages_fts, rowid, title) VALUES('delete', OLD.rowid, OLD.title);
-        INSERT INTO pages_fts(rowid, title, page_id) VALUES (NEW.rowid, NEW.title, NEW.id);
+        INSERT INTO pages_fts(rowid, title, page_id) VALUES (NEW.rowid, NEW.title, NEW.page_id);
       END;
     `);
 
@@ -138,7 +138,7 @@ export class UserDatabase implements IUserDatabase {
       CREATE TRIGGER IF NOT EXISTS blocks_ai AFTER INSERT ON blocks
       BEGIN
         INSERT INTO blocks_fts (rowid, content, block_id, page_id, parent_block_id, type)
-        VALUES (NEW.rowid, NEW.content, NEW.id, NEW.page_id, NEW.parent_block_id, NEW.type);
+        VALUES (NEW.rowid, NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id, NEW.type);
       END;
     `);
 
@@ -154,7 +154,7 @@ export class UserDatabase implements IUserDatabase {
       BEGIN
         INSERT INTO blocks_fts(blocks_fts, rowid, content) VALUES('delete', OLD.rowid, OLD.content);
         INSERT INTO blocks_fts (rowid, content, block_id, page_id, parent_block_id, type)
-        VALUES (NEW.rowid, NEW.content, NEW.id, NEW.page_id, NEW.parent_block_id, NEW.type);
+        VALUES (NEW.rowid, NEW.content, NEW.block_id, NEW.page_id, NEW.parent_block_id, NEW.type);
       END;
     `);
   }
@@ -164,32 +164,32 @@ export class UserDatabase implements IUserDatabase {
    */
   addPage(title: string): string {
     // First check if a page with this title already exists (due to UNIQUE constraint)
-    const checkStmt = this.db.prepare('SELECT id FROM pages WHERE title = ?');
+    const checkStmt = this.db.prepare('SELECT page_id FROM pages WHERE title = ?');
     const existing = checkStmt.get(title);
     if (existing) {
       throw new PageAlreadyExistsError(`Page with title '${title}' already exists`);
     }
 
     const insertStmt = this.db.prepare(`
-      INSERT INTO pages (title) VALUES (?) RETURNING id
+      INSERT INTO pages (title) VALUES (?) RETURNING page_id
     `);
-    const result = insertStmt.get(title) as { id: string };
-    return result.id;
+    const result = insertStmt.get(title) as { page_id: string };
+    return result.page_id;
   }
 
   /**
    * Get a page by its ID
    */
-  getPageById(id: string): Page {
+  getPageById(pageId: string): Page {
     const stmt = this.db.prepare(`
-      SELECT id, title, created_at
+      SELECT page_id, title, created_at
       FROM pages
-      WHERE id = ?
+      WHERE page_id = ?
     `);
 
-    const result = stmt.get(id);
+    const result = stmt.get(pageId);
     if (!result) {
-      throw new PageNotFoundError(`Page with id '${id}' not found`);
+      throw new PageNotFoundError(`Page with id '${pageId}' not found`);
     }
 
     return PageSchema.parse(result);
@@ -200,7 +200,7 @@ export class UserDatabase implements IUserDatabase {
    */
   getAllPages(): Page[] {
     const stmt = this.db.prepare(`
-      SELECT id, title, created_at
+      SELECT page_id, title, created_at
       FROM pages
       ORDER BY created_at DESC
     `);
@@ -212,175 +212,223 @@ export class UserDatabase implements IUserDatabase {
   /**
    * Update a page's title
    */
-  updatePageTitle(id: string, newTitle: string): void {
+  updatePageTitle(pageId: string, newTitle: string): void {
     // Check if a different page with this title already exists
     const checkStmt = this.db.prepare(`
-      SELECT id FROM pages WHERE title = ? AND id != ?
+      SELECT page_id FROM pages WHERE title = ? AND page_id != ?
     `);
-    const existing = checkStmt.get(newTitle, id);
+    const existing = checkStmt.get(newTitle, pageId);
     if (existing) {
       throw new PageAlreadyExistsError(`Page with title '${newTitle}' already exists`);
     }
 
     // Get the old title to verify the page exists
-    const checkPageExists = this.db.prepare(`SELECT title FROM pages WHERE id = ?`);
-    const oldPage = checkPageExists.get(id);
+    const checkPageExists = this.db.prepare(`SELECT title FROM pages WHERE page_id = ?`);
+    const oldPage = checkPageExists.get(pageId);
     if (oldPage === undefined) {
-      throw new PageNotFoundError(`Page with ID ${id} not found`);
+      throw new PageNotFoundError(`Page with ID ${pageId} not found`);
     }
 
     const stmt = this.db.prepare(`
       UPDATE pages
       SET title = ?
-      WHERE id = ?
+      WHERE page_id = ?
     `);
 
-    const result = stmt.run(newTitle, id);
+    const result = stmt.run(newTitle, pageId);
     if (result.changes === 0) {
-      throw new PageNotFoundError(`Page with ID ${id} not found`);
+      throw new PageNotFoundError(`Page with ID ${pageId} not found`);
     }
   }
 
   /**
    * Delete a page by its ID
    */
-  deletePage(id: string): void {
+  deletePage(pageId: string): void {
     const stmt = this.db.prepare(`
       DELETE FROM pages
-      WHERE id = ?
+      WHERE page_id = ?
     `);
-
-    const result = stmt.run(id);
+    
+    const result = stmt.run(pageId);
     if (result.changes === 0) {
-      throw new PageNotFoundError(`Page with ID ${id} not found`);
+      throw new PageNotFoundError(`Page with ID ${pageId} not found`);
     }
   }
 
-  /**
-   * Add a new block to the database
-   */
-  addBlock(content: string, position: number, type: string = 'text', pageId?: string, parentBlockId?: string): string {
-    if (pageId !== undefined && parentBlockId !== undefined) {
-      throw new Error("A block must be associated with either a page_id or a parent_block_id, but not both.");
+    /**
+
+     * Add a new block to the database
+
+     */
+
+    addBlock(content: string, position: number, type: string = 'text', pageId?: string, parentBlockId?: string): string {
+
+      if (pageId !== undefined && parentBlockId !== undefined) {
+
+        throw new Error("A block must be associated with either a page_id or a parent_block_id, but not both.");
+
+      }
+
+  
+
+      let result: { block_id: string } | undefined;
+
+  
+
+      if (pageId !== undefined) {
+
+        const stmt = this.db.prepare(`
+
+          INSERT INTO blocks (content, position, type, page_id) VALUES (?, ?, ?, ?) RETURNING block_id
+
+        `);
+
+        result = stmt.get(content, position, type, pageId) as { block_id: string };
+
+      } else if (parentBlockId !== undefined) {
+
+        const stmt = this.db.prepare(`
+
+          INSERT INTO blocks (content, position, type, parent_block_id) VALUES (?, ?, ?, ?) RETURNING block_id
+
+        `);
+
+        result = stmt.get(content, position, type, parentBlockId) as { block_id: string };
+
+      } else {
+
+        // Block without parent - both pageId and parentBlockId are undefined
+
+        const stmt = this.db.prepare(`
+
+          INSERT INTO blocks (content, position, type) VALUES (?, ?, ?) RETURNING block_id
+
+        `);
+
+        result = stmt.get(content, position, type) as { block_id: string };
+
+      }
+
+  
+
+      return result.block_id;
+
     }
 
-    let result: { id: string } | undefined;
-    if (pageId !== undefined) {
+  
+
+    /**
+
+     * Get a block by its ID
+
+     */
+
+    getBlockById(blockId: string): Block {
+
       const stmt = this.db.prepare(`
-        INSERT INTO blocks (content, position, type, page_id) VALUES (?, ?, ?, ?) RETURNING id
+
+        SELECT block_id, content, page_id, parent_block_id, position, type, created_at
+
+        FROM blocks
+
+        WHERE block_id = ?
+
       `);
-      result = stmt.get(content, position, type, pageId) as { id: string };
-    } else if (parentBlockId !== undefined) {
-      const stmt = this.db.prepare(`
-        INSERT INTO blocks (content, position, type, parent_block_id) VALUES (?, ?, ?, ?) RETURNING id
-      `);
-      result = stmt.get(content, position, type, parentBlockId) as { id: string };
-    } else {
-      // Block without parent - both pageId and parentBlockId are undefined
-      const stmt = this.db.prepare(`
-        INSERT INTO blocks (content, position, type) VALUES (?, ?, ?) RETURNING id
-      `);
-      result = stmt.get(content, position, type) as { id: string };
+
+  
+
+      const result = stmt.get(blockId);
+
+      if (!result) {
+
+        throw new BlockNotFoundError(`Block with ID ${blockId} not found`);
+
+      }
+
+  
+
+      return BlockSchema.parse(result);
+
     }
-
-    return result.id;
-  }
-
-  /**
-   * Get a block by its ID
-   */
-  getBlockById(id: string): Block {
-    const stmt = this.db.prepare(`
-      SELECT id, content, page_id, parent_block_id, position, type, created_at
-      FROM blocks
-      WHERE id = ?
-    `);
-
-    const result = stmt.get(id);
-    if (!result) {
-      throw new BlockNotFoundError(`Block with ID ${id} not found`);
-    }
-
-    return BlockSchema.parse(result);
-  }
 
   /**
    * Get all blocks associated with a specific page
    */
   getBlocksByPageId(pageId: string): Block[] {
     const stmt = this.db.prepare(`
-      SELECT id, content, page_id, parent_block_id, position, type, created_at
+      SELECT block_id, content, page_id, parent_block_id, position, type, created_at
       FROM blocks
       WHERE page_id = ?
       ORDER BY position ASC
     `);
 
-    const results = stmt.all();
+    const results = stmt.all(pageId);
     return z.array(BlockSchema).parse(results);
   }
 
   /**
    * Update a block's content
    */
-  updateBlockContent(id: string, newContent: string): void {
+  updateBlockContent(blockId: string, newContent: string): void {
     // Get the current block to verify it exists
-    const checkBlockExists = this.db.prepare(`SELECT id FROM blocks WHERE id = ?`);
-    const currentBlock = checkBlockExists.get(id);
+    const checkBlockExists = this.db.prepare(`SELECT block_id FROM blocks WHERE block_id = ?`);
+    const currentBlock = checkBlockExists.get(blockId);
     if (currentBlock === undefined) {
-      throw new BlockNotFoundError(`Block with ID ${id} not found`);
+      throw new BlockNotFoundError(`Block with ID ${blockId} not found`);
     }
 
     const stmt = this.db.prepare(`
       UPDATE blocks
       SET content = ?
-      WHERE id = ?
+      WHERE block_id = ?
     `);
 
-    const result = stmt.run(newContent, id);
+    const result = stmt.run(newContent, blockId);
     if (result.changes === 0) {
-      throw new BlockNotFoundError(`Block with ID ${id} not found`);
+      throw new BlockNotFoundError(`Block with ID ${blockId} not found`);
     }
   }
 
   /**
    * Update a block's parent relationship
    */
-  updateBlockParent(id: string, newPageId?: string, newParentBlockId?: string): void {
+  updateBlockParent(blockId: string, newPageId?: string, newParentBlockId?: string): void {
     if (Boolean(newPageId) === Boolean(newParentBlockId)) {
       throw new Error("A block must be associated with either a page_id or a parent_block_id, but not both.");
     }
 
     // Get the current block to verify it exists
-    const checkBlockExists = this.db.prepare(`SELECT id FROM blocks WHERE id = ?`);
-    const currentBlock = checkBlockExists.get(id);
+    const checkBlockExists = this.db.prepare(`SELECT block_id FROM blocks WHERE block_id = ?`);
+    const currentBlock = checkBlockExists.get(blockId);
     if (currentBlock === undefined) {
-      throw new BlockNotFoundError(`Block with ID ${id} not found`);
+      throw new BlockNotFoundError(`Block with ID ${blockId} not found`);
     }
 
     if (newPageId !== undefined && newParentBlockId === undefined) {
       const stmt = this.db.prepare(`
-        UPDATE blocks SET page_id = ?, parent_block_id = NULL WHERE id = ?
+        UPDATE blocks SET page_id = ?, parent_block_id = NULL WHERE block_id = ?
       `);
-      const result = stmt.run(newPageId, id);
+      const result = stmt.run(newPageId, blockId);
       if (result.changes === 0) {
-        throw new BlockNotFoundError(`Block with ID ${id} not found`);
+        throw new BlockNotFoundError(`Block with ID ${blockId} not found`);
       }
     } else if (newParentBlockId !== undefined && newPageId === undefined) {
       const stmt = this.db.prepare(`
-        UPDATE blocks SET parent_block_id = ?, page_id = NULL WHERE id = ?
+        UPDATE blocks SET parent_block_id = ?, page_id = NULL WHERE block_id = ?
       `);
-      const result = stmt.run(newParentBlockId, id);
+      const result = stmt.run(newParentBlockId, blockId);
       if (result.changes === 0) {
-        throw new BlockNotFoundError(`Block with ID ${id} not found`);
+        throw new BlockNotFoundError(`Block with ID ${blockId} not found`);
       }
     } else {
       // Remove parent association - set both to NULL
       const stmt = this.db.prepare(`
-        UPDATE blocks SET page_id = NULL, parent_block_id = NULL WHERE id = ?
+        UPDATE blocks SET page_id = NULL, parent_block_id = NULL WHERE block_id = ?
       `);
-      const result = stmt.run(id);
+      const result = stmt.run(blockId);
       if (result.changes === 0) {
-        throw new BlockNotFoundError(`Block with ID ${id} not found`);
+        throw new BlockNotFoundError(`Block with ID ${blockId} not found`);
       }
     }
   }
@@ -390,7 +438,7 @@ export class UserDatabase implements IUserDatabase {
    */
   updateBlockPosition(blockId: string, newPosition: number): void {
     // Get the current block to verify it exists
-    const checkBlockExists = this.db.prepare(`SELECT id FROM blocks WHERE id = ?`);
+    const checkBlockExists = this.db.prepare(`SELECT block_id FROM blocks WHERE block_id = ?`);
     const currentBlock = checkBlockExists.get(blockId);
     if (currentBlock === undefined) {
       throw new BlockNotFoundError(`Block with ID ${blockId} not found`);
@@ -399,7 +447,7 @@ export class UserDatabase implements IUserDatabase {
     const stmt = this.db.prepare(`
       UPDATE blocks
       SET position = ?
-      WHERE id = ?
+      WHERE block_id = ?
     `);
 
     const result = stmt.run(newPosition, blockId);
@@ -411,15 +459,15 @@ export class UserDatabase implements IUserDatabase {
   /**
    * Delete a block by its ID
    */
-  deleteBlock(id: string): void {
+  deleteBlock(blockId: string): void {
     const stmt = this.db.prepare(`
       DELETE FROM blocks
-      WHERE id = ?
+      WHERE block_id = ?
     `);
 
-    const result = stmt.run(id);
+    const result = stmt.run(blockId);
     if (result.changes === 0) {
-      throw new BlockNotFoundError(`Block with ID ${id} not found`);
+      throw new BlockNotFoundError(`Block with ID ${blockId} not found`);
     }
   }
 
@@ -431,25 +479,25 @@ export class UserDatabase implements IUserDatabase {
     const colorBytes = Buffer.from(color.replace('#', ''), 'hex');
 
     const stmt = this.db.prepare(`
-      INSERT INTO workspaces (name, color) VALUES (?, ?) RETURNING id
+      INSERT INTO workspaces (name, color) VALUES (?, ?) RETURNING workspace_id
     `);
-    const result = stmt.get(name, colorBytes) as { id: number };
-    return result.id;
+    const result = stmt.get(name, colorBytes) as { workspace_id: number };
+    return result.workspace_id;
   }
 
   /**
    * Get a workspace by its ID
    */
-  getWorkspaceById(id: number): Workspace {
+  getWorkspaceById(workspaceId: number): Workspace {
     const stmt = this.db.prepare(`
-      SELECT id, name, color
+      SELECT workspace_id, name, color
       FROM workspaces
-      WHERE id = ?
+      WHERE workspace_id = ?
     `);
 
-    const row = stmt.get(id) as { id: number, name: string, color: Buffer } | undefined;
+    const row = stmt.get(workspaceId) as { workspace_id: number, name: string, color: Buffer } | undefined;
     if (!row) {
-      throw new WorkspaceNotFoundError(`Workspace with ID ${id} not found`);
+      throw new WorkspaceNotFoundError(`Workspace with ID ${workspaceId} not found`);
     }
 
     // Convert BLOB color back to hex string
@@ -464,11 +512,11 @@ export class UserDatabase implements IUserDatabase {
    */
   getAllWorkspaces(): Workspace[] {
     const stmt = this.db.prepare(`
-      SELECT id, name, color
+      SELECT workspace_id, name, color
       FROM workspaces
     `);
 
-    const rows = stmt.all() as { id: number, name: string, color: Buffer }[];
+    const rows = stmt.all() as { workspace_id: number, name: string, color: Buffer }[];
 
     return rows.map(row => {
       // Convert BLOB color back to hex string
@@ -482,32 +530,32 @@ export class UserDatabase implements IUserDatabase {
   /**
    * Update a workspace's properties
    */
-  updateWorkspace(id: number, name: string, color: string): void {
+  updateWorkspace(workspaceId: number, name: string, color: string): void {
     // Convert color string to BLOB format (bytes)
     const colorBytes = Buffer.from(color.replace('#', ''), 'hex');
 
     const stmt = this.db.prepare(`
-      UPDATE workspaces SET name = ?, color = ? WHERE id = ?
+      UPDATE workspaces SET name = ?, color = ? WHERE workspace_id = ?
     `);
 
-    const result = stmt.run(name, colorBytes, id);
+    const result = stmt.run(name, colorBytes, workspaceId);
     if (result.changes === 0) {
-      throw new WorkspaceNotFoundError(`Workspace with ID ${id} not found`);
+      throw new WorkspaceNotFoundError(`Workspace with ID ${workspaceId} not found`);
     }
   }
 
   /**
    * Delete a workspace by its ID
    */
-  deleteWorkspace(id: number): void {
+  deleteWorkspace(workspaceId: number): void {
     const stmt = this.db.prepare(`
       DELETE FROM workspaces
-      WHERE id = ?
+      WHERE workspace_id = ?
     `);
 
-    const result = stmt.run(id);
+    const result = stmt.run(workspaceId);
     if (result.changes === 0) {
-      throw new WorkspaceNotFoundError(`Workspace with ID ${id} not found`);
+      throw new WorkspaceNotFoundError(`Workspace with ID ${workspaceId} not found`);
     }
   }
 
@@ -527,9 +575,9 @@ export class UserDatabase implements IUserDatabase {
 
     // Use FTS to search for pages by title with ranking
     const ftsStmt = this.db.prepare(`
-      SELECT p.id, p.title, p.created_at
+      SELECT p.page_id, p.title, p.created_at
       FROM pages p
-      JOIN pages_fts pf ON p.id = pf.page_id
+      JOIN pages_fts pf ON p.page_id = pf.page_id
       WHERE pages_fts MATCH ?
       ORDER BY rank
       LIMIT ?
@@ -555,9 +603,9 @@ export class UserDatabase implements IUserDatabase {
 
     // Use FTS to search for blocks by content with ranking
     const ftsStmt = this.db.prepare(`
-      SELECT b.id, b.content, b.page_id, b.parent_block_id, b.position, b.type, b.created_at
+      SELECT b.block_id, b.content, b.page_id, b.parent_block_id, b.position, b.type, b.created_at
       FROM blocks b
-      JOIN blocks_fts bf ON b.id = bf.block_id
+      JOIN blocks_fts bf ON b.block_id = bf.block_id
       WHERE blocks_fts MATCH ?
       ORDER BY rank
       LIMIT ?
@@ -615,14 +663,14 @@ export class UserDatabase implements IUserDatabase {
    */
   private createDefaultWorkspace(): void {
     // Check if default workspace with ID 0 already exists
-    const stmt = this.db.prepare('SELECT 1 FROM workspaces WHERE id = 0');
+    const stmt = this.db.prepare('SELECT 1 FROM workspaces WHERE workspace_id = 0');
     const existing = stmt.get();
 
     if (!existing) {
       const defaultName = 'Default';
       const defaultColor = Buffer.from('4285F4', 'hex'); // Color as BLOB
       const insertStmt = this.db.prepare(
-        'INSERT INTO workspaces (id, name, color) VALUES (?, ?, ?)'
+        'INSERT INTO workspaces (workspace_id, name, color) VALUES (?, ?, ?)'
       );
       insertStmt.run(0, defaultName, defaultColor);
     }

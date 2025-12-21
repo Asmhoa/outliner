@@ -15,7 +15,7 @@ export const UserDatabaseInfoSchema = z.object({
 export type UserDatabaseInfo = z.infer<typeof UserDatabaseInfoSchema>;
 
 export const PageSchema = z.object({
-  id: z.string(),
+  page_id: z.string(),
   title: z.string().max(255),
   created_at: z.coerce.date()
 });
@@ -23,7 +23,7 @@ export const PageSchema = z.object({
 export type Page = z.infer<typeof PageSchema>;
 
 export const BlockSchema = z.object({
-  id: z.string(),
+  block_id: z.string(),
   content: z.string(),
   position: z.number(),
   type: z.string(),
@@ -47,7 +47,7 @@ export const BlockSchema = z.object({
 export type Block = z.infer<typeof BlockSchema>;
 
 export const WorkspaceSchema = z.object({
-  id: z.number(),
+  workspace_id: z.number(),
   name: z.string().max(255),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Invalid color format')
 });
