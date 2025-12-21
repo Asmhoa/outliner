@@ -4,32 +4,28 @@ import os from 'os';
 import { SystemDatabase } from '../../../src/database/system';
 import { UserDatabase } from '../../../src/database/user';
 import { UserDatabaseAlreadyExistsError, UserDatabaseNotFoundError } from '../../../src/database/errors';
+import { setupTestSystemDatabase, teardownTestSystemDatabase, DbTestSetup } from '../test-utils/db-test-setup';
 
 describe('SystemDatabase', () => {
+  let testSetup: DbTestSetup;
   let tempDir: string;
   let sysDb: SystemDatabase;
 
   beforeEach(() => {
-    // Create a temporary directory for each test
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'test-system-db-'));
-    const sysDbPath = path.join(tempDir, 'system.db');
-
-    sysDb = new SystemDatabase(sysDbPath, tempDir); // Use tempDir for user databases too
+    testSetup = setupTestSystemDatabase();
+    tempDir = testSetup.tempDir;
+    sysDb = testSetup.sysDb;
   });
 
   afterEach(() => {
-    // Close the database connection and clean up the temporary directory
-    sysDb.close();
-
-    // Remove the temporary directory and all its contents
-    fs.rmSync(tempDir, { recursive: true, force: true });
+    teardownTestSystemDatabase(testSetup);
   });
 
 
   test('[add] should add and retrieve user database', async () => {
     // Test that a new user database can be added and loaded
     const dbName = 'test_db';
-    const expectedPath = 'test_db.db'; // Path is calculated from name
+    const expectedPath = path.join(tempDir, 'test_db.db');
 
     const dbInfo = await sysDb.addUserDatabase(dbName);
 
@@ -119,7 +115,7 @@ describe('SystemDatabase', () => {
     const updatedDbInfo = sysDb.getUserDatabaseById(dbInfo.id);
     expect(updatedDbInfo).not.toBeNull();
     expect(updatedDbInfo!.name).toBe('new_test_db');
-    expect(updatedDbInfo!.path).toBe('new_test_db.db'); // Path should reflect the new name
+    expect(updatedDbInfo!.path).toBe(path.join(tempDir, 'new_test_db.db')); // Path should reflect the new name
   });
 
   test('[update] should not change database when updating with no new data', async () => {
@@ -185,21 +181,16 @@ describe('SystemDatabase', () => {
     // Test that renaming a user database also renames its corresponding file
     const originalName = 'original_db';
     const newName = 'renamed_db';
-    const expectedOriginalPath = 'original_db.db';
-    const expectedNewPath = 'renamed_db.db';
+    const expectedOriginalPath = path.join(tempDir, 'original_db.db');
+    const expectedNewPath = path.join(tempDir, 'renamed_db.db');
 
     // Add a user database - this will set up the entry in system.db
     const dbInfo = await sysDb.addUserDatabase(originalName);
-
-    // Create the actual user database file in the databases directory
-    // SystemDatabase internally sets databasesDir relative to its location
-    // For this test using a temp system DB, the actual user DBs are also in the same temp dir
-    const originalDbPath = path.join(tempDir, expectedOriginalPath);
-    const originalUserDb = new UserDatabase(originalDbPath);
+    const originalUserDb = new UserDatabase(dbInfo.path);
     originalUserDb.close(); // Create and close, to initialize the file
 
     // Verify original file exists
-    expect(fs.existsSync(originalDbPath)).toBe(true);
+    expect(fs.existsSync(dbInfo.path)).toBe(true);
 
     // Rename the user database
     const updated = await sysDb.updateUserDatabase(dbInfo.id, newName);
@@ -211,8 +202,8 @@ describe('SystemDatabase', () => {
     expect(updatedDbInfo.path).toBe(expectedNewPath);
 
     // Verify file system changes
-    const newDbPath = path.join(tempDir, expectedNewPath);
-    expect(fs.existsSync(originalDbPath)).toBe(false); // Original file should be gone
+    const newDbPath = expectedNewPath;
+    expect(fs.existsSync(dbInfo.path)).toBe(false); // Original file should be gone
     expect(fs.existsSync(newDbPath)).toBe(true); // New file should exist
   });
 

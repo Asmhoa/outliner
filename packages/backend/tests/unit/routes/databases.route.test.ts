@@ -5,6 +5,7 @@ import os from 'os';
 import fs from 'fs';
 import { app } from '../../../src/app'; // Adjust this import path as needed
 import { SystemDatabase } from '../../../src/database/system';
+import { UserDatabase } from '../../../src/database/user';
 import { UserDatabaseInfo } from '../../../src/database/entities';
 
 // Define paths relative to the test directory
@@ -191,7 +192,12 @@ describe('Database API Routes', () => {
   test('should delete a database successfully', async () => {
     // Create a database first
     const newDb = await sysDb.addUserDatabase('to_delete');
+    const newDbInstance = new UserDatabase(newDb.path);
     const dbId = newDb.id;
+
+    // Add a row to the db to ensure it's written as a file
+    // (should be handled gracefully, this is just to prevent output in stderr)
+    newDbInstance.addPage('Test')
 
     const response = await request(app)
       .delete(`/databases/${dbId}`)

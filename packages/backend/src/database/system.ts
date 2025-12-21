@@ -12,6 +12,7 @@ import {
   UserDatabaseInfo,
   UserDatabaseInfoSchema
 } from './entities';
+import { getDefaultAutoSelectFamily } from 'net';
 
 /**
  * SystemDatabase manages the list of UserDatabases available to the application.
@@ -145,7 +146,7 @@ export class SystemDatabase implements ISystemDatabase {
       `);
 
       // Insert will generate the ID automatically due to DEFAULT (lower(hex(randomblob(16))))
-      stmt.run(name, dbPath);
+      stmt.run(name, fullDbPath);
 
       // Get the inserted record to return all fields
       const selectStmt = this.db.prepare(`
@@ -156,12 +157,7 @@ export class SystemDatabase implements ISystemDatabase {
       const result = selectStmt.get(name) as any;
 
       // Validate and parse the result using the schema
-      const validatedData = UserDatabaseInfoSchema.parse({
-        id: result.id,
-        name,
-        path: dbPath,
-        created_at: result.created_at
-      });
+      const validatedData = UserDatabaseInfoSchema.parse(result);
       return validatedData;
     } catch (error) {
       if (error instanceof BetterSqlite3.SqliteError && error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
@@ -197,12 +193,12 @@ export class SystemDatabase implements ISystemDatabase {
       throw new UserDatabaseNotFoundError(`Database with id '${id}' not found.`);
     }
 
-    const oldDbEntryPathRelative = currentDb.path;
-    const oldFileSystemPath = path.join(this.databasesDir, oldDbEntryPathRelative);
+    const oldFileSystemPath = currentDb.path; // currentDb.path is already the full path
 
-    // Calculate the new relative path from the new name
+    // Calculate the new full path from the new name
     const calculatedPathFromName = newName.toLowerCase().replace(/\s/g, '_') + '.db';
     const newDbEntryPathRelative = this.sanitizePath(calculatedPathFromName);
+    const newDbEntryFullPath = path.join(this.databasesDir, newDbEntryPathRelative);
 
     // Check if name already exists (but exclude the current database being updated)
     // Use a different approach - try to get by name, but if it doesn't exist that's ok
@@ -229,7 +225,7 @@ export class SystemDatabase implements ISystemDatabase {
       const stmt = this.db.prepare(
         `UPDATE ${this.TABLE_NAME} SET name = ?, path = ? WHERE id = ?`
       );
-      const result = stmt.run(newName, newDbEntryPathRelative, id);
+      const result = stmt.run(newName, newDbEntryFullPath, id);
 
       if (result.changes === 0) {
         throw new UserDatabaseNotFoundError(
@@ -238,7 +234,7 @@ export class SystemDatabase implements ISystemDatabase {
       }
 
       // Rename the actual file to match the new name
-      const newFileSystemPath = path.join(this.databasesDir, newDbEntryPathRelative);
+      const newFileSystemPath = newDbEntryFullPath;
 
       try {
         await fsPromises.access(oldFileSystemPath);
@@ -270,7 +266,7 @@ export class SystemDatabase implements ISystemDatabase {
     }
 
     // Delete the actual database file first
-    const dbFilePath = path.join(this.databasesDir, dbToDelete.path);
+    const dbFilePath = dbToDelete.path;
     try {
       await fsPromises.unlink(dbFilePath); // unlink removes the file
     } catch (error) {
