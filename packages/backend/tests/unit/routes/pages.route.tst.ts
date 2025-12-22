@@ -42,7 +42,7 @@ describe('Page API Routes', () => {
       if (fs.existsSync(dbInfo.path)) {
         fs.unlinkSync(dbInfo.path);
       }
-      sysDb.deleteUserDatabase(testDatabaseId);
+      await sysDb.deleteUserDatabase(testDatabaseId);
     }
   });
 

@@ -48,7 +48,7 @@ export type Block = z.infer<typeof BlockSchema>;
 
 export const WorkspaceSchema = z.object({
   workspace_id: z.number(),
-  name: z.string().max(255),
+  name: z.string(),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Invalid color format')
 });
 

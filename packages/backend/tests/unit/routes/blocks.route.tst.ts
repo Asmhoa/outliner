@@ -42,7 +42,7 @@ describe('Block API Routes', () => {
       if (fs.existsSync(dbInfo.path)) {
         fs.unlinkSync(dbInfo.path);
       }
-      sysDb.deleteUserDatabase(testDatabaseId);
+      await sysDb.deleteUserDatabase(testDatabaseId);
     }
   });
 
@@ -65,7 +65,7 @@ describe('Block API Routes', () => {
 
     const responseData = response.body;
     const blockId = responseData.block_id;
-    
+
     expect(blockId).toBeDefined();
     expect(typeof blockId).toBe('string');
     expect(blockId.length).toBeGreaterThan(0);
@@ -274,7 +274,7 @@ describe('Block API Routes', () => {
 
     const responseData = response.body;
     const blockId = responseData.block_id;
-    
+
     expect(blockId).toBeDefined();
     expect(typeof blockId).toBe('string');
     expect(blockId.length).toBeGreaterThan(0);

@@ -24,8 +24,7 @@ router.post('/db/:db_id/workspaces', (req: Request, res: Response) => {
     res.status(200).json({
       workspace_id: workspaceId,
       name,
-      color,
-      created_at: new Date().toISOString()
+      color
     });
   } catch (error) {
     if (error instanceof WorkspaceNotFoundError) {
@@ -52,7 +51,7 @@ router.get('/db/:db_id/workspaces/:workspace_id', (req: Request, res: Response) 
     const workspace = userDb.getWorkspaceById(workspaceIdNum);
 
     res.json({
-      workspace_id: workspace.id,
+      workspace_id: workspace.workspace_id,
       name: workspace.name,
       color: workspace.color
     });
@@ -79,7 +78,7 @@ router.get('/db/:db_id/workspaces', (req: Request, res: Response) => {
 
     const workspaces = userDb.getAllWorkspaces();
     res.json(workspaces.map(workspace => ({
-      workspace_id: workspace.id,
+      workspace_id: workspace.workspace_id,
       name: workspace.name,
       color: workspace.color
     })));

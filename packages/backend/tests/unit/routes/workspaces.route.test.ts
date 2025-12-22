@@ -16,6 +16,7 @@ describe('Workspace API Routes', () => {
   let testSetup: DbTestSetup;
   let testDb: UserDatabase;
   let testDatabaseId: string;
+  let testDbNum = 0;
 
   beforeAll(() => {
     // Initialize system database
@@ -25,8 +26,10 @@ describe('Workspace API Routes', () => {
 
   beforeEach(() => {
     // Add the test database and capture its ID
-    sysDb.addUserDatabase('test_db');
-    const dbInfo = sysDb.getUserDatabaseByName('test_db');
+    let userDbName = `test_db_${testDbNum}`;
+    testDbNum += 1;
+    sysDb.addUserDatabase(userDbName);
+    const dbInfo = sysDb.getUserDatabaseByName(userDbName);
     if (dbInfo) {
       testDatabaseId = dbInfo.id;
     }
@@ -35,16 +38,13 @@ describe('Workspace API Routes', () => {
     testDb = new UserDatabase(dbInfo.path);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     testDb.close();
 
     // Delete the test database from system DB
     if (testDatabaseId) {
       const dbInfo = sysDb.getUserDatabaseById(testDatabaseId);
-      if (fs.existsSync(dbInfo.path)) {
-        fs.unlinkSync(dbInfo.path);
-      }
-      sysDb.deleteUserDatabase(testDatabaseId);
+      await sysDb.deleteUserDatabase(testDatabaseId);
     }
 
   });
@@ -58,7 +58,7 @@ describe('Workspace API Routes', () => {
       .post(`/db/${testDatabaseId}/workspaces`)
       .send({
         name: 'Test Workspace',
-        color: '#FF0000'
+        color: '#ff0000'
       })
       .expect(200);
 
@@ -70,7 +70,7 @@ describe('Workspace API Routes', () => {
     const workspace_data = testDb.getWorkspaceById(Number(workspace_id));
     expect(workspace_data).toBeDefined();
     expect(workspace_data?.name).toBe('Test Workspace');
-    expect(workspace_data?.color).toBe('#FF0000');
+    expect(workspace_data?.color).toBe('#ff0000');
   });
 
   test('should add a workspace with special characters', async () => {
@@ -78,24 +78,25 @@ describe('Workspace API Routes', () => {
       .post(`/db/${testDatabaseId}/workspaces`)
       .send({
         name: 'Workspace & Test!',
-        color: '#00AAFF'
+        color: '#00aaff'
       })
       .expect(200);
 
     const response_data = response.body;
     const workspace_id = response_data.workspace_id;
+
     expect(typeof workspace_id).toBe('number');
 
     // Verify the workspace exists in the database
     const workspace_data = testDb.getWorkspaceById(Number(workspace_id));
     expect(workspace_data).toBeDefined();
     expect(workspace_data?.name).toBe('Workspace & Test!');
-    expect(workspace_data?.color).toBe('#00AAFF');
+    expect(workspace_data?.color).toBe('#00aaff');
   });
 
   test('should get a workspace by ID successfully', async () => {
     // Create a workspace first
-    const workspace_id = testDb.addWorkspace('Test Workspace', '#FF0000');
+    const workspace_id = testDb.addWorkspace('Test Workspace', '#ff0000');
 
     const response = await request(app)
       .get(`/db/${testDatabaseId}/workspaces/${workspace_id}`)
@@ -104,7 +105,7 @@ describe('Workspace API Routes', () => {
     const response_data = response.body;
     expect(response_data.workspace_id).toBe(workspace_id);
     expect(response_data.name).toBe('Test Workspace');
-    expect(response_data.color).toBe('#FF0000');
+    expect(response_data.color).toBe('#ff0000');
   });
 
   test('should return 404 when getting a non-existent workspace', async () => {
@@ -117,9 +118,9 @@ describe('Workspace API Routes', () => {
 
   test('should get all workspaces successfully', async () => {
     // Create some workspaces
-    const workspace1_id = testDb.addWorkspace('Workspace 1', '#FF0000');
-    const workspace2_id = testDb.addWorkspace('Workspace 2', '#00FF00');
-    const workspace3_id = testDb.addWorkspace('Workspace 3', '#0000FF');
+    const workspace1_id = testDb.addWorkspace('Workspace 1', '#ff0000');
+    const workspace2_id = testDb.addWorkspace('Workspace 2', '#00ff00');
+    const workspace3_id = testDb.addWorkspace('Workspace 3', '#0000ff');
 
     const response = await request(app)
       .get(`/db/${testDatabaseId}/workspaces`)
@@ -137,27 +138,27 @@ describe('Workspace API Routes', () => {
     for (const ws of workspaces) {
       if (ws.workspace_id === workspace1_id) {
         expect(ws.name).toBe('Workspace 1');
-        expect(ws.color).toBe('#FF0000');
+        expect(ws.color).toBe('#ff0000');
       } else if (ws.workspace_id === workspace2_id) {
         expect(ws.name).toBe('Workspace 2');
-        expect(ws.color).toBe('#00FF00');
+        expect(ws.color).toBe('#00ff00');
       } else if (ws.workspace_id === workspace3_id) {
         expect(ws.name).toBe('Workspace 3');
-        expect(ws.color).toBe('#0000FF');
+        expect(ws.color).toBe('#0000ff');
       }
     }
   });
 
   test('should update a workspace successfully', async () => {
     // Create a workspace first
-    const workspace_id = testDb.addWorkspace('Old Workspace', '#FF0000');
+    const workspace_id = testDb.addWorkspace('Old Workspace', '#ff0000');
 
     const response = await request(app)
       .put(`/db/${testDatabaseId}/workspaces`)
       .send({
         workspace_id: workspace_id,
         new_name: 'Updated Workspace',
-        new_color: '#FFFFFF'
+        new_color: '#ffffff'
       })
       .expect(200);
 
@@ -167,7 +168,7 @@ describe('Workspace API Routes', () => {
     const workspace_data = testDb.getWorkspaceById(Number(workspace_id));
     expect(workspace_data).toBeDefined();
     expect(workspace_data?.name).toBe('Updated Workspace');
-    expect(workspace_data?.color).toBe('#FFFFFF');
+    expect(workspace_data?.color).toBe('#ffffff');
   });
 
   test('should return 404 when updating a non-existent workspace', async () => {
@@ -176,16 +177,16 @@ describe('Workspace API Routes', () => {
       .send({
         workspace_id: 999999, // Use a large number unlikely to exist
         new_name: 'Updated Workspace',
-        new_color: '#FFFFFF'
+        new_color: '#ffffff'
       })
       .expect(404);
 
-    expect(response.body).toEqual({ error: 'Workspace not found' });
+    expect(response.body).toEqual({ error: 'Workspace with ID 999999 not found' });
   });
 
   test('should update a workspace with special characters', async () => {
     // Create a workspace first
-    const workspace_id = testDb.addWorkspace('Test Workspace', '#FF0000');
+    const workspace_id = testDb.addWorkspace('Test Workspace', '#ff0000');
 
     const response = await request(app)
       .put(`/db/${testDatabaseId}/workspaces`)
@@ -202,12 +203,12 @@ describe('Workspace API Routes', () => {
     const workspace_data = testDb.getWorkspaceById(Number(workspace_id));
     expect(workspace_data).toBeDefined();
     expect(workspace_data?.name).toBe('Updated Workspace & Test!');
-    expect(workspace_data?.color).toBe('#123ABC');
+    expect(workspace_data?.color).toBe('#123abc');
   });
 
   test('should delete a workspace successfully', async () => {
     // Create a workspace first
-    const workspace_id = testDb.addWorkspace('Test Workspace', '#FF0000');
+    const workspace_id = testDb.addWorkspace('Test Workspace', '#ff0000');
 
     const response = await request(app)
       .delete(`/db/${testDatabaseId}/workspaces/${workspace_id}`)
@@ -231,7 +232,7 @@ describe('Workspace API Routes', () => {
       .delete(`/db/${testDatabaseId}/workspaces/999999`) // Use a large number unlikely to exist
       .expect(404);
 
-    expect(response.body).toEqual({ error: 'Workspace not found' });
+    expect(response.body).toEqual({ error: 'Workspace with ID 999999 not found' });
   });
 
   test('should add a workspace with a very long name', async () => {
@@ -241,7 +242,7 @@ describe('Workspace API Routes', () => {
       .post(`/db/${testDatabaseId}/workspaces`)
       .send({
         name: long_name,
-        color: '#ABCDEF'
+        color: '#abcdef'
       })
       .expect(200);
 
@@ -253,7 +254,7 @@ describe('Workspace API Routes', () => {
     const workspace_data = testDb.getWorkspaceById(Number(workspace_id));
     expect(workspace_data).toBeDefined();
     expect(workspace_data?.name).toBe(long_name);
-    expect(workspace_data?.color).toBe('#ABCDEF');
+    expect(workspace_data?.color).toBe('#abcdef');
   });
 
   test('should get all workspaces when there are no additional workspaces (only default)', async () => {
