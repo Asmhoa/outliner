@@ -13,37 +13,37 @@ describe('Block API Routes', () => {
   let testSetup: DbTestSetup;
   let testDb: UserDatabase;
   let testDatabaseId: string;
+  let testDbNum = 0;
 
   beforeAll(() => {
     // Initialize system database
     testSetup = setupTestSystemDatabase();
     sysDb = testSetup.sysDb;
-  });
+  })
 
   beforeEach(() => {
     // Add the test database and capture its ID
-    sysDb.addUserDatabase('test_db');
-    const dbInfo = sysDb.getUserDatabaseByName('test_db');
+    let userDbName = `test_db_${testDbNum}`;
+    testDbNum += 1;
+    sysDb.addUserDatabase(userDbName);
+    const dbInfo = sysDb.getUserDatabaseByName(userDbName);
     if (dbInfo) {
       testDatabaseId = dbInfo.id;
     }
 
     // Create user database
     testDb = new UserDatabase(dbInfo.path);
-    testDb.initializeTables();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     testDb.close();
 
     // Delete the test database from system DB
     if (testDatabaseId) {
       const dbInfo = sysDb.getUserDatabaseById(testDatabaseId);
-      if (fs.existsSync(dbInfo.path)) {
-        fs.unlinkSync(dbInfo.path);
-      }
       await sysDb.deleteUserDatabase(testDatabaseId);
     }
+
   });
 
   afterAll(() => {

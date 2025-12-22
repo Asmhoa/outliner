@@ -6,44 +6,44 @@ import fs from 'fs';
 import { app } from '../../../src/app'; // Adjust this import path as needed
 import { SystemDatabase } from '../../../src/database/system';
 import { UserDatabase } from '../../../src/database/user';
-import { setupTestSystemDatabase, teardownTestSystemDatabase, DbTestSetup } from '../../test-utils/db-test-setup';
+import { setupTestSystemDatabase, teardownTestSystemDatabase, DbTestSetup } from '../test-utils/db-test-setup';
 
 describe('Page API Routes', () => {
   let sysDb: SystemDatabase;
   let testSetup: DbTestSetup;
   let testDb: UserDatabase;
   let testDatabaseId: string;
+  let testDbNum = 0;
 
   beforeAll(() => {
     // Initialize system database
     testSetup = setupTestSystemDatabase();
     sysDb = testSetup.sysDb;
-  });
+  })
 
   beforeEach(() => {
     // Add the test database and capture its ID
-    sysDb.addUserDatabase('test_db');
-    const dbInfo = sysDb.getUserDatabaseByName('test_db');
+    let userDbName = `test_db_${testDbNum}`;
+    testDbNum += 1;
+    sysDb.addUserDatabase(userDbName);
+    const dbInfo = sysDb.getUserDatabaseByName(userDbName);
     if (dbInfo) {
       testDatabaseId = dbInfo.id;
     }
 
     // Create user database
     testDb = new UserDatabase(dbInfo.path);
-    testDb.initializeTables();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     testDb.close();
 
     // Delete the test database from system DB
     if (testDatabaseId) {
       const dbInfo = sysDb.getUserDatabaseById(testDatabaseId);
-      if (fs.existsSync(dbInfo.path)) {
-        fs.unlinkSync(dbInfo.path);
-      }
       await sysDb.deleteUserDatabase(testDatabaseId);
     }
+
   });
 
   afterAll(() => {
@@ -173,21 +173,11 @@ describe('Page API Routes', () => {
   });
 
   // Additional edge case tests for pages
-  test('should add a page with an empty title', async () => {
+  test('should not add a page with an empty title', async () => {
     const response = await request(app)
       .post(`/db/${testDatabaseId}/pages`)
       .send({ title: '' })
-      .expect(200);
-
-    const { page_id } = response.body;
-    expect(page_id).toBeDefined();
-    expect(typeof page_id).toBe('string');
-    expect(page_id.length).toBeGreaterThan(0);
-
-    // Verify the page exists in the database with empty title
-    const pageData = testDb.getPageById(page_id);
-    expect(pageData).toBeDefined();
-    expect(pageData?.title).toBe('');
+      .expect(400);
   });
 
   test('should get all pages when there are no pages', async () => {

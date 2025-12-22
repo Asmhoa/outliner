@@ -190,7 +190,7 @@ export class UserDatabase implements IUserDatabase {
 
     const result = stmt.get(pageId);
     if (!result) {
-      throw new PageNotFoundError(`Page with id '${pageId}' not found`);
+      throw new PageNotFoundError(`Page with ID ${pageId} not found`);
     }
 
     return PageSchema.parse(result);

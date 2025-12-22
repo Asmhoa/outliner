@@ -46,7 +46,7 @@ router.get('/db/:db_id/pages/:page_id', (req: Request, res: Response) => {
     const page = userDb.getPageById(page_id);
 
     res.json({
-      page_id: page.id,
+      page_id: page.page_id,
       title: page.title,
       created_at: page.created_at.toISOString()
     });
@@ -73,7 +73,7 @@ router.get('/db/:db_id/pages', (req: Request, res: Response) => {
 
     const pages = userDb.getAllPages();
     res.json(pages.map(page => ({
-      page_id: page.id,
+      page_id: page.page_id,
       title: page.title,
       created_at: page.created_at.toISOString()
     })));
