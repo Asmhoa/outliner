@@ -1,6 +1,6 @@
+import { beforeEach, afterEach, describe, expect, test} from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
 import { SystemDatabase } from '../../../src/database/system';
 import { UserDatabase } from '../../../src/database/user';
 import { UserDatabaseAlreadyExistsError, UserDatabaseNotFoundError } from '../../../src/database/errors';

@@ -30,6 +30,7 @@ export class UserDatabase implements IUserDatabase {
 
   constructor(private dbPath: string) {
     this.db = new BetterSqlite3(dbPath);
+    this.db.pragma('foreign_keys = ON');
     this.initializeTables();
   }
 
@@ -249,7 +250,7 @@ export class UserDatabase implements IUserDatabase {
       DELETE FROM pages
       WHERE page_id = ?
     `);
-    
+
     const result = stmt.run(pageId);
     if (result.changes === 0) {
       throw new PageNotFoundError(`Page with ID ${pageId} not found`);
@@ -270,11 +271,11 @@ export class UserDatabase implements IUserDatabase {
 
       }
 
-  
+
 
       let result: { block_id: string } | undefined;
 
-  
+
 
       if (pageId !== undefined) {
 
@@ -310,13 +311,13 @@ export class UserDatabase implements IUserDatabase {
 
       }
 
-  
+
 
       return result.block_id;
 
     }
 
-  
+
 
     /**
 
@@ -336,7 +337,7 @@ export class UserDatabase implements IUserDatabase {
 
       `);
 
-  
+
 
       const result = stmt.get(blockId);
 
@@ -346,7 +347,7 @@ export class UserDatabase implements IUserDatabase {
 
       }
 
-  
+
 
       return BlockSchema.parse(result);
 

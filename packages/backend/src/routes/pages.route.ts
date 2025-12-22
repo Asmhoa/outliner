@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { SystemDatabase } from '../database/system';
-import { UserDatabase } from '../database/user';
 import { PageNotFoundError, PageAlreadyExistsError, UserDatabaseNotFoundError } from '../database/errors';
+import { getUserDatabase } from '../database/system.provider';
 import { PageCreate, PageRename } from './requests';
 import { Page } from '../database/entities';
 
@@ -9,8 +8,7 @@ const router: Router = Router();
 
 // POST /db/{db_id}/pages - Create a new page
 router.post('/db/:db_id/pages', (req: Request, res: Response) => {
-  let sysDb: SystemDatabase | null = null;
-  let userDb: UserDatabase | null = null;
+  let userDb = null;
   try {
     const { db_id } = req.params;
     const { title } = req.body as PageCreate;
@@ -20,9 +18,7 @@ router.post('/db/:db_id/pages', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Title is required' });
     }
 
-    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const dbInfo = sysDb.getUserDatabaseById(db_id);
-    userDb = new UserDatabase(dbInfo.path);
+    userDb = getUserDatabase(db_id);
 
     const pageId = userDb.addPage(title);
     res.status(200).json({ page_id: pageId });
@@ -36,20 +32,16 @@ router.post('/db/:db_id/pages', (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to create page' });
   } finally {
     userDb?.close();
-    sysDb?.close();
   }
 });
 
 // GET /db/{db_id}/pages/{page_id} - Get a specific page
 router.get('/db/:db_id/pages/:page_id', (req: Request, res: Response) => {
-  let sysDb: SystemDatabase | null = null;
-  let userDb: UserDatabase | null = null;
+  let userDb = null;
   try {
     const { db_id, page_id } = req.params;
 
-    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const dbInfo = sysDb.getUserDatabaseById(db_id);
-    userDb = new UserDatabase(dbInfo.path);
+    userDb = getUserDatabase(db_id);
 
     const page = userDb.getPageById(page_id);
 
@@ -68,20 +60,16 @@ router.get('/db/:db_id/pages/:page_id', (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to retrieve page' });
   } finally {
     userDb?.close();
-    sysDb?.close();
   }
 });
 
 // GET /db/{db_id}/pages - Get all pages
 router.get('/db/:db_id/pages', (req: Request, res: Response) => {
-  let sysDb: SystemDatabase | null = null;
-  let userDb: UserDatabase | null = null;
+  let userDb = null;
   try {
     const { db_id } = req.params;
 
-    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const dbInfo = sysDb.getUserDatabaseById(db_id);
-    userDb = new UserDatabase(dbInfo.path);
+    userDb = getUserDatabase(db_id);
 
     const pages = userDb.getAllPages();
     res.json(pages.map(page => ({
@@ -96,14 +84,12 @@ router.get('/db/:db_id/pages', (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to retrieve pages' });
   } finally {
     userDb?.close();
-    sysDb?.close();
   }
 });
 
 // PUT /db/{db_id}/pages - Rename a page
 router.put('/db/:db_id/pages', (req: Request, res: Response) => {
-  let sysDb: SystemDatabase | null = null;
-  let userDb: UserDatabase | null = null;
+  let userDb = null;
   try {
     const { db_id } = req.params;
     const { page_id, new_title } = req.body as PageRename;
@@ -113,9 +99,7 @@ router.put('/db/:db_id/pages', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'page_id and new_title are required' });
     }
 
-    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const dbInfo = sysDb.getUserDatabaseById(db_id);
-    userDb = new UserDatabase(dbInfo.path);
+    userDb = getUserDatabase(db_id);
 
     userDb.updatePageTitle(page_id, new_title);
 
@@ -133,20 +117,16 @@ router.put('/db/:db_id/pages', (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to rename page' });
   } finally {
     userDb?.close();
-    sysDb?.close();
   }
 });
 
 // DELETE /db/{db_id}/pages/{page_id} - Delete a page
 router.delete('/db/:db_id/pages/:page_id', (req: Request, res: Response) => {
-  let sysDb: SystemDatabase | null = null;
-  let userDb: UserDatabase | null = null;
+  let userDb = null;
   try {
     const { db_id, page_id } = req.params;
 
-    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const dbInfo = sysDb.getUserDatabaseById(db_id);
-    userDb = new UserDatabase(dbInfo.path);
+    userDb = getUserDatabase(db_id);
 
     userDb.deletePage(page_id);
 
@@ -161,7 +141,6 @@ router.delete('/db/:db_id/pages/:page_id', (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to delete page' });
   } finally {
     userDb?.close();
-    sysDb?.close();
   }
 });
 

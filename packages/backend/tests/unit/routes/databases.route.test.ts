@@ -1,51 +1,31 @@
-import { beforeEach, afterEach, describe, expect, test, vi } from 'vitest';
+import { beforeEach, afterEach, describe, expect, test, vi, beforeAll } from 'vitest';
 import request from 'supertest';
-import path from 'path';
-import os from 'os';
-import fs from 'fs';
 import { app } from '../../../src/app'; // Adjust this import path as needed
 import { SystemDatabase } from '../../../src/database/system';
 import { UserDatabase } from '../../../src/database/user';
 import { UserDatabaseInfo } from '../../../src/database/entities';
+import { setupTestSystemDatabase, teardownTestSystemDatabase, DbTestSetup } from '../test-utils/db-test-setup';
+import { SystemDatabaseProvider } from '../../../src/database/system.provider';
 
-// Define paths relative to the test directory
-const TEST_DATA_DIR = path.join(os.tmpdir(), 'outliner-test-data');
-const TEST_SYS_DB_PATH = path.join(TEST_DATA_DIR, 'test_sys.db');
-
-// Mock environment variables
-vi.stubEnv('SYSTEM_DB_PATH', TEST_SYS_DB_PATH);
-
-// Setup test data directory
-beforeEach(() => {
-  fs.mkdirSync(TEST_DATA_DIR, { recursive: true });
-});
-
-afterEach(() => {
-  // Clean up the directory after each test
-  if (fs.existsSync(TEST_DATA_DIR)) {
-    fs.rmSync(TEST_DATA_DIR, { recursive: true, force: true });
-  }
-
-  // Reset any mocked dependencies
-  vi.clearAllMocks();
-});
 
 describe('Database API Routes', () => {
   let sysDb: SystemDatabase;
+  let testSetup: DbTestSetup;
 
   beforeEach(() => {
     // Initialize system database
-    sysDb = new SystemDatabase(TEST_SYS_DB_PATH);
+    testSetup = setupTestSystemDatabase();
+    sysDb = testSetup.sysDb;
   });
 
   afterEach(() => {
-    sysDb.close();
+    teardownTestSystemDatabase(testSetup);
 
-    // Remove the system database file
-    if (fs.existsSync(TEST_SYS_DB_PATH)) {
-      fs.unlinkSync(TEST_SYS_DB_PATH);
-    }
+    // Force provider for routes to make a new instance next time
+    // Needed since each test has a different SYSTEM_DB_PATH
+    SystemDatabaseProvider.closeInstance();
   });
+
 
   test('should get an empty list when no databases exist', async () => {
     const response = await request(app)

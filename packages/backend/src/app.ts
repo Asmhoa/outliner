@@ -6,6 +6,7 @@ import { workspacesRouter } from './routes/workspaces.route';
 import { databasesRouter } from './routes/databases.route';
 import { searchRouter } from './routes/search.route';
 import { errorHandler } from './middleware';
+import { injectSystemDatabase } from './database/system.provider';
 import { PORT } from './config';
 
 const app: express.Application = express();
@@ -18,6 +19,11 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// System database dependency injection
+// Not needed but can reduce code.
+// Might be a bad idea if requests are saved anywhere?
+// app.use(injectSystemDatabase);
 
 // Routes
 app.use(pagesRouter);

@@ -1,10 +1,8 @@
 import BetterSqlite3 from 'better-sqlite3';
-import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
 import { promises as fsPromises } from 'fs';
 import { ISystemDatabase } from './interfaces';
-import { SYSTEM_DB_NAME, TESTING_SYSTEM_DB_NAME } from '../config';
-import { isTestEnv } from '../utils';
+import { SYSTEM_DB_NAME, SYSTEM_DB_PATH } from '../config';
 import { UserDatabaseAlreadyExistsError, UserDatabaseNotFoundError } from './errors';
 import { z } from 'zod';
 
@@ -12,7 +10,6 @@ import {
   UserDatabaseInfo,
   UserDatabaseInfoSchema
 } from './entities';
-import { getDefaultAutoSelectFamily } from 'net';
 
 /**
  * SystemDatabase manages the list of UserDatabases available to the application.
@@ -21,26 +18,16 @@ import { getDefaultAutoSelectFamily } from 'net';
 export class SystemDatabase implements ISystemDatabase {
   private db: BetterSqlite3.Database;
   private readonly TABLE_NAME = 'user_databases';
-  private databasesDir: string;
+  databasesDir: string;
 
-  constructor(dbPath?: string, databasesDir?: string) {
+  constructor(databasesDir?: string) {
     // Define the directory for user databases
-    this.databasesDir = databasesDir || path.join(__dirname, '..', 'databases');
+    this.databasesDir = databasesDir || SYSTEM_DB_PATH();
 
     // Create the databases directory synchronously if it doesn't exist
     // Better to use synchronous fs call in constructor
     require('fs').mkdirSync(this.databasesDir, { recursive: true });
-
-    // Determine if a custom system database path was provided
-    let resolvedDbPath = process.env.OUTLINER_SYS_DB_PATH || dbPath;
-    if (!resolvedDbPath) {
-      if (isTestEnv()) {
-        // Use a different system.db for testing
-        resolvedDbPath = path.join(this.databasesDir, TESTING_SYSTEM_DB_NAME);
-      } else {
-        resolvedDbPath = path.join(this.databasesDir, SYSTEM_DB_NAME);
-      }
-    }
+    let resolvedDbPath = path.join(this.databasesDir, SYSTEM_DB_NAME());
 
     this.db = new BetterSqlite3(resolvedDbPath);
     this.db.pragma('foreign_keys = ON');

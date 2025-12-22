@@ -1,4 +1,4 @@
-import { beforeEach, afterEach, describe, expect, test, vi } from 'vitest';
+import { beforeEach, afterEach, describe, expect, test, vi, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import path from 'path';
 import os from 'os';
@@ -6,39 +6,21 @@ import fs from 'fs';
 import { app } from '../../../src/app'; // Adjust this import path as needed
 import { SystemDatabase } from '../../../src/database/system';
 import { UserDatabase } from '../../../src/database/user';
-
-// Define paths relative to the test directory
-const TEST_DATA_DIR = path.join(os.tmpdir(), 'outliner-test-data');
-const TEST_USER_DB_PATH = path.join(TEST_DATA_DIR, 'test_search.db');
-const TEST_SYS_DB_PATH = path.join(TEST_DATA_DIR, 'test_sys.db');
-let testDatabaseId: string | null = null;
-
-// Mock environment variables
-vi.stubEnv('SYSTEM_DB_PATH', TEST_SYS_DB_PATH);
-
-// Setup test data directory
-beforeEach(() => {
-  fs.mkdirSync(TEST_DATA_DIR, { recursive: true });
-});
-
-afterEach(() => {
-  // Clean up the directory after each test
-  if (fs.existsSync(TEST_DATA_DIR)) {
-    fs.rmSync(TEST_DATA_DIR, { recursive: true, force: true });
-  }
-
-  // Reset any mocked dependencies
-  vi.clearAllMocks();
-});
+import { setupTestSystemDatabase, teardownTestSystemDatabase, DbTestSetup } from '../../test-utils/db-test-setup';
 
 describe('Search API Routes', () => {
   let sysDb: SystemDatabase;
+  let testSetup: DbTestSetup;
   let testDb: UserDatabase;
+  let testDatabaseId: string;
+
+  beforeAll(() => {
+    // Initialize system database
+    testSetup = setupTestSystemDatabase();
+    sysDb = testSetup.sysDb;
+  });
 
   beforeEach(() => {
-    // Initialize system database
-    sysDb = new SystemDatabase(TEST_SYS_DB_PATH);
-
     // Add the test database and capture its ID
     sysDb.addUserDatabase('test_search_db');
     const dbInfo = sysDb.getUserDatabaseByName('test_search_db');
@@ -47,7 +29,7 @@ describe('Search API Routes', () => {
     }
 
     // Create user database
-    testDb = new UserDatabase(TEST_USER_DB_PATH);
+    testDb = new UserDatabase(dbInfo.path);
     testDb.initializeTables();
 
     // Create some test data for search
@@ -65,17 +47,19 @@ describe('Search API Routes', () => {
 
   afterEach(() => {
     testDb.close();
-    sysDb.close();
 
     // Delete the test database from system DB
     if (testDatabaseId) {
+      const dbInfo = sysDb.getUserDatabaseById(testDatabaseId);
+      if (fs.existsSync(dbInfo.path)) {
+        fs.unlinkSync(dbInfo.path);
+      }
       sysDb.deleteUserDatabase(testDatabaseId);
     }
+  });
 
-    // Remove the user database file
-    if (fs.existsSync(TEST_USER_DB_PATH)) {
-      fs.unlinkSync(TEST_USER_DB_PATH);
-    }
+  afterAll(() => {
+    teardownTestSystemDatabase(testSetup);
   });
 
   test('should search pages endpoint successfully', async () => {

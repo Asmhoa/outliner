@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { SystemDatabase } from '../database/system';
-import { UserDatabase } from '../database/user';
 import { UserDatabaseNotFoundError } from '../database/errors';
+import { getUserDatabase } from '../database/system.provider';
 import { SearchRequest } from './requests';
 import { Page, Block } from '../database/entities';
 
@@ -9,8 +8,7 @@ const router: Router = Router();
 
 // POST /db/{db_id}/search - Search for pages and/or blocks
 router.post('/db/:db_id/search', (req: Request, res: Response) => {
-  let sysDb: SystemDatabase | null = null;
-  let userDb: UserDatabase | null = null;
+  let userDb = null;
   try {
     const { db_id } = req.params;
     const { query, limit = 10, search_type = "all", advanced = false } = req.body as SearchRequest;
@@ -20,9 +18,7 @@ router.post('/db/:db_id/search', (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Query is required' });
     }
 
-    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const dbInfo = sysDb.getUserDatabaseById(db_id);
-    userDb = new UserDatabase(dbInfo.path);
+    userDb = getUserDatabase(db_id);
 
     // Determine whether to escape special characters based on advanced mode
     const escapeSpecialChars = !advanced;
@@ -69,20 +65,16 @@ router.post('/db/:db_id/search', (req: Request, res: Response) => {
     res.status(500).json({ error: `Search failed: ${error}` });
   } finally {
     userDb?.close();
-    sysDb?.close();
   }
 });
 
 // POST /db/{db_id}/rebuild-search - Rebuild the search index
 router.post('/db/:db_id/rebuild-search', (req: Request, res: Response) => {
-  let sysDb: SystemDatabase | null = null;
-  let userDb: UserDatabase | null = null;
+  let userDb = null;
   try {
     const { db_id } = req.params;
 
-    sysDb = new SystemDatabase(process.env.SYSTEM_DB_PATH || 'system.db');
-    const dbInfo = sysDb.getUserDatabaseById(db_id);
-    userDb = new UserDatabase(dbInfo.path);
+    userDb = getUserDatabase(db_id);
 
     // Rebuild the search index
     userDb.rebuildSearch();
@@ -95,7 +87,6 @@ router.post('/db/:db_id/rebuild-search', (req: Request, res: Response) => {
     res.status(500).json({ error: `Rebuild search failed: ${error}` });
   } finally {
     userDb?.close();
-    sysDb?.close();
   }
 });
 
