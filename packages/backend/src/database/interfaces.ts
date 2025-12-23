@@ -39,7 +39,7 @@ export interface IUserDatabase extends IDatabaseConnection {
   deletePage(id: string): void;
 
   // Methods for block operations
-  addBlock(content: string, position: number, type: string, pageId?: string, parentBlockId?: string): string; // Returns block ID
+  addBlock(content: string, type: string, options: { position: number, pageId?: string, parentBlockId?: string }): string; // Returns block ID
   getBlockById(id: string): Block;
   getBlocksByPageId(pageId: string): Block[];
   updateBlockContent(id: string, newContent: string): void;

@@ -113,7 +113,7 @@ describe('UserDatabase', () => {
 
   test('addBlock should add a block to a page', () => {
     const pageId = db.addPage('Test Page');
-    const blockId = db.addBlock('Test Block', 1, 'text', pageId);
+    const blockId = db.addBlock('Test Block', 'text', { position: 1, pageId });
 
     expect(typeof blockId).toBe('string');
 
@@ -123,8 +123,8 @@ describe('UserDatabase', () => {
 
   test('addBlock should add a block as a child of another block', () => {
     const pageId = db.addPage('Test Page');
-    const parentBlockId = db.addBlock('Parent Block', 1, 'text', pageId);
-    const childBlockId = db.addBlock('Child Block', 1, 'text', undefined, parentBlockId);
+    const parentBlockId = db.addBlock('Parent Block', 'text', { position: 1, pageId });
+    const childBlockId = db.addBlock('Child Block', 'text', { position: 1, parentBlockId });
 
     expect(typeof childBlockId).toBe('string');
 
@@ -135,16 +135,16 @@ describe('UserDatabase', () => {
 
   test('addBlock should throw error when adding block with both page_id and parent_block_id', () => {
     const pageId = db.addPage('Test Page');
-    const parentBlockId = db.addBlock('Parent Block', 1, 'text', pageId);
+    const parentBlockId = db.addBlock('Parent Block', 'text', { position: 1, pageId });
 
     expect(() => {
-      db.addBlock('Test Block', 1, 'text', pageId, parentBlockId);
+      db.addBlock('Test Block', 'text', { position: 1, pageId, parentBlockId });
     }).toThrow(/A block must be associated with either a page_id or a parent_block_id, but not both/);
   });
 
   test('deleteBlock should delete a block', () => {
     const pageId = db.addPage('Test Page');
-    const blockId = db.addBlock('Test Block', 1, 'text', pageId);
+    const blockId = db.addBlock('Test Block', 'text', { position: 1, pageId });
 
     db.deleteBlock(blockId);
 
@@ -162,7 +162,7 @@ describe('UserDatabase', () => {
 
   test('deletePage should cascade delete its blocks', () => {
     const pageId = db.addPage('Test Page');
-    const blockId = db.addBlock('Test Block', 1, 'text', pageId);
+    const blockId = db.addBlock('Test Block', 'text', { position: 1, pageId });
 
     db.deletePage(pageId);
 
@@ -174,8 +174,8 @@ describe('UserDatabase', () => {
 
   test('deleteBlock should cascade delete its child blocks', () => {
     const pageId = db.addPage('Test Page');
-    const parentBlockId = db.addBlock('Parent Block', 1, 'text', pageId);
-    const childBlockId = db.addBlock('Child Block', 1, 'text', undefined, parentBlockId);
+    const parentBlockId = db.addBlock('Parent Block', 'text', { position: 1, pageId });
+    const childBlockId = db.addBlock('Child Block', 'text', { position: 1, parentBlockId });
 
     db.deleteBlock(parentBlockId);
 
@@ -187,7 +187,7 @@ describe('UserDatabase', () => {
 
   test('updateBlockContent should update the content of a block', () => {
     const pageId = db.addPage('Test Page');
-    const blockId = db.addBlock('Original Content', 1, 'text', pageId);
+    const blockId = db.addBlock('Original Content', 'text', { position: 1, pageId });
 
     // Update the content
     db.updateBlockContent(blockId, 'New Content');
@@ -206,7 +206,7 @@ describe('UserDatabase', () => {
   test('updateBlockParent should update a block\'s parent to a different page', () => {
     const pageId1 = db.addPage('Page One');
     const pageId2 = db.addPage('Page Two');
-    const blockId = db.addBlock('Block on Page One', 1, 'text', pageId1);
+    const blockId = db.addBlock('Block on Page One', 'text', { position: 1, pageId: pageId1 });
 
     // Move the block to a different page
     db.updateBlockParent(blockId, pageId2);
@@ -219,9 +219,9 @@ describe('UserDatabase', () => {
 
   test('updateBlockParent should update a block\'s parent to a different block', () => {
     const pageId = db.addPage('Test Page');
-    const parentBlockId1 = db.addBlock('Parent Block One', 1, 'text', pageId);
-    const parentBlockId2 = db.addBlock('Parent Block Two', 2, 'text', pageId);
-    const blockId = db.addBlock('Child Block', 1, 'text', undefined, parentBlockId1);
+    const parentBlockId1 = db.addBlock('Parent Block One', 'text', { position: 1, pageId });
+    const parentBlockId2 = db.addBlock('Parent Block Two', 'text', { position: 2, pageId });
+    const blockId = db.addBlock('Child Block', 'text', { position: 1, parentBlockId: parentBlockId1 });
 
     // Change the parent to the second parent block
     db.updateBlockParent(blockId, undefined, parentBlockId2);
@@ -234,8 +234,8 @@ describe('UserDatabase', () => {
 
   test('updateBlockParent should move a block from a page to be a child of another block', () => {
     const pageId = db.addPage('Test Page');
-    const parentBlockId = db.addBlock('Parent Block', 1, 'text', pageId);
-    const blockId = db.addBlock('Block on Page', 1, 'text', pageId);
+    const parentBlockId = db.addBlock('Parent Block', 'text', { position: 1, pageId });
+    const blockId = db.addBlock('Block on Page', 'text', { position: 1, pageId });
 
     // Move the block to be a child of another block
     db.updateBlockParent(blockId, undefined, parentBlockId);
@@ -249,8 +249,8 @@ describe('UserDatabase', () => {
   test('updateBlockParent should move a block from a parent block to be directly under a page', () => {
     const pageId1 = db.addPage('Page One');
     const pageId2 = db.addPage('Page Two');
-    const parentBlockId = db.addBlock('Parent Block', 1, 'text', pageId1);
-    const blockId = db.addBlock('Child Block', 1, 'text', undefined, parentBlockId);
+    const parentBlockId = db.addBlock('Parent Block', 'text', { position: 1, pageId: pageId1 });
+    const blockId = db.addBlock('Child Block', 'text', { position: 1, parentBlockId });
 
     // Move the block to a different page
     db.updateBlockParent(blockId, pageId2);
@@ -263,7 +263,7 @@ describe('UserDatabase', () => {
 
   test('updateBlockParent should throw error when updating block parent with both page_id and parent_block_id', () => {
     const pageId = db.addPage('Test Page');
-    const blockId = db.addBlock('Test Block', 1, 'text', pageId);
+    const blockId = db.addBlock('Test Block', 'text', { position: 1, pageId });
 
     expect(() => {
       db.updateBlockParent(blockId, pageId, blockId);
@@ -272,7 +272,7 @@ describe('UserDatabase', () => {
 
   test('updateBlockParent should throw error when updating block parent with neither page_id nor parent_block_id', () => {
     const pageId = db.addPage('Test Page');
-    const blockId = db.addBlock('Test Block', 1, 'text', pageId);
+    const blockId = db.addBlock('Test Block', 'text', { position: 1, pageId });
 
     expect(() => {
       db.updateBlockParent(blockId);
@@ -468,9 +468,9 @@ describe('UserDatabaseFTS', () => {
 
   test('searchBlocks should find blocks with exact content match', () => {
     const pageId = db.addPage('Test Page');
-    const blockId1 = db.addBlock('Learning Python is fun', 1, 'text', pageId);
-    const blockId2 = db.addBlock('JavaScript is powerful', 2, 'text', pageId);
-    const blockId3 = db.addBlock('Python data science', 3, 'text', pageId);
+    const blockId1 = db.addBlock('Learning Python is fun', 'text', { position: 1, pageId });
+    const blockId2 = db.addBlock('JavaScript is powerful', 'text', { position: 2, pageId });
+    const blockId3 = db.addBlock('Python data science', 'text', { position: 3, pageId });
 
     // Search for an exact match
     const results = db.searchBlocks('Python');
@@ -483,9 +483,9 @@ describe('UserDatabaseFTS', () => {
 
   test('searchBlocks should find blocks with partial content match', () => {
     const pageId = db.addPage('Test Page');
-    const blockId1 = db.addBlock('Getting started with Python programming', 1, 'text', pageId);
-    const blockId2 = db.addBlock('Advanced JavaScript concepts', 2, 'text', pageId);
-    const blockId3 = db.addBlock('Python machine learning tutorial', 3, 'text', pageId);
+    const blockId1 = db.addBlock('Getting started with Python programming', 'text', { position: 1, pageId });
+    const blockId2 = db.addBlock('Advanced JavaScript concepts', 'text', { position: 2, pageId });
+    const blockId3 = db.addBlock('Python machine learning tutorial', 'text', { position: 3, pageId });
 
     // Search for blocks containing "Python"
     const results = db.searchBlocks('Python');
@@ -497,9 +497,9 @@ describe('UserDatabaseFTS', () => {
 
   test('searchBlocks should find blocks with multiple search terms', () => {
     const pageId = db.addPage('Test Page');
-    const blockId1 = db.addBlock('Introduction to Python Programming', 1, 'text', pageId);
-    const blockId2 = db.addBlock('Advanced JavaScript', 2, 'text', pageId);
-    const blockId3 = db.addBlock('Python Machine Learning', 3, 'text', pageId);
+    const blockId1 = db.addBlock('Introduction to Python Programming', 'text', { position: 1, pageId });
+    const blockId2 = db.addBlock('Advanced JavaScript', 'text', { position: 2, pageId });
+    const blockId3 = db.addBlock('Python Machine Learning', 'text', { position: 3, pageId });
 
     // Search for blocks containing both "Python" and "Programming"
     const results = db.searchBlocks('Python Programming');
@@ -510,9 +510,9 @@ describe('UserDatabaseFTS', () => {
 
   test('searchBlocks should work with phrase matching', () => {
     const pageId = db.addPage('Test Page');
-    const blockId1 = db.addBlock('Introduction to Python Programming', 1, 'text', pageId);
-    const blockId2 = db.addBlock('Advanced Python Concepts', 2, 'text', pageId);
-    const blockId3 = db.addBlock('Python Programming Guide', 3, 'text', pageId);
+    const blockId1 = db.addBlock('Introduction to Python Programming', 'text', { position: 1, pageId });
+    const blockId2 = db.addBlock('Advanced Python Concepts', 'text', { position: 2, pageId });
+    const blockId3 = db.addBlock('Python Programming Guide', 'text', { position: 3, pageId });
 
     // Search for blocks containing the exact phrase "Python Programming"
     const results = db.searchBlocks('"Python Programming"');
@@ -525,8 +525,8 @@ describe('UserDatabaseFTS', () => {
 
   test('searchBlocks should return no results when nothing matches', () => {
     const pageId = db.addPage('Test Page');
-    db.addBlock('Learning Python is fun', 1, 'text', pageId);
-    db.addBlock('JavaScript is powerful', 2, 'text', pageId);
+    db.addBlock('Learning Python is fun', 'text', { position: 1, pageId });
+    db.addBlock('JavaScript is powerful', 'text', { position: 2, pageId });
 
     // Search for a term that doesn't exist
     const results = db.searchBlocks('Nonexistent');
@@ -537,7 +537,7 @@ describe('UserDatabaseFTS', () => {
     const pageId = db.addPage('Test Page');
     // Add several blocks that match the search term
     for (let i = 0; i < 15; i++) {
-      db.addBlock(`Python tutorial part ${i}`, i + 1, 'text', pageId);
+      db.addBlock(`Python tutorial part ${i}`, 'text', { position: i + 1, pageId });
     }
 
     // Search with a limit of 5
@@ -547,8 +547,8 @@ describe('UserDatabaseFTS', () => {
 
   test('searchBlocks should be case insensitive', () => {
     const pageId = db.addPage('Test Page');
-    const blockId1 = db.addBlock('Learning Python is Fun', 1, 'text', pageId);
-    db.addBlock('JavaScript is powerful', 2, 'text', pageId);
+    const blockId1 = db.addBlock('Learning Python is Fun', 'text', { position: 1, pageId });
+    db.addBlock('JavaScript is powerful', 'text', { position: 2, pageId });
 
     // Search using different case
     let results = db.searchBlocks('python');
@@ -564,8 +564,8 @@ describe('UserDatabaseFTS', () => {
 
   test('searchBlocks should find blocks in nested block structures', () => {
     const pageId = db.addPage('Test Page');
-    const parentBlockId = db.addBlock('Parent block with Python content', 1, 'text', pageId);
-    const childBlockId = db.addBlock('Child block with JavaScript content', 1, 'text', undefined, parentBlockId);
+    const parentBlockId = db.addBlock('Parent block with Python content', 'text', { position: 1, pageId });
+    const childBlockId = db.addBlock('Child block with JavaScript content', 'text', { position: 1, parentBlockId });
 
     // Search for blocks containing "Python"
     const results = db.searchBlocks('Python');
@@ -583,8 +583,8 @@ describe('UserDatabaseFTS', () => {
   test('searchAll should find both pages and blocks', () => {
     const pageId1 = db.addPage('Python Tutorial');
     const pageId2 = db.addPage('JavaScript Guide');
-    const blockId1 = db.addBlock('Learning Python is fun', 1, 'text', pageId1);
-    const blockId2 = db.addBlock('Advanced JavaScript concepts', 2, 'text', pageId2);
+    const blockId1 = db.addBlock('Learning Python is fun', 'text', { position: 1, pageId: pageId1 });
+    const blockId2 = db.addBlock('Advanced JavaScript concepts', 'text', { position: 2, pageId: pageId2 });
 
     // Search for term that appears in both page titles and block content
     const [pages, blocks] = db.searchAll('Python');
@@ -597,8 +597,8 @@ describe('UserDatabaseFTS', () => {
   test('searchAll should work when query matches only pages', () => {
     const pageId1 = db.addPage('Python Tutorial');
     db.addPage('Java Guide');
-    db.addBlock('Learning JavaScript is fun', 1, 'text', pageId1);
-    db.addBlock('Advanced JavaScript concepts', 2, 'text', pageId1);
+    db.addBlock('Learning JavaScript is fun', 'text', { position: 1, pageId: pageId1 });
+    db.addBlock('Advanced JavaScript concepts', 'text', { position: 2, pageId: pageId1 });
 
     // Search for term that appears only in page titles
     const [pages, blocks] = db.searchAll('Python');
@@ -610,8 +610,8 @@ describe('UserDatabaseFTS', () => {
   test('searchAll should work when query matches only blocks', () => {
     const pageId1 = db.addPage('Tutorial');
     db.addPage('Guide');
-    const blockId1 = db.addBlock('Learning Python is fun', 1, 'text', pageId1);
-    db.addBlock('Advanced JavaScript concepts', 2, 'text', pageId1);
+    const blockId1 = db.addBlock('Learning Python is fun', 'text', { position: 1, pageId: pageId1 });
+    db.addBlock('Advanced JavaScript concepts', 'text', { position: 2, pageId: pageId1 });
 
     // Search for term that appears only in block content
     const [pages, blocks] = db.searchAll('Python');
@@ -642,7 +642,7 @@ describe('UserDatabaseFTS', () => {
 
   test('searchBlocks should update correctly after content update', () => {
     const pageId = db.addPage('Test Page');
-    const blockId = db.addBlock('Old content with Python', 1, 'text', pageId);
+    const blockId = db.addBlock('Old content with Python', 'text', { position: 1, pageId });
 
     // Initially, should find the block
     let results = db.searchBlocks('Python');
@@ -680,7 +680,7 @@ describe('UserDatabaseFTS', () => {
 
   test('searchBlocks should update correctly after deletion', () => {
     const pageId = db.addPage('Test Page');
-    const blockId = db.addBlock('Content with Python', 1, 'text', pageId);
+    const blockId = db.addBlock('Content with Python', 'text', { position: 1, pageId });
 
     // Initially, should find the block
     let results = db.searchBlocks('Python');
@@ -709,7 +709,7 @@ describe('UserDatabaseFTS', () => {
     expect(results[0].page_id).toBe(pageId);
 
     // Add a block
-    const blockId = db.addBlock('Advanced Python techniques', 1, 'text', pageId);
+    const blockId = db.addBlock('Advanced Python techniques', 'text', { position: 1, pageId });
 
     // Block should be searchable
     results = db.searchBlocks('Python');
@@ -719,7 +719,7 @@ describe('UserDatabaseFTS', () => {
 
   test('search should work with special characters', () => {
     const pageId = db.addPage('Python & JavaScript Tutorial');
-    const blockId = db.addBlock("Tips: 'Advanced Python' techniques", 1, 'text', pageId);
+    const blockId = db.addBlock("Tips: 'Advanced Python' techniques", 'text', { position: 1, pageId });
 
     // Search with ampersand
     let results = db.searchPages('Python & JavaScript');
@@ -740,7 +740,7 @@ describe('UserDatabaseFTS', () => {
   test('search with empty query should return empty results', () => {
     db.addPage('Python Tutorial');
     const pageId = db.addPage('JavaScript Guide');
-    const blockId = db.addBlock('Learning Python is fun', 1, 'text', pageId);
+    const blockId = db.addBlock('Learning Python is fun', 'text', { position: 1, pageId });
 
     // Empty search should return empty results
     const [pages, blocks] = db.searchAll('');
@@ -753,7 +753,7 @@ describe('UserDatabaseFTS', () => {
     const page2_id = db.addPage('Python Advanced Topics');
 
     for (let i = 0; i < 10; i++) {
-      db.addBlock(`Python concept ${i}`, i + 1, 'text', page1_id);
+      db.addBlock(`Python concept ${i}`, 'text', { position: i + 1, pageId: page1_id });
     }
 
     // Search with limit - should apply separately to pages and blocks

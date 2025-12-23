@@ -39,10 +39,10 @@ describe('Search API Routes', () => {
     const page3 = testDb.addPage("Machine Learning Basics");
 
     // Add blocks to pages
-    testDb.addBlock("Learning Python is fun and powerful", 0, { page_id: page1 });
-    testDb.addBlock("JavaScript enables interactive web pages", 0, { page_id: page2 });
-    testDb.addBlock("Machine Learning uses algorithms and statistical models", 0, { page_id: page3 });
-    testDb.addBlock("Python has great libraries for data science", 1, { page_id: page1 });
+    testDb.addBlock("Learning Python is fun and powerful", "text", { position: 0, pageId: page1 });
+    testDb.addBlock("JavaScript enables interactive web pages", "text", { position: 0, pageId: page2 });
+    testDb.addBlock("Machine Learning uses algorithms and statistical models", "text", { position: 0, pageId: page3 });
+    testDb.addBlock("Python has great libraries for data science", "text", { position: 1, pageId: page1 });
   });
 
   afterEach(() => {
@@ -150,7 +150,7 @@ describe('Search API Routes', () => {
     // First, add more test data to have enough results
     for (let i = 0; i < 5; i++) {
       const newPageId = testDb.addPage(`Test Page ${i} Python`);
-      testDb.addBlock(`Test block content ${i} with Python`, 0, { page_id: newPageId });
+      testDb.addBlock(`Test block content ${i} with Python`, "text", { position: 0, pageId: newPageId });
     }
 
     const searchRequest = {

@@ -257,101 +257,57 @@ export class UserDatabase implements IUserDatabase {
     }
   }
 
-    /**
+  /**
+   * Add a new block to the database
+   */
+  addBlock(content: string, type: string, options: { position: number, pageId?: string, parentBlockId?: string }): string {
+    const { position, pageId, parentBlockId } = options;
 
-     * Add a new block to the database
-
-     */
-
-    addBlock(content: string, position: number, type: string = 'text', pageId?: string, parentBlockId?: string): string {
-
-      if (pageId !== undefined && parentBlockId !== undefined) {
-
-        throw new Error("A block must be associated with either a page_id or a parent_block_id, but not both.");
-
-      }
-
-
-
-      let result: { block_id: string } | undefined;
-
-
-
-      if (pageId !== undefined) {
-
-        const stmt = this.db.prepare(`
-
-          INSERT INTO blocks (content, position, type, page_id) VALUES (?, ?, ?, ?) RETURNING block_id
-
-        `);
-
-        result = stmt.get(content, position, type, pageId) as { block_id: string };
-
-      } else if (parentBlockId !== undefined) {
-
-        const stmt = this.db.prepare(`
-
-          INSERT INTO blocks (content, position, type, parent_block_id) VALUES (?, ?, ?, ?) RETURNING block_id
-
-        `);
-
-        result = stmt.get(content, position, type, parentBlockId) as { block_id: string };
-
-      } else {
-
-        // Block without parent - both pageId and parentBlockId are undefined
-
-        const stmt = this.db.prepare(`
-
-          INSERT INTO blocks (content, position, type) VALUES (?, ?, ?) RETURNING block_id
-
-        `);
-
-        result = stmt.get(content, position, type) as { block_id: string };
-
-      }
-
-
-
-      return result.block_id;
-
+    if (pageId !== undefined && parentBlockId !== undefined) {
+      throw new Error("A block must be associated with either a page_id or a parent_block_id, but not both.");
     }
 
+    if (pageId === undefined && parentBlockId === undefined) {
+      throw new Error("A block must be associated with either a page_id or a parent_block_id - both cannot be undefined.");
+    }
 
+    let result: { block_id: string } | undefined;
 
-    /**
-
-     * Get a block by its ID
-
-     */
-
-    getBlockById(blockId: string): Block {
-
+    if (pageId !== undefined) {
       const stmt = this.db.prepare(`
-
-        SELECT block_id, content, page_id, parent_block_id, position, type, created_at
-
-        FROM blocks
-
-        WHERE block_id = ?
-
+        INSERT INTO blocks (content, position, type, page_id) VALUES (?, ?, ?, ?) RETURNING block_id
       `);
-
-
-
-      const result = stmt.get(blockId);
-
-      if (!result) {
-
-        throw new BlockNotFoundError(`Block with ID ${blockId} not found`);
-
-      }
-
-
-
-      return BlockSchema.parse(result);
-
+      result = stmt.get(content, position, type, pageId) as { block_id: string };
+    } else {
+      // parentBlockId !== undefined
+      const stmt = this.db.prepare(`
+        INSERT INTO blocks (content, position, type, parent_block_id) VALUES (?, ?, ?, ?) RETURNING block_id
+      `);
+      result = stmt.get(content, position, type, parentBlockId) as { block_id: string };
     }
+
+    return result.block_id;
+  }
+
+
+
+  /**
+   * Get a block by its ID
+   */
+  getBlockById(blockId: string): Block {
+    const stmt = this.db.prepare(`
+      SELECT block_id, content, page_id, parent_block_id, position, type, created_at
+      FROM blocks
+      WHERE block_id = ?
+    `);
+
+    const result = stmt.get(blockId);
+    if (!result) {
+      throw new BlockNotFoundError(`Block with ID ${blockId} not found`);
+    }
+
+    return BlockSchema.parse(result);
+  }
 
   /**
    * Get all blocks associated with a specific page

@@ -71,18 +71,18 @@ describe('Block API Routes', () => {
     expect(blockId.length).toBeGreaterThan(0);
 
     // Verify the block exists in the database
-    const blockData = testDb.getBlockContentById(blockId);
+    const blockData = testDb.getBlockById(blockId);
     expect(blockData).toBeDefined();
-    expect(blockData?.content).toBe('Test Block');
-    expect(blockData?.page_id).toBe(pageId);
-    expect(blockData?.parent_block_id).toBeNull();
-    expect(blockData?.position).toBe(1);
+    expect(blockData.content).toBe('Test Block');
+    expect(blockData.page_id).toBe(pageId);
+    expect(blockData.parent_block_id).toBeNull();
+    expect(blockData.position).toBe(1);
   });
 
   test('should get a block by ID successfully', async () => {
     // Create a page and block first
     const pageId = testDb.addPage('Test Page');
-    const blockId = testDb.addBlock('Test Block', 1, { page_id: pageId });
+    const blockId = testDb.addBlock('Test Block', 'text', { position: 1, pageId: pageId });
 
     const response = await request(app)
       .get(`/db/${testDatabaseId}/block/${blockId}`)
@@ -108,8 +108,8 @@ describe('Block API Routes', () => {
   test('should get all blocks for a page successfully', async () => {
     // Create a page and some blocks that are directly associated with the page
     const pageId = testDb.addPage('Test Page');
-    const block1Id = testDb.addBlock('Block 1', 1, { page_id: pageId });
-    const block2Id = testDb.addBlock('Block 2', 2, { page_id: pageId });
+    const block1Id = testDb.addBlock('Block 1', 'text', { position: 1, pageId: pageId });
+    const block2Id = testDb.addBlock('Block 2', 'text', { position: 2, pageId: pageId });
 
     const response = await request(app)
       .get(`/db/${testDatabaseId}/blocks/${pageId}`)
@@ -141,7 +141,7 @@ describe('Block API Routes', () => {
   test('should update block content successfully', async () => {
     // Create a page and block first
     const pageId = testDb.addPage('Test Page');
-    const blockId = testDb.addBlock('Original Content', 1, { page_id: pageId });
+    const blockId = testDb.addBlock('Original Content', 'text', { position: 1, pageId: pageId });
 
     const response = await request(app)
       .put(`/db/${testDatabaseId}/blocks/content`)
@@ -154,9 +154,9 @@ describe('Block API Routes', () => {
     expect(response.body).toEqual({ status: 'success' });
 
     // Verify the block content was updated in the database
-    const blockData = testDb.getBlockContentById(blockId);
+    const blockData = testDb.getBlockById(blockId);
     expect(blockData).toBeDefined();
-    expect(blockData?.content).toBe('Updated Content');
+    expect(blockData.content).toBe('Updated Content');
   });
 
   test('should return 404 when updating content of a non-existent block', async () => {
@@ -174,7 +174,7 @@ describe('Block API Routes', () => {
   test('should update block parent successfully', async () => {
     // Create a page and two blocks first
     const pageId = testDb.addPage('Test Page');
-    const blockId = testDb.addBlock('Test Block', 1, { page_id: pageId });
+    const blockId = testDb.addBlock('Test Block', 'text', { position: 1, pageId: pageId });
     const newPageId = testDb.addPage('New Page');
 
     const response = await request(app)
@@ -188,16 +188,16 @@ describe('Block API Routes', () => {
     expect(response.body).toEqual({ status: 'success' });
 
     // Verify the block parent was updated in the database
-    const blockData = testDb.getBlockContentById(blockId);
+    const blockData = testDb.getBlockById(blockId);
     expect(blockData).toBeDefined();
-    expect(blockData?.page_id).toBe(newPageId); // Should be on the new page
-    expect(blockData?.parent_block_id).toBeNull(); // Parent should be None (not a child block)
+    expect(blockData.page_id).toBe(newPageId); // Should be on the new page
+    expect(blockData.parent_block_id).toBeNull(); // Parent should be None (not a child block)
   });
 
   test('should delete a block successfully', async () => {
     // Create a page and block first
     const pageId = testDb.addPage('Test Page');
-    const blockId = testDb.addBlock('Test Block', 1, { page_id: pageId });
+    const blockId = testDb.addBlock('Test Block', 'text', { position: 1, pageId: pageId });
 
     const response = await request(app)
       .delete(`/db/${testDatabaseId}/blocks/${blockId}`)
@@ -207,7 +207,7 @@ describe('Block API Routes', () => {
 
     // Verify the block was deleted from the database
     try {
-      testDb.getBlockContentById(blockId);
+      testDb.getBlockById(blockId);
       // If we reach this line, the block wasn't deleted
       expect(true).toBe(false); // This should not happen
     } catch (error) {
@@ -238,7 +238,7 @@ describe('Block API Routes', () => {
   test('should update block content with special characters', async () => {
     // Create a page and block first
     const pageId = testDb.addPage('Test Page');
-    const blockId = testDb.addBlock('Original Content', 1, { page_id: pageId });
+    const blockId = testDb.addBlock('Original Content', 'text', { position: 1, pageId: pageId });
 
     const specialContent = 'Special chars: !@#$%^&*()_+-={}|\\:"\'<>?,./';
     const response = await request(app)
@@ -252,15 +252,15 @@ describe('Block API Routes', () => {
     expect(response.body).toEqual({ status: 'success' });
 
     // Verify the block content was updated in the database
-    const blockData = testDb.getBlockContentById(blockId);
+    const blockData = testDb.getBlockById(blockId);
     expect(blockData).toBeDefined();
-    expect(blockData?.content).toBe(specialContent);
+    expect(blockData.content).toBe(specialContent);
   });
 
   test('should add a block with parent successfully', async () => {
     // Create a page and parent block first
     const pageId = testDb.addPage('Test Page');
-    const parentBlockId = testDb.addBlock('Parent Block', 1, { page_id: pageId });
+    const parentBlockId = testDb.addBlock('Parent Block', 'text', { position: 1, pageId: pageId });
 
     // First add the child block to the page
     let response = await request(app)
@@ -280,12 +280,12 @@ describe('Block API Routes', () => {
     expect(blockId.length).toBeGreaterThan(0);
 
     // Verify the block exists in the database (initially associated with the page)
-    let blockData = testDb.getBlockContentById(blockId);
+    let blockData = testDb.getBlockById(blockId);
     expect(blockData).toBeDefined();
-    expect(blockData?.content).toBe('Child Block');
-    expect(blockData?.page_id).toBe(pageId); // Initially associated with the page
-    expect(blockData?.parent_block_id).toBeNull(); // Initially no parent block
-    expect(blockData?.position).toBe(2);
+    expect(blockData.content).toBe('Child Block');
+    expect(blockData.page_id).toBe(pageId); // Initially associated with the page
+    expect(blockData.parent_block_id).toBeNull(); // Initially no parent block
+    expect(blockData.position).toBe(2);
 
     // Now update the block's parent to be the parent_block
     response = await request(app)
@@ -299,10 +299,10 @@ describe('Block API Routes', () => {
     expect(response.body).toEqual({ status: 'success' });
 
     // Verify the block was updated with the correct parent
-    blockData = testDb.getBlockContentById(blockId);
+    blockData = testDb.getBlockById(blockId);
     expect(blockData).toBeDefined();
-    expect(blockData?.content).toBe('Child Block');
-    expect(blockData?.page_id).toBeNull(); // Should no longer be directly associated with page
-    expect(blockData?.parent_block_id).toBe(parentBlockId); // Should have the correct parent
+    expect(blockData.content).toBe('Child Block');
+    expect(blockData.page_id).toBeNull(); // Should no longer be directly associated with page
+    expect(blockData.parent_block_id).toBe(parentBlockId); // Should have the correct parent
   });
 });

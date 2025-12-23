@@ -25,7 +25,7 @@ router.post('/db/:db_id/blocks', (req: Request, res: Response) => {
 
     userDb = getUserDatabase(db_id);
 
-    const blockId = userDb.addBlock(content, position, type, page_id, parent_block_id);
+    const blockId = userDb.addBlock(content, type, { position, pageId: page_id, parentBlockId: parent_block_id });
     res.status(200).json({
       block_id: blockId,
       content,
