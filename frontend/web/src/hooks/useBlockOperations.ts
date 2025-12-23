@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { showNotification } from "@mantine/notifications";
 import { useDatabase } from "./useDatabase";
 import apiService from "../services";
-import { type BlockUpdatePosition } from "../api-client";
+import { type BlockUpdatePosition } from "../services/APIService";
 
 export const useBlockOperations = () => {
   const { dbId } = useDatabase();

@@ -1,6 +1,6 @@
 import React from 'react';
 import Block from '../block/Block';
-import { type Block as BlockType } from '../../api-client';
+import { type Block as BlockType } from '../../services/APIService';
 
 interface PageContentProps {
   blocks: BlockType[];

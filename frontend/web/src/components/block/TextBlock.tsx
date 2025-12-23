@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from 'react-markdown';
 // For future extensions: import remarkGfm from 'remark-gfm';  // npm install remark-gfm
 import apiService from "../../services";
-import { type BlockUpdateContent } from "../../api-client";
+import { type BlockUpdateContent } from "../../services/APIService";
 import log from "../../utils/logger";
 import { useDatabase } from "../../hooks/useDatabase";
 import { useBlockEditing } from "../../contexts/BlockEditingContext";

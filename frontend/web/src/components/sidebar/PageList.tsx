@@ -1,7 +1,7 @@
 import { Text } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import { useDatabase } from "../../hooks/useDatabase";
-import type { Page as PageType } from "../../api-client";
+import type { Page as PageType } from "../../services/APIService";
 import log from "../../utils/logger";
 
 interface PageListProps {

@@ -9,7 +9,7 @@ import PageContent from "./PageContent";
 import PageActions from "./PageActions";
 import { BlockEditingProvider } from "../../contexts/BlockEditingContext";
 
-import { type Block as BlockType, type HTTPError } from "../../api-client";
+import { type Block as BlockType, type HTTPError } from "../../services/APIService";
 
 interface PageProps {
   page_id: string;

@@ -11,10 +11,7 @@ import "./App.css";
 import Page from "./components/page/Page";
 import AllPages from "./components/page/AllPages";
 import RightSidebar from "./components/sidebar/RightSidebar";
-import {
-  type Block,
-  type HTTPError,
-} from "./api-client";
+import { type Block, type HTTPError } from "./services/APIService";
 import HeaderToolbar from "./components/sidebar/HeaderToolbar";
 import LeftSidebar from "./components/sidebar/LeftSidebar";
 import { useDatabase } from "./hooks/useDatabase";

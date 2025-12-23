@@ -11,7 +11,7 @@ import {
 } from "@mantine/core";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDatabase } from "../../hooks/useDatabase";
-import type { Page as PageType } from "../../api-client";
+import type { Page as PageType } from "../../services/APIService";
 import { useState } from "react";
 import log from "../../utils/logger";
 

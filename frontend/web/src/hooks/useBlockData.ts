@@ -4,7 +4,7 @@ import apiService from "../services";
 import {
   type Block as BlockType,
   type BlockUpdateContent
-} from "../api-client";
+} from "../services/APIService";
 import { showNotification } from "@mantine/notifications";
 import log from "../utils/logger";
 

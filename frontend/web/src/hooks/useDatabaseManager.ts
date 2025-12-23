@@ -1,15 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
 import { useDatabase } from "./useDatabase";
-import {
-  getDatabasesDatabasesGet,
-  getWorkspacesDbDbIdWorkspacesGet,
-  createDatabaseDatabasesPost,
-  type Database as DatabaseType,
-  type Workspace,
-  type HTTPError
-} from "../api-client";
+import apiService from "../services";
 import { showNotification } from "@mantine/notifications";
 import log from "../utils/logger";
+import { type Database as DatabaseType, type Workspace, type HTTPError } from "../services/APIService";
 
 interface UseDatabaseManagerReturn {
   databases: { value: string; label: string }[];
@@ -34,7 +28,7 @@ export const useDatabaseManager = (): UseDatabaseManagerReturn => {
 
   const fetchDatabases = useCallback(async () => {
     setIsDatabasesLoading(true);
-    const { data, error } = await getDatabasesDatabasesGet();
+    const { data, error } = await apiService.getDatabases();
     if (error) {
       log.error("[useDatabaseManager] Failed to fetch databases:", error);
       setIsDatabasesLoading(false);
@@ -52,10 +46,8 @@ export const useDatabaseManager = (): UseDatabaseManagerReturn => {
 
   const fetchWorkspaces = useCallback(async () => {
     if (!dbId) return;
-    const { data: all_workspaces, error } = await getWorkspacesDbDbIdWorkspacesGet({
-      path: { db_id: dbId },
-    });
-    
+    const { data: all_workspaces, error } = await apiService.getWorkspaces(dbId);
+
     if (error) {
       log.error("[useDatabaseManager] Failed to fetch workspaces:", error);
       return;
@@ -76,12 +68,10 @@ export const useDatabaseManager = (): UseDatabaseManagerReturn => {
 
   const createDatabase = async (name: string) => {
     log.debug(`[useDatabaseManager] Creating database`, { name });
-    const { data, error, response } = await createDatabaseDatabasesPost({
-      body: { name }
-    });
+    const { data, error, response } = await apiService.createDatabase(name);
 
     if (error) {
-      if (response.status === 409) {
+      if (response?.status === 409) {
         const httpError = error as HTTPError;
         const errorMessage = (httpError.body as { detail: string }).detail || "A database with this name already exists.";
         log.error(errorMessage);

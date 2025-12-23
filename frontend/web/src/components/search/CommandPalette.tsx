@@ -25,7 +25,7 @@ import {
   type PageModel,
   type BlockModel,
   type SearchRequest,
-} from "../../api-client";
+} from "../../services/APIService";
 import { useDatabase } from "../../hooks/useDatabase";
 import apiService from "../../services";
 

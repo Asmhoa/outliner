@@ -39,13 +39,13 @@ router.post('/db/:db_id/search', (req: Request, res: Response) => {
 
     // Format the results to match the expected response
     const formattedPages = pages.map(page => ({
-      page_id: page.id,
+      page_id: page.page_id,
       title: page.title,
       created_at: page.created_at.toISOString()
     }));
 
     const formattedBlocks = blocks.map(block => ({
-      block_id: block.id,
+      block_id: block.block_id,
       content: block.content,
       page_id: block.page_id,
       parent_block_id: block.parent_block_id,

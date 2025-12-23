@@ -5,7 +5,7 @@ import {
   Stack,
 } from "@mantine/core";
 import WorkspaceSidebar from "./WorkspaceSidebar";
-import type { Page as PageType } from "../../api-client";
+import type { Page as PageType } from "../../services/APIService";
 import { useNavigate } from "react-router-dom";
 import { useDatabase } from "../../hooks/useDatabase";
 import DatabaseSelector from "../database/DatabaseSelector";
