@@ -26,13 +26,13 @@ router.post('/db/:db_id/search', (req: Request, res: Response) => {
     // Perform search based on the search_type parameter
     let pages: Page[], blocks: Block[];
     if (search_type === "pages") {
-      pages = userDb.searchPages(query);
+      pages = userDb.searchPages(query, limit, escapeSpecialChars);
       blocks = [];
     } else if (search_type === "blocks") {
       pages = [];
-      blocks = userDb.searchBlocks(query);
+      blocks = userDb.searchBlocks(query, limit, escapeSpecialChars);
     } else if (search_type === "all") {
-      [pages, blocks] = userDb.searchAll(query);
+      [pages, blocks] = userDb.searchAll(query, limit, escapeSpecialChars);
     } else {
       return res.status(400).json({ error: "Invalid search_type. Must be 'pages', 'blocks', or 'all'" });
     }

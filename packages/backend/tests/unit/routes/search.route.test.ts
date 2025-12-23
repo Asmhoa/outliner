@@ -6,13 +6,14 @@ import fs from 'fs';
 import { app } from '../../../src/app'; // Adjust this import path as needed
 import { SystemDatabase } from '../../../src/database/system';
 import { UserDatabase } from '../../../src/database/user';
-import { setupTestSystemDatabase, teardownTestSystemDatabase, DbTestSetup } from '../../test-utils/db-test-setup';
+import { setupTestSystemDatabase, teardownTestSystemDatabase, DbTestSetup } from '../test-utils/db-test-setup';
 
 describe('Search API Routes', () => {
   let sysDb: SystemDatabase;
   let testSetup: DbTestSetup;
   let testDb: UserDatabase;
   let testDatabaseId: string;
+  let testDbNum = 0;
 
   beforeAll(() => {
     // Initialize system database
@@ -22,15 +23,16 @@ describe('Search API Routes', () => {
 
   beforeEach(() => {
     // Add the test database and capture its ID
-    sysDb.addUserDatabase('test_search_db');
-    const dbInfo = sysDb.getUserDatabaseByName('test_search_db');
+    let userDbName = `test_db_${testDbNum}`;
+    testDbNum += 1;
+    sysDb.addUserDatabase(userDbName);
+    const dbInfo = sysDb.getUserDatabaseByName(userDbName);
     if (dbInfo) {
       testDatabaseId = dbInfo.id;
     }
 
     // Create user database
     testDb = new UserDatabase(dbInfo.path);
-    testDb.initializeTables();
 
     // Create some test data for search
     // Create test pages
@@ -45,17 +47,15 @@ describe('Search API Routes', () => {
     testDb.addBlock("Python has great libraries for data science", "text", { position: 1, pageId: page1 });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     testDb.close();
 
     // Delete the test database from system DB
     if (testDatabaseId) {
       const dbInfo = sysDb.getUserDatabaseById(testDatabaseId);
-      if (fs.existsSync(dbInfo.path)) {
-        fs.unlinkSync(dbInfo.path);
-      }
       await sysDb.deleteUserDatabase(testDatabaseId);
     }
+
   });
 
   afterAll(() => {
