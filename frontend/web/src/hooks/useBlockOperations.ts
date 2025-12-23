@@ -1,7 +1,8 @@
 import { useCallback } from "react";
 import { showNotification } from "@mantine/notifications";
 import { useDatabase } from "./useDatabase";
-import { updateBlockPositionDbDbIdBlocksPositionPut, type BlockUpdatePosition } from "../api-client";
+import apiService from "../services";
+import { type BlockUpdatePosition } from "../api-client";
 
 export const useBlockOperations = () => {
   const { dbId } = useDatabase();
@@ -21,15 +22,7 @@ export const useBlockOperations = () => {
     if (!dbId) return;
 
     // Update position in database
-    const updateBody: BlockUpdatePosition = {
-      block_id: blockId,
-      new_position: Math.max(0, newPosition), // Ensure position is not negative
-    };
-
-    const { error } = await updateBlockPositionDbDbIdBlocksPositionPut({
-      path: { db_id: dbId },
-      body: updateBody
-    });
+    const { error } = await apiService.updateBlockPosition(dbId, blockId, Math.max(0, newPosition));
 
     if (error) {
       showNotification({ message: "Failed to move block", color: "red" });
@@ -41,10 +34,13 @@ export const useBlockOperations = () => {
   const changeParent = useCallback(async (blockId: string, newParentId: string | null) => {
     if (!dbId) return;
 
-    // This would use the updateBlockParent API endpoint
-    // For now, just log that we'd change the parent
-    console.log("Would change parent for block", blockId, "to", newParentId);
-    // Implementation would go here
+    const { error } = await apiService.updateBlockParent(dbId, blockId, newParentId);
+
+    if (error) {
+      showNotification({ message: "Failed to change block parent", color: "red" });
+    } else {
+      showNotification({ message: "Block parent changed successfully" });
+    }
   }, [dbId]);
 
   return {

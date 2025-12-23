@@ -1,0 +1,43 @@
+{
+  "name": "@outliner/backend",
+  "version": "1.0.0",
+  "description": "Backend API for Outliner application",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "concurrently \"tsc --build --watch\" \"nodemon dist/index.js\"",
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts",
+    "db:migrate": "node dist/database/migrate.js"
+  },
+  "dependencies": {
+    "@outliner/shared": "workspace:*",
+    "better-sqlite3": "^12.5.0",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "uuid": "^13.0.0",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.0.3",
+    "@types/supertest": "^6.0.3",
+    "@vitest/coverage-v8": "^4.0.16",
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.1.11",
+    "supertest": "^7.1.4",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  },
+  "keywords": [
+    "outliner",
+    "backend",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT"
+}

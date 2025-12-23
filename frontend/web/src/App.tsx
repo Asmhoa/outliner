@@ -12,8 +12,6 @@ import Page from "./components/page/Page";
 import AllPages from "./components/page/AllPages";
 import RightSidebar from "./components/sidebar/RightSidebar";
 import {
-  getBlocksDbDbIdBlocksPageIdGet,
-  addBlockDbDbIdBlocksPost,
   type Block,
   type HTTPError,
 } from "./api-client";
@@ -27,6 +25,7 @@ import { useDatabaseManager } from "./hooks/useDatabaseManager";
 import { useLocation } from "react-router-dom";
 import CommandPalette from "./components/search/CommandPalette";
 import { useKeyboardShortcut } from "./hooks/useKeyboardShortcut";
+import apiService from "./services";
 
 type NavbarVisibility = "visible" | "workspace-collapsed" | "sidebar-collapsed";
 
@@ -114,9 +113,7 @@ function App() {
 
     const fetchBlocks = async () => {
       log.debug(`[App] Fetching blocks for page`, { page_id: currentPageId });
-      const { data, error } = await getBlocksDbDbIdBlocksPageIdGet({
-        path: { db_id: dbId, page_id: currentPageId },
-      });
+      const { data, error } = await apiService.getBlocks(dbId, currentPageId);
 
       if (error) {
         log.error("[App] Failed to fetch blocks:", error);
@@ -128,11 +125,7 @@ function App() {
           log.debug(`[App] No blocks found, creating new block for page`, {
             page_id: currentPageId,
           });
-          const { data: newBlock, error: newBlockError } =
-            await addBlockDbDbIdBlocksPost({
-              path: { db_id: dbId },
-              body: { page_id: currentPageId, content: "", position: 0, type: "text" },
-            });
+          const { data: newBlock, error: newBlockError } = await apiService.addBlock(dbId, currentPageId, "", 0, "text");
 
           if (newBlockError) {
             log.error("[App] Failed to create new block:", newBlockError);

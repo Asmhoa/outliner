@@ -24,10 +24,10 @@ import { useNavigate } from "react-router-dom";
 import {
   type PageModel,
   type BlockModel,
-  searchDbDbIdSearchPost,
   type SearchRequest,
 } from "../../api-client";
 import { useDatabase } from "../../hooks/useDatabase";
+import apiService from "../../services";
 
 interface SearchResult {
   pages: PageModel[];
@@ -98,14 +98,7 @@ export default function CommandPalette({
       setError(null);
 
       try {
-        const response = await searchDbDbIdSearchPost({
-          path: { db_id: dbId },
-          body: {
-            query: debouncedQuery,
-            search_type: "all",
-            limit: 20,
-          },
-        });
+        const response = await apiService.search(dbId, debouncedQuery);
 
         if (response.error) {
           setError(

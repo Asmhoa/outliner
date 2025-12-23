@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from 'react-markdown';
 // For future extensions: import remarkGfm from 'remark-gfm';  // npm install remark-gfm
-import { updateBlockContentDbDbIdBlocksContentPut, type BlockUpdateContent } from "../../api-client";
+import apiService from "../../services";
+import { type BlockUpdateContent } from "../../api-client";
 import log from "../../utils/logger";
 import { useDatabase } from "../../hooks/useDatabase";
 import { useBlockEditing } from "../../contexts/BlockEditingContext";
@@ -45,15 +46,7 @@ const TextBlock: React.FC<TextBlockProps> = ({
 
     log.debug(`[TextBlock] Updating content`, { block_id: id, new_content: newContent });
 
-    const updatedBlock: BlockUpdateContent = {
-      block_id: id,
-      new_content: newContent,
-    };
-
-    const { error } = await updateBlockContentDbDbIdBlocksContentPut({
-      path: { db_id: dbId },
-      body: updatedBlock
-    });
+    const { error } = await apiService.updateBlockContent(dbId, id, newContent);
 
     if (error) {
       log.error("[TextBlock] Failed to update block content:", error);

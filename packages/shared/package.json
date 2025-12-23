@@ -1,0 +1,20 @@
+{
+  "name": "@outliner/shared",
+  "version": "1.0.0",
+  "description": "Shared utilities and types for Outliner application",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16",
+    "@vitest/coverage-v8": "^4.0.16"
+  }
+}
