@@ -59,7 +59,7 @@ router.get('/db/:db_id/block/:block_id', (req: Request, res: Response) => {
     const block = userDb.getBlockById(block_id);
 
     res.json({
-      block_id: block.id,
+      block_id: block.block_id,
       content: block.content,
       page_id: block.page_id,
       parent_block_id: block.parent_block_id,
@@ -91,7 +91,7 @@ router.get('/db/:db_id/blocks/:page_id', (req: Request, res: Response) => {
     const blocks = userDb.getBlocksByPageId(page_id);
 
     res.json(blocks.map(block => ({
-      block_id: block.id,
+      block_id: block.block_id,
       content: block.content,
       page_id: block.page_id,
       parent_block_id: block.parent_block_id,

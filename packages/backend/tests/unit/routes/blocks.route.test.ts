@@ -6,7 +6,7 @@ import fs from 'fs';
 import { app } from '../../../src/app'; // Adjust this import path as needed
 import { SystemDatabase } from '../../../src/database/system';
 import { UserDatabase } from '../../../src/database/user';
-import { setupTestSystemDatabase, teardownTestSystemDatabase, DbTestSetup } from '../../test-utils/db-test-setup';
+import { setupTestSystemDatabase, teardownTestSystemDatabase, DbTestSetup } from '../test-utils/db-test-setup';
 
 describe('Block API Routes', () => {
   let sysDb: SystemDatabase;
@@ -168,7 +168,7 @@ describe('Block API Routes', () => {
       })
       .expect(404);
 
-    expect(response.body).toEqual({ error: 'Block not found' });
+    expect(response.body).toEqual({ error: 'Block with ID xyz999 not found' });
   });
 
   test('should update block parent successfully', async () => {
@@ -221,7 +221,7 @@ describe('Block API Routes', () => {
       .delete(`/db/${testDatabaseId}/blocks/xyz999`)
       .expect(404);
 
-    expect(response.body).toEqual({ error: 'Block not found' });
+    expect(response.body).toEqual({ error: 'Block with ID xyz999 not found' });
   });
 
   test('should get blocks for a page when there are no blocks', async () => {
