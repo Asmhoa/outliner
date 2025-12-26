@@ -13,7 +13,7 @@ SERVER_PORT := $(call get_constant,SERVER_PORT)
 TESTING_SERVER_PORT := $(call get_constant,TESTING_PORT)
 TESTING_SYSTEM_DB_NAME := $(call get_constant,TESTING_SYSTEM_DB_NAME)
 SERVER_DIR := server
-WEB_FRONTEND_DIR := frontend/web
+WEB_FRONTEND_DIR := packages/frontend
 
 
 .PHONY: help

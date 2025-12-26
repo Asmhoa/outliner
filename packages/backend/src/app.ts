@@ -15,7 +15,7 @@ const app: express.Application = express();
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? [process.env.FRONTEND_URL || '']
-    : [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`],
+    : [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`, `http://localhost:5173`],
   credentials: true
 }));
 app.use(express.json());

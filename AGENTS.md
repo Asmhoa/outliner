@@ -1,6 +1,6 @@
-# Agent Workflow for API and Client Generation
+# Agent Workflow for Outliner
 
-This document outlines the workflow for managing the API and the auto-generated TypeScript client in this project.
+This document outlines the workflow for managing the backend (api server) and frontend (react) for the outliner project.
 
 ## Makefile
 
@@ -13,63 +13,36 @@ The project includes a `Makefile` with several commands to streamline common dev
 -   `make clean`: Removes temporary files, such as Python cache files (`.pyc`), test caches, and log files.
 -   `make format`: Format the codebase.
 
-## Backend (Server)
+## Backend (API Server)
 
-The backend is a Python [FastAPI](https://fastapi.tiangolo.com/) application located in the `server/` directory.
+The backend is a TypeScript [Express](https://expressjs.com/) application located in the `packages/backend/` directory. It provides REST APIs for managing pages, blocks, and workspaces using a SQLite database for data persistence.
 
-### API Documentation and Specification
+### Running the backend
 
-FastAPI automatically generates an OpenAPI 3.0 specification for the API.
-
--   **Swagger UI:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
--   **ReDoc:** [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
--   **OpenAPI Spec (JSON):** [http://127.0.0.1:8000/openapi.json](http://127.0.0.1:8000/openapi.json)
-
-The server must be running to access these. Use `make dev` to start the frontend and server, or to run only the server:
+Use `pnpm --filter @outliner/backend dev` to start the development server, or:
 
 ```bash
-cd server && uv run python -m outliner_api_server
+cd packages/backend && pnpm dev
 ```
 
 ### Running tests
-`make test` will test all components. To test only the server:
+`make test` will test all components. To test only the backend:
 
 ```bash
-cd server && uv run pytest
+cd packages/backend && npm run test
 ```
 
-To check coverage, use
+To run tests in watch mode:
 ```bash
-cd server && uv run pytest --cov
+cd packages/backend && npm run test:watch
 ```
 ## Frontend (Web)
 
-The frontend is a React+TypeScript application located in `frontend/web/`.
-
-### Typed API Client Generation
-
-The project uses [`openapi-ts`](https://github.com/hey-api/openapi-ts) to automatically generate a typed TypeScript client from the backend's OpenAPI specification.
-
--   **Generated Code Location:** `frontend/web/src/api-client/`
--   **Types:** `frontend/web/src/api-client/types.gen.ts`
--   **API Services:** `frontend/web/src/api-client/sdk.gen.ts`
-
-### How to Update the API Client
-
-To update the client after making changes to the FastAPI application:
-
-1.  **Ensure the backend server is running.**
-2.  **Run the generation script**
-
-    ```bash
-    cd frontend/web/ && npm run generate-api-client
-    ```
-
-This script executes the `openapi-ts` command, which fetches the latest `openapi.json` from the running server and regenerates the client code. This ensures the frontend's API client is always in sync with the backend API.
+The frontend is a React+TypeScript+Vite application located in `packages/frontend/`.
 
 ## Database Management
 
-The application supports tracking multiple user databases through a SystemDatabase. Each request can specify which UserDatabase to use via a path parameter:
+The application supports tracking multiple user databases through a SystemDatabase using SQLite. Each request can specify which UserDatabase to use via a path parameter:
 
 - `GET /db/{db_name}/pages` - Get all pages from a specific database
 - `GET /db/{db_name}/pages/{page_id}` - Get a specific page from a specific database
@@ -80,54 +53,24 @@ This allows the same server instance to handle multiple UserDatabases, enabling 
 
 ### Technical Implementation
 
-FastAPI automatically passes path parameters to dependency functions. Example:
+The backend uses Express middleware and route parameters to handle database selection. Example:
 
-```python
-def get_db(db_name: str, request: Request):
-    # db_name is automatically injected from the route path
-    sys_db = request.app.state.sys_db
-    # ... get database by name ...
-    yield db
-
-@app.get("/db/{db_name}/pages")
-def get_pages(db_name: str, db: UserDatabase = Depends(get_db)):
-    # db_name is passed to get_db dependency automatically
-    pass
+```typescript
+app.get('/db/:dbName/pages', (req: Request, res: Response) => {
+  const dbName = req.params.dbName;
+  // Get database by name from system database
+  const db = getDatabaseByName(dbName);
+  // ... perform operations on selected database ...
+});
 ```
 
-### Running Playwright Tests
+## Monorepo Structure
 
-The frontend includes Playwright tests for end-to-end testing. To run these tests properly, you must follow the test mode requirements:
+The project follows a monorepo architecture using pnpm workspaces with the following packages:
 
-1. **For running tests:**
-   - Terminal 1: `OUTLINER_TEST_MODE=1 make clean && make run-backend`
-   - Terminal 2: `OUTLINER_TEST_MODE=1 make gen-api && make test`
-
-2. **For re-running tests:**
-   - You must repeat step 1, starting with: `OUTLINER_TEST_MODE=1 make clean && make run-backend` before running `make test` again.
-
-3. **After testing is complete, restore the original API client:**
-   - Terminal 1: `OUTLINER_TEST_MODE=0 make clean && make run-backend`
-   - Terminal 2: `OUTLINER_TEST_MODE=0 make gen-api`
-
-To run the tests, use the `make test` command after following the setup above.
-
-The Playwright configuration is set up to:
-- Run tests in parallel
-- Use http://localhost:5173 as the base URL
-- Generate an HTML reporter
-- Retry failed tests on CI environments
-
-To view the HTML test report after running tests:
-```bash
-npx playwright show-report
-```
-
-### Frontend Component Structure
-
--   `frontend/ui`: This directory is intended for shared UI components (e.g., React components) that can be used across different frontend applications.
--   `frontend/web`: The web application, which consumes shared components from `frontend/ui`.
--   `frontend/desktop`: The desktop application, which also consumes shared components from `frontend/ui`.
+-   `packages/backend`: TypeScript/Express API server
+-   `packages/frontend`: React+TypeScript web application
+-   `packages/shared`: Shared utilities, types, and interfaces
 
 ## Code Location Preference
 
@@ -137,4 +80,4 @@ When implementing features or making changes, prefer handling logic and data man
 
 When making changes to the API, prefer using custom error classes for error handling rather than boolean flags to indicate success/failure.
 
-For example, instead of returning `{"success": false, "error": "Page not found"}`, the API should raise specific exceptions like `PageNotFoundError` which are then caught and converted to properly structured HTTP responses with appropriate status codes. The `api.py` file should be responsible for catching these exceptions and returning the appropriate HTTP status codes and error messages.
+For example, instead of returning `{"success": false, "error": "Page not found"}`, the API should raise specific exceptions like `NotFoundError` which are then caught and converted to properly structured HTTP responses with appropriate status codes. The error handling middleware should be responsible for catching these exceptions and returning the appropriate HTTP status codes and error messages.
