@@ -1,4 +1,0 @@
-SERVER_PORT = 8000
-TESTING_PORT = 8001
-SYSTEM_DB_NAME = "system.db"
-TESTING_SYSTEM_DB_NAME = "test_system.db"
